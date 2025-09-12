@@ -1,3 +1,6 @@
+// Fix: Add triple-slash directive to include Vite client types for `import.meta.env`.
+/// <reference types="vite/client" />
+
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -30,11 +33,11 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
       return;
     }
 
-    // It is assumed that STRIPE_PUBLISHABLE_KEY is available in the environment
-    const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+    // In a Vite project, client-side environment variables must be prefixed with VITE_
+    const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
     if (!stripePublishableKey) {
-      console.error('Stripe publishable key is not set.');
+      console.error('Stripe publishable key is not set. Make sure VITE_STRIPE_PUBLISHABLE_KEY is set in your environment.');
       setError('Payment processing is not available at the moment.');
       setLoading(false);
       return;
