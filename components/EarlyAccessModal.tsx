@@ -1,5 +1,3 @@
-// Fix: Add triple-slash directive to include Vite client types for `import.meta.env`.
-/// <reference types="vite/client" />
 
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
@@ -34,7 +32,8 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
     }
 
     // In a Vite project, client-side environment variables must be prefixed with VITE_
-    const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    // Fix: Use type assertion for import.meta.env as Vite client types are not available.
+    const stripePublishableKey = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
 
     if (!stripePublishableKey) {
       console.error('Stripe publishable key is not set. Make sure VITE_STRIPE_PUBLISHABLE_KEY is set in your environment.');

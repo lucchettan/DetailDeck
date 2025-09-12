@@ -7,9 +7,9 @@ const LanguageSwitcher: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
 
     const languages = {
-        en: 'English',
-        fr: 'Français',
-        es: 'Español'
+        en: { name: 'English', flag: '🇬🇧' },
+        fr: { name: 'Français', flag: '🇫🇷' },
+        es: { name: 'Español', flag: '🇪🇸' }
     };
 
     const handleLanguageChange = (lang: 'en' | 'fr' | 'es') => {
@@ -21,16 +21,24 @@ const LanguageSwitcher: React.FC = () => {
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center space-x-1 text-brand-gray hover:text-brand-dark transition-colors duration-300"
+                className="flex items-center space-x-2 text-brand-gray hover:text-brand-dark transition-colors duration-300"
             >
-                <span>{languages[language]}</span>
+                <span>{languages[language].flag}</span>
+                <span>{languages[language].name}</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {isOpen && (
-                <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                    <button onClick={() => handleLanguageChange('en')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">English</button>
-                    <button onClick={() => handleLanguageChange('fr')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">Français</button>
-                    <button onClick={() => handleLanguageChange('es')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">Español</button>
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    {Object.entries(languages).map(([langCode, langDetails]) => (
+                         <button 
+                            key={langCode}
+                            onClick={() => handleLanguageChange(langCode as 'en' | 'fr' | 'es')} 
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light"
+                        >
+                            <span className="mr-3">{langDetails.flag}</span>
+                            <span>{langDetails.name}</span>
+                        </button>
+                    ))}
                 </div>
             )}
         </div>
