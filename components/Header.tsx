@@ -27,7 +27,7 @@ const LanguageSwitcher: React.FC = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {isOpen && (
-                <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200">
+                <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                     <button onClick={() => handleLanguageChange('en')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">English</button>
                     <button onClick={() => handleLanguageChange('fr')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">Français</button>
                     <button onClick={() => handleLanguageChange('es')} className="block w-full text-left px-4 py-2 text-sm text-brand-dark hover:bg-brand-light">Español</button>
@@ -38,7 +38,7 @@ const LanguageSwitcher: React.FC = () => {
 }
 
 
-const Header: React.FC = () => {
+const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -53,7 +53,10 @@ const Header: React.FC = () => {
             <LanguageSwitcher />
             <a href="#pricing" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.pricing}</a>
             <a href="#faq" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.faq}</a>
-            <button className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105">
+            <button 
+              onClick={onGetStartedClick}
+              className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105"
+            >
               {t.getStarted}
             </button>
           </nav>

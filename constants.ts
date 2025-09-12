@@ -129,16 +129,64 @@ export const HOW_IT_WORKS_STEPS = {
 
 export const PRICING_PLANS = {
   en: [
-    { name: 'Solo', price: '60', description: 'For the individual detailer getting started.', features: ['1 User', 'Unlimited Bookings', 'Free Booking Page', 'Basic Analytics'] },
-    { name: 'Business', price: '150', description: 'For established shops with multiple locations.', features: ['Unlimited Users', 'Multi-location Support', 'API Access', 'Dedicated Account Manager', 'Priority Support'] },
+    { 
+      name: 'Solo', 
+      description: 'For the individual detailer getting started.', 
+      pricing: { monthly: '60', yearly: '550' },
+      features: ['1 User', 'Unlimited Bookings', 'Free Booking Page', 'Basic Analytics'] 
+    },
+    { 
+      name: 'Business', 
+      description: 'For established shops with multiple locations.', 
+      pricing: { monthly: '150', yearly: '1500' },
+      features: ['Unlimited Users', 'Multi-location Support', 'API Access', 'Dedicated Account Manager', 'Priority Support'] 
+    },
+    {
+      name: 'Lifetime',
+      description: 'One payment for lifetime access. Never worry about subscriptions again.',
+      pricing: { onetime: '3000' },
+      features: ['Everything in Business', 'Lifetime Updates', 'VIP Support', 'Early Access to New Features']
+    }
   ],
   fr: [
-    { name: 'Solo', price: '60', description: 'Pour l\'artisan indépendant qui se lance.', features: ['1 Utilisateur', 'Réservations illimitées', 'Page de réservation gratuite', 'Analyses de base'] },
-    { name: 'Business', price: '150', description: 'Pour les entreprises établies avec plusieurs sites.', features: ['Utilisateurs illimités', 'Support multi-sites', 'Accès API', 'Gestionnaire de compte dédié', 'Support prioritaire'] },
+    { 
+      name: 'Solo', 
+      description: 'Pour l\'artisan indépendant qui se lance.', 
+      pricing: { monthly: '60', yearly: '550' },
+      features: ['1 Utilisateur', 'Réservations illimitées', 'Page de réservation gratuite', 'Analyses de base'] 
+    },
+    { 
+      name: 'Business', 
+      description: 'Pour les entreprises établies avec plusieurs sites.', 
+      pricing: { monthly: '150', yearly: '1500' },
+      features: ['Utilisateurs illimités', 'Support multi-sites', 'Accès API', 'Gestionnaire de compte dédié', 'Support prioritaire'] 
+    },
+    {
+      name: 'À Vie',
+      description: 'Un paiement unique pour un accès à vie. Ne vous souciez plus jamais des abonnements.',
+      pricing: { onetime: '3000' },
+      features: ['Tout de Business', 'Mises à jour à vie', 'Support VIP', 'Accès anticipé aux nouveautés']
+    }
   ],
   es: [
-    { name: 'Solo', price: '60', description: 'Para el detallista individual que está empezando.', features: ['1 Usuario', 'Reservas ilimitadas', 'Página de reserva gratuita', 'Análisis básicos'] },
-    { name: 'Business', price: '150', description: 'Para talleres establecidos con múltiples ubicaciones.', features: ['Usuarios ilimitados', 'Soporte multi-ubicación', 'Acceso API', 'Gestor de cuenta dedicado', 'Soporte prioritario'] },
+    { 
+      name: 'Solo', 
+      description: 'Para el detallista individual que está empezando.', 
+      pricing: { monthly: '60', yearly: '550' },
+      features: ['1 Usuario', 'Reservas ilimitadas', 'Página de reserva gratuita', 'Análisis básicos'] 
+    },
+    { 
+      name: 'Business', 
+      description: 'Para talleres establecidos con múltiples ubicaciones.', 
+      pricing: { monthly: '150', yearly: '1500' },
+      features: ['Usuarios ilimitados', 'Soporte multi-ubicación', 'Acceso API', 'Gestor de cuenta dedicado', 'Soporte prioritario'] 
+    },
+    {
+      name: 'De por vida',
+      description: 'Un pago único para acceso de por vida. No te preocupes más por las suscripciones.',
+      pricing: { onetime: '3000' },
+      features: ['Todo en Business', 'Actualizaciones de por vida', 'Soporte VIP', 'Acceso anticipado a nuevas funciones']
+    }
   ]
 };
 
@@ -161,4 +209,10 @@ export const FAQ_ITEMS = {
     { question: '¿Puedo personalizar el diseño de mi página de reservas?', answer: 'Tu página de reservas está diseñada para ser limpia, profesional y optimizada para las conversiones. Aunque la personalización avanzada del diseño no está disponible actualmente, puedes subir el logotipo de tu negocio y mostrar tus servicios para ofrecer una experiencia de marca a tus clientes.' },
     { question: '¿Es DetailDeck adecuado para negocios de detailing móvil?', answer: 'Sí, es perfecto para detallistas móviles. Puedes establecer áreas de servicio, gestionar tu horario de viaje y permitir que los clientes te reserven en su ubicación.' },
   ]
+};
+
+export const STRIPE_PRICE_IDS = {
+  soloEarlyAccess: 'price_1PexampleSoloEarlyAccess0001', // Replace with your actual Stripe Price ID
+  businessEarlyAccess: 'price_1PexampleBusinessEarlyAccess0002', // Replace with your actual Stripe Price ID
+  lifetimeEarlyAccess: 'price_1PexampleLifetimeEarlyAccess0003', // Replace with your actual Stripe Price ID
 };
