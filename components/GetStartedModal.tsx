@@ -74,7 +74,7 @@ const GetStartedModal: React.FC<GetStartedModalProps> = ({ isOpen, onClose }) =>
               <input
                 type="email"
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent outline-none transition-shadow"
+                className="w-full px-4 py-3 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
                 aria-label="Email address"
                 required
               />

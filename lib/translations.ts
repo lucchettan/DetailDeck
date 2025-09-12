@@ -12,6 +12,15 @@ export const translations = {
     learnMore: 'Learn More',
     launchingSoon: 'Launching November 1st!',
     getEarlyAccess: 'Get Early Access',
+    joinWaitingList: 'Join Waiting List',
+    // Waiting List Modal
+    waitingListTitle: 'Join the Waiting List',
+    waitingListSubtitle: 'Be the first to know when we launch. No spam, we promise.',
+    emailAddress: 'Email address',
+    notifyMe: 'Notify Me',
+    joining: 'Joining...',
+    waitingListSuccess: 'You\'re on the list!',
+    waitingListSuccessSubtitle: 'Thanks for your interest. We\'ll email you on launch day.',
     // Early Access Modal
     earlyAccessTitle: 'Exclusive Early Access Offer!',
     earlyAccessSubtitle: 'Be among the first to join and get a massive discount on your first year. This offer won\'t last!',
@@ -31,6 +40,11 @@ export const translations = {
     // Showcase
     showcaseTitle: 'Your Business, At a Glance',
     showcaseSubtitle: 'A powerful dashboard that\'s surprisingly simple to use.',
+    showcaseItem1Title: 'Daily Summary',
+    showcaseItem2Title: 'Booking Management',
+    showcaseItem3Title: 'Service Editor',
+    showcaseItem4Title: 'Services Catalog',
+    showcaseItem5Title: 'Business Profile',
     // Pricing
     pricingTitle: 'Simple, Transparent Pricing',
     pricingSubtitle: 'Choose the plan that\'s right for your business. No hidden fees.',
@@ -67,6 +81,15 @@ export const translations = {
     learnMore: 'En savoir plus',
     launchingSoon: 'Lancement le 1er Novembre !',
     getEarlyAccess: 'Accès Anticipé',
+    joinWaitingList: 'Rejoindre la liste d\'attente',
+    // Waiting List Modal
+    waitingListTitle: 'Rejoindre la liste d\'attente',
+    waitingListSubtitle: 'Soyez le premier informé de notre lancement. Pas de spam, promis.',
+    emailAddress: 'Adresse e-mail',
+    notifyMe: 'Prévenez-moi',
+    joining: 'Inscription...',
+    waitingListSuccess: 'Vous êtes sur la liste !',
+    waitingListSuccessSubtitle: 'Merci de votre intérêt. Nous vous enverrons un e-mail le jour du lancement.',
      // Early Access Modal
     earlyAccessTitle: 'Offre Exclusive d\'Accès Anticipé !',
     earlyAccessSubtitle: 'Soyez parmi les premiers à nous rejoindre et bénéficiez d\'une remise massive sur votre première année. Cette offre est limitée !',
@@ -86,6 +109,11 @@ export const translations = {
     // Showcase
     showcaseTitle: 'Votre entreprise, en un coup d\'œil',
     showcaseSubtitle: 'Un tableau de bord puissant et étonnamment simple à utiliser.',
+    showcaseItem1Title: 'Résumé du jour',
+    showcaseItem2Title: 'Gestion des réservations',
+    showcaseItem3Title: 'Éditeur de services',
+    showcaseItem4Title: 'Catalogue de services',
+    showcaseItem5Title: 'Profil de l\'entreprise',
     // Pricing
     pricingTitle: 'Des tarifs simples et transparents',
     pricingSubtitle: 'Choisissez le plan adapté à votre entreprise. Sans frais cachés.',
@@ -122,6 +150,15 @@ export const translations = {
     learnMore: 'Saber más',
     launchingSoon: '¡Lanzamiento el 1 de Noviembre!',
     getEarlyAccess: 'Obtener Acceso Anticipado',
+    joinWaitingList: 'Unirse a la lista de espera',
+    // Waiting List Modal
+    waitingListTitle: 'Únete a la lista de espera',
+    waitingListSubtitle: 'Sé el primero en saber cuándo lanzamos. Sin spam, lo prometemos.',
+    emailAddress: 'Dirección de correo electrónico',
+    notifyMe: 'Notificarme',
+    joining: 'Uniéndose...',
+    waitingListSuccess: '¡Estás en la lista!',
+    waitingListSuccessSubtitle: 'Gracias por tu interés. Te enviaremos un correo electrónico el día del lanzamiento.',
      // Early Access Modal
     earlyAccessTitle: '¡Oferta Exclusiva de Acceso Anticipado!',
     earlyAccessSubtitle: 'Sé de los primeros en unirte y obtén un gran descuento en tu primer año. ¡Esta oferta no durará!',
@@ -141,6 +178,11 @@ export const translations = {
     // Showcase
     showcaseTitle: 'Tu negocio, de un vistazo',
     showcaseSubtitle: 'Un panel de control potente y sorprendentemente fácil de usar.',
+    showcaseItem1Title: 'Resumen del día',
+    showcaseItem2Title: 'Gestión de reservas',
+    showcaseItem3Title: 'Editor de servicios',
+    showcaseItem4Title: 'Catálogo de servicios',
+    showcaseItem5Title: 'Perfil del negocio',
     // Pricing
     pricingTitle: 'Precios simples y transparentes',
     pricingSubtitle: 'Elige el plan adecuado para tu negocio. Sin cargos ocultos.',

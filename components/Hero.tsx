@@ -3,9 +3,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 interface HeroProps {
   onEarlyAccessClick: () => void;
+  onWaitingListClick: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick }) => {
+const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick, onWaitingListClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -21,12 +22,20 @@ const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick }) => {
           <p className="font-semibold text-brand-dark bg-yellow-200/50 text-yellow-900 px-4 py-2 rounded-full border border-yellow-300/80">
             {t.launchingSoon}
           </p>
-          <button 
-            onClick={onEarlyAccessClick}
-            className="bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-4 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30"
-          >
-            {t.getEarlyAccess}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button 
+              onClick={onEarlyAccessClick}
+              className="bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-4 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30"
+            >
+              {t.getEarlyAccess}
+            </button>
+            <button 
+              onClick={onWaitingListClick}
+              className="bg-white text-brand-blue font-bold py-4 px-8 rounded-lg text-lg border-2 border-brand-blue hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 shadow-sm"
+            >
+              {t.joinWaitingList}
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -192,22 +192,40 @@ export const PRICING_PLANS = {
 
 export const FAQ_ITEMS = {
   en: [
-    { question: 'Can I use my own domain name for the booking page?', answer: 'DetailDeck generates a unique and professional booking page for your business (e.g., `detaildeck.com/your-name`). You can share this link directly with your clients on your website, social media, or business cards. We do not support custom domains at this time.' },
     { question: 'What payment gateways do you support?', answer: 'We support Stripe and PayPal for seamless online payments. We also offer an \'in-store payment\' option. To secure appointments made with this option, we require a €20 deposit. A fee is applied for any cancellation made less than 24 hours before the appointment.' },
-    { question: 'Can I customize the design of my booking page?', answer: 'Your booking page is designed to be clean, professional, and optimized for conversions. While extensive design customization is not currently available, you can upload your business logo and showcase your services to provide a branded experience for your clients.' },
     { question: 'Is DetailDeck suitable for mobile detailing businesses?', answer: 'Yes, it\'s perfect for mobile detailers. You can set service areas, manage your travel schedule, and allow clients to book you at their location, all from our platform.' },
   ],
   fr: [
-    { question: 'Puis-je utiliser mon propre nom de domaine pour la page de réservation ?', answer: 'DetailDeck génère une page de réservation unique et professionnelle pour votre entreprise (ex: `detaildeck.com/votre-nom`). Vous pouvez partager ce lien directement avec vos clients sur votre site web, les réseaux sociaux ou vos cartes de visite. Nous ne prenons pas en charge les domaines personnalisés pour le moment.' },
     { question: 'Quelles passerelles de paiement supportez-vous ?', answer: 'Nous prenons en charge Stripe et PayPal pour des paiements en ligne fluides. Nous offrons également une option de "paiement sur place". Pour garantir les rendez-vous pris avec cette option, nous exigeons un acompte de 20 €. Des frais d\'annulation seront appliqués pour toute annulation faite moins de 24 heures avant le rendez-vous.' },
-    { question: 'Puis-je personnaliser le design de ma page de réservation ?', answer: 'Votre page de réservation est conçue pour être épurée, professionnelle et optimisée pour les conversions. Bien que la personnalisation avancée du design ne soit pas actuellement disponible, vous pouvez télécharger le logo de votre entreprise et présenter vos services pour offrir une expérience de marque à vos clients.' },
     { question: 'DetailDeck est-il adapté aux entreprises de detailing mobile ?', answer: 'Oui, c\'est parfait pour les detailers mobiles. Vous pouvez définir des zones de service, gérer votre planning de déplacement et permettre aux clients de vous réserver à leur emplacement.' },
   ],
   es: [
-    { question: '¿Puedo usar mi propio nombre de dominio para la página de reservas?', answer: 'DetailDeck genera una página de reserva única y profesional para tu negocio (p. ej., `detaildeck.com/tu-nombre`). Puedes compartir este enlace directamente con tus clientes en tu sitio web, redes sociales o tarjetas de visita. Actualmente no admitimos dominios personalizados.' },
     { question: '¿Qué pasarelas de pago admiten?', answer: 'Admitimos Stripe y PayPal para pagos en línea sin problemas. También ofrecemos una opción de "pago en el local". Para asegurar las citas realizadas con esta opción, requerimos un depósito de 20 €. Se aplicará una tarifa de cancelación por cualquier anulación realizada con menos de 24 horas de antelación a la cita.' },
-    { question: '¿Puedo personalizar el diseño de mi página de reservas?', answer: 'Tu página de reservas está diseñada para ser limpia, profesional y optimizada para las conversiones. Aunque la personalización avanzada del diseño no está disponible actualmente, puedes subir el logotipo de tu negocio y mostrar tus servicios para ofrecer una experiencia de marca a tus clientes.' },
     { question: '¿Es DetailDeck adecuado para negocios de detailing móvil?', answer: 'Sí, es perfecto para detallistas móviles. Puedes establecer áreas de servicio, gestionar tu horario de viaje y permitir que los clientes te reserven en su ubicación.' },
+  ]
+};
+
+export const SHOWCASE_ITEMS = {
+  en: [
+    { image: 'https://i.imgur.com/8aK3N3y.png', title: 'showcaseItem1Title' },
+    { image: 'https://i.imgur.com/g08e6vC.png', title: 'showcaseItem2Title' },
+    { image: 'https://i.imgur.com/3hVzL2A.png', title: 'showcaseItem3Title' },
+    { image: 'https://i.imgur.com/s64hN5G.png', title: 'showcaseItem4Title' },
+    { image: 'https://i.imgur.com/5q0Yk9p.png', title: 'showcaseItem5Title' },
+  ],
+  fr: [
+    { image: 'https://i.imgur.com/8aK3N3y.png', title: 'showcaseItem1Title' },
+    { image: 'https://i.imgur.com/g08e6vC.png', title: 'showcaseItem2Title' },
+    { image: 'https://i.imgur.com/3hVzL2A.png', title: 'showcaseItem3Title' },
+    { image: 'https://i.imgur.com/s64hN5G.png', title: 'showcaseItem4Title' },
+    { image: 'https://i.imgur.com/5q0Yk9p.png', title: 'showcaseItem5Title' },
+  ],
+  es: [
+    { image: 'https://i.imgur.com/8aK3N3y.png', title: 'showcaseItem1Title' },
+    { image: 'https://i.imgur.com/g08e6vC.png', title: 'showcaseItem2Title' },
+    { image: 'https://i.imgur.com/3hVzL2A.png', title: 'showcaseItem3Title' },
+    { image: 'https://i.imgur.com/s64hN5G.png', title: 'showcaseItem4Title' },
+    { image: 'https://i.imgur.com/5q0Yk9p.png', title: 'showcaseItem5Title' },
   ]
 };
 
