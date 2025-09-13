@@ -17,7 +17,7 @@ enum PageState {
 
 const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
   const { t } = useLanguage();
-  const { signUp } = useAuth();
+  const { signUp, logIn } = useAuth();
 
   const [pageState, setPageState] = useState<PageState>(PageState.Initial);
   const [pendingSignupData, setPendingSignupData] = useState<any | null>(null);
@@ -53,16 +53,16 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
       setError(t.passwordMismatch);
       return;
     }
-    if (!pendingSignupData?.formData?.email) {
-      setError("Email address is missing. Cannot create account.");
+    if (!pendingSignupData?.formData?.email || !pendingSignupData?.plan) {
+      setError("Required information is missing. Cannot create account.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Create the user. The database trigger `handle_new_user_with_shop` will
-      // automatically create the associated shop using the metadata passed here.
+      // Step 1: Create the user. The database trigger `handle_new_user_with_shop` 
+      // will automatically create the associated shop and purchase record.
       const { error: authError } = await signUp({
         email: pendingSignupData.formData.email,
         password: password,
@@ -72,12 +72,16 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
                 first_name: pendingSignupData.formData.firstName,
                 last_name: pendingSignupData.formData.lastName,
                 address: pendingSignupData.formData.address,
+                // Pass purchase data
+                plan_id: pendingSignupData.plan.id,
+                plan_name: pendingSignupData.plan.name,
+                billing_cycle: pendingSignupData.plan.billingCycle,
+                price: pendingSignupData.plan.price,
             }
         }
       });
 
       if (authError) {
-        // Handle specific error for existing user
         if (authError.message.includes('User already registered')) {
             setError(t.accountExistsError);
             localStorage.removeItem('pendingSignup');
@@ -87,14 +91,27 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
         }
         throw authError;
       }
-
-      // Success! If signUp doesn't throw an error, we assume the trigger worked.
+      
       localStorage.removeItem('pendingSignup');
-      setPageState(PageState.FinalSuccess);
+
+      // Step 2: Automatically log the user in.
+      const { error: loginError } = await logIn({
+          email: pendingSignupData.formData.email,
+          password: password,
+      });
+
+      if (loginError) {
+          // This is an unlikely but possible state.
+          // The user's account is created, but auto-login failed.
+          // We show them the success message with instructions to verify and log in manually.
+          setPageState(PageState.FinalSuccess);
+      }
+      // If login is successful, the AuthProvider's state will change,
+      // and the App component will automatically route to the dashboard.
+      // This component will unmount, so no further action is needed here.
 
     } catch (e: any) {
       console.error('Account setup error:', e);
-      // Improve error message for RLS issues.
       let friendlyError = e.message || 'An unexpected error occurred.';
       if (e.message?.includes('violates row-level security policy')) {
         friendlyError = 'Your account was created, but we failed to set up your shop. Please ensure your database security policies are configured correctly or contact support.';
@@ -178,21 +195,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
       // Default/Initial state
       default:
         return (
-          <>
-            <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-6" />
-            <h1 className="text-3xl sm:text-4xl font-bold text-brand-dark mb-4">
-              {t.paymentSuccessTitle}
-            </h1>
-            <p className="text-brand-gray text-lg mb-8">
-              Thank you for your purchase. Please check your email for a receipt.
-            </p>
-            <button
-              onClick={onReturnToHome}
-              className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105"
-            >
-              {t.backToHomepage}
-            </button>
-          </>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue mx-auto"></div>
         );
     }
   }

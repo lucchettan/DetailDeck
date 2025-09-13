@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     // Header & Auth
@@ -130,6 +131,8 @@ export const translations = {
     accountCreatedTitle: 'Account Created!',
     accountCreatedSubtitle: 'Success! Please check your email to verify your account. You can now log in.',
     accountExistsError: 'An account with this email already exists. Please log in instead.',
+    // Dashboard
+    dashboardGreeting: 'Welcome to your Dashboard!',
     // Footer
     footerDescription: 'DetailDeck is the ultimate platform for auto detailers, built to streamline your operations, boost your bookings, and accelerate your growth.',
     product: 'Product',
@@ -273,6 +276,8 @@ export const translations = {
     accountCreatedTitle: 'Compte Créé !',
     accountCreatedSubtitle: 'Succès ! Veuillez consulter vos e-mails pour vérifier votre compte. Vous pouvez maintenant vous connecter.',
     accountExistsError: 'Un compte avec cet e-mail existe déjà. Veuillez vous connecter.',
+    // Dashboard
+    dashboardGreeting: 'Bienvenue sur votre Tableau de Bord !',
     // Footer
     footerDescription: 'DetailDeck est la plateforme qui accompagne les detailers vers le succès, en simplifiant leur gestion et en boostant leur croissance.',
     product: 'Produit',
@@ -416,6 +421,8 @@ export const translations = {
     accountCreatedTitle: '¡Cuenta Creada!',
     accountCreatedSubtitle: '¡Éxito! Por favor, revisa tu correo para verificar tu cuenta. Ya puedes iniciar sesión.',
     accountExistsError: 'Ya existe una cuenta con este correo. Por favor, inicia sesión.',
+    // Dashboard
+    dashboardGreeting: '¡Bienvenido a tu Panel de Control!',
     // Footer
     footerDescription: 'DetailDeck es la plataforma definitiva para detallistas de coches, creada para optimizar tus operaciones, impulsar tus reservas y acelerar tu crecimiento.',
     product: 'Producto',

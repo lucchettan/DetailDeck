@@ -6,6 +6,7 @@ import { STRIPE_PRICE_IDS } from '../constants';
 import StepTransition from './StepTransition';
 import { supabase } from '../lib/supabaseClient';
 import { IS_MOCK_MODE, VITE_STRIPE_PUBLISHABLE_KEY } from '../lib/env';
+import { SelectedPlan } from '../App';
 
 // This is necessary when using the Stripe script via a CDN
 declare const Stripe: any;
@@ -20,6 +21,7 @@ interface FormData {
   shopName: string;
   email: string;
   firstName: string;
+
   lastName: string;
   address: string;
   phone: string;
@@ -39,7 +41,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const modalRef = useRef<HTMLDivElement>(null);
   
   const [step, setStep] = useState('1');
-  const [selectedPlan, setSelectedPlan] = useState<'solo' | 'business' | 'lifetime'>('business');
+  const [selectedPlanId, setSelectedPlanId] = useState<'solo' | 'business' | 'lifetime'>('business');
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
     email: '',
@@ -53,9 +55,15 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const [apiError, setApiError] = useState('');
   const [userExists, setUserExists] = useState(false);
 
+  const planInfo: Record<'solo' | 'business' | 'lifetime', SelectedPlan> = {
+    solo: { id: 'solo', name: t.soloPlanTitle, billingCycle: 'yearly', price: '400' },
+    business: { id: 'business', name: t.businessPlanTitle, billingCycle: 'yearly', price: '750' },
+    lifetime: { id: 'lifetime', name: t.earlyAccessLifetimeTitle, billingCycle: 'onetime', price: '1250' }
+  };
+
   const resetState = () => {
     setStep('1');
-    setSelectedPlan('business');
+    setSelectedPlanId('business');
     setFormData({ shopName: '', email: '', firstName: '', lastName: '', address: '', phone: '' });
     setErrors({});
     setLoading(false);
@@ -104,7 +112,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     setLoading(true);
 
     if (IS_MOCK_MODE) {
-      console.log("Mock Mode: Simulating form submission.", { formData, selectedPlan });
+      console.log("Mock Mode: Simulating form submission.", { formData, selectedPlanId });
       // Simulate a short delay for a more realistic feel
       await new Promise(resolve => setTimeout(resolve, 1500));
       alert("This is a mock checkout flow. Your data has been logged to the console, and you would normally be redirected to Stripe to complete your payment.");
@@ -137,7 +145,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
         last_name: formData.lastName,
         address: formData.address,
         phone: formData.phone,
-        selected_plan: selectedPlan,
+        selected_plan: selectedPlanId,
       });
 
       if (dbError) {
@@ -149,19 +157,18 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
         throw new Error('Stripe publishable key is not set.');
       }
 
+      const planToSave = planInfo[selectedPlanId];
       // Save user info to local storage to be picked up on the success page
-      localStorage.setItem('pendingSignup', JSON.stringify({ formData, plan: { id: selectedPlan } }));
+      localStorage.setItem('pendingSignup', JSON.stringify({ formData, plan: planToSave }));
 
       const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
       
       let priceId;
-      // All early access offers are treated as one-time payments for this initial transaction.
       const mode: 'payment' | 'subscription' = 'payment';
 
-      // Fix: Correctly access the nested early access price IDs.
-      if (selectedPlan === 'solo') {
+      if (selectedPlanId === 'solo') {
         priceId = STRIPE_PRICE_IDS.earlyAccess.solo;
-      } else if (selectedPlan === 'business') {
+      } else if (selectedPlanId === 'business') {
         priceId = STRIPE_PRICE_IDS.earlyAccess.business;
       } else {
         priceId = STRIPE_PRICE_IDS.earlyAccess.lifetime;
@@ -177,7 +184,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
 
       if (stripeError) {
         console.error("Stripe redirectToCheckout error:", stripeError);
-        console.error("Attempted to use Price ID:", priceId, "for plan:", selectedPlan);
+        console.error("Attempted to use Price ID:", priceId, "for plan:", selectedPlanId);
         localStorage.removeItem('pendingSignup'); // Clean up on failure
         throw new Error(stripeError.message);
       }
@@ -185,7 +192,6 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     } catch (e: any) {
       console.error('Early Access Submission Error:', e);
       let userMessage = e.message || 'An unexpected error occurred. Please try again.';
-      // Provide a more user-friendly error for the most common Stripe issue.
       if (typeof e.message === 'string' && e.message.includes('No such price')) {
           userMessage = "It seems there's an issue with the selected payment plan. Please contact support.";
       }
@@ -195,7 +201,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   };
 
   const handlePlanSelectAndProceed = (plan: 'solo' | 'business' | 'lifetime') => {
-    setSelectedPlan(plan);
+    setSelectedPlanId(plan);
     setStep('2');
   };
 
@@ -265,7 +271,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
       period: ` / ${t.lifetime}` 
     },
   };
-  const selectedPlanDetails = planDetails[selectedPlan];
+  const selectedPlanDetails = planDetails[selectedPlanId];
 
 
   return (
@@ -301,7 +307,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
             <div key="1" data-step="1">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 md:min-h-[280px]">
                     {/* Solo Plan */}
-                    <button type="button" onClick={() => handlePlanSelectAndProceed('solo')} className={`border rounded-lg p-4 bg-brand-light transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'solo' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
+                    <button type="button" onClick={() => handlePlanSelectAndProceed('solo')} className={`border rounded-lg p-4 bg-brand-light transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'solo' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
                         <div>
                           <h3 className="text-lg font-bold text-brand-dark">{t.soloPlanTitle}</h3>
                           <p className="text-brand-gray text-sm mt-1">{t.soloPlanDescription}</p>
@@ -314,7 +320,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                     </button>
 
                     {/* Business Plan */}
-                    <button type="button" onClick={() => handlePlanSelectAndProceed('business')} className={`border rounded-lg p-4 bg-blue-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'business' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
+                    <button type="button" onClick={() => handlePlanSelectAndProceed('business')} className={`border rounded-lg p-4 bg-blue-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'business' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full">{t.bestValue}</div>
                         <div>
                           <h3 className="text-lg font-bold text-brand-dark">{t.businessPlanTitle}</h3>
@@ -328,7 +334,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                     </button>
 
                     {/* Lifetime Plan */}
-                     <button type="button" onClick={() => handlePlanSelectAndProceed('lifetime')} className={`border rounded-lg p-4 bg-yellow-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'lifetime' ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-gray-200 hover:border-gray-400'}`}>
+                     <button type="button" onClick={() => handlePlanSelectAndProceed('lifetime')} className={`border rounded-lg p-4 bg-yellow-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'lifetime' ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-gray-200 hover:border-gray-400'}`}>
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">{t.bestDeal}</div>
                         <div>
                           <h3 className="text-lg font-bold text-brand-dark">{t.earlyAccessLifetimeTitle}</h3>
