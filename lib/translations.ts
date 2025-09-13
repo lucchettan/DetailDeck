@@ -74,9 +74,9 @@ export const translations = {
     faq: 'FAQ',
     getStarted: 'Commencer',
     // Hero
-    heroTitle1: 'Boostez vos Réservations.',
+    heroTitle1: 'L'outil sur mesure pour les professionels du detailing.',
     heroTitle2: 'Sans Effort.',
-    heroSubtitle: 'La plateforme tout-en-un conçue pour les professionnels du detailing. Boostez votre business avec une plateforme de réservation qui travaille pour vous, 24/7.',
+    heroSubtitle: 'Remplissez votre calendrier sans efforts, la plateforme travaille pour vous. Automatisez vos réservations en partageant votre formulaire généré automatiquement.',
     startTrial: 'Commencez votre essai gratuit',
     learnMore: 'En savoir plus',
     launchingSoon: 'Lancement le 1er Novembre !',
