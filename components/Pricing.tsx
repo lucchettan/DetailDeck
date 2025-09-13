@@ -1,11 +1,17 @@
+
 import React, { useState } from 'react';
 import { PRICING_PLANS } from '../constants';
 import { CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import { SelectedPlan } from '../App';
 
 type BillingCycle = 'monthly' | 'yearly';
 
-const Pricing: React.FC = () => {
+interface PricingProps {
+  onChoosePlan: (plan: SelectedPlan) => void;
+}
+
+const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
   const { language, t } = useLanguage();
   const plans = PRICING_PLANS[language];
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
@@ -71,7 +77,14 @@ const Pricing: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <button className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${plan.name === 'Lifetime' || plan.name === 'À Vie' || plan.name === 'De por vida' ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
+              <button 
+                onClick={() => {
+                  const cycle = 'onetime' in plan.pricing ? 'onetime' : billingCycle;
+                  const price = 'onetime' in plan.pricing ? plan.pricing.onetime : plan.pricing[billingCycle];
+                  // @ts-ignore - The id property is guaranteed to be there after our constants update
+                  onChoosePlan({ id: plan.id, name: plan.name, billingCycle: cycle, price });
+                }}
+                className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${plan.name === 'Lifetime' || plan.name === 'À Vie' || plan.name === 'De por vida' ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
                 {t.choosePlan}
               </button>
             </div>

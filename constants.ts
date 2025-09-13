@@ -131,18 +131,21 @@ export const HOW_IT_WORKS_STEPS = {
 export const PRICING_PLANS = {
   en: [
     { 
+      id: 'solo',
       name: 'Solo', 
       description: 'For the individual detailer getting started.', 
       pricing: { monthly: '60', yearly: '550' },
       features: ['1 User', 'Unlimited Bookings', 'Free Booking Page', 'Basic Analytics'] 
     },
     { 
+      id: 'business',
       name: 'Business', 
       description: 'For businesses with multiple employees requiring different roles.', 
       pricing: { monthly: '150', yearly: '1500' },
       features: ['Unlimited Users', 'Role-based permissions', 'API Access', 'Dedicated Account Manager', 'Priority Support'] 
     },
     {
+      id: 'lifetime',
       name: 'Lifetime',
       description: 'One payment for lifetime access. Never worry about subscriptions again.',
       pricing: { onetime: '3000' },
@@ -151,18 +154,21 @@ export const PRICING_PLANS = {
   ],
   fr: [
     { 
+      id: 'solo',
       name: 'Solo', 
       description: 'Pour l\'artisan indépendant qui se lance.', 
       pricing: { monthly: '60', yearly: '550' },
       features: ['1 Utilisateur', 'Réservations illimitées', 'Page de réservation gratuite', 'Analyses de base'] 
     },
     { 
+      id: 'business',
       name: 'Business', 
       description: 'Pour les entreprises avec plusieurs employés nécessitant différents rôles.', 
       pricing: { monthly: '150', yearly: '1500' },
       features: ['Utilisateurs illimités', 'Permissions basées sur les rôles', 'Accès API', 'Gestionnaire de compte dédié', 'Support prioritaire'] 
     },
     {
+      id: 'lifetime',
       name: 'À Vie',
       description: 'Un paiement unique pour un accès à vie. Ne vous souciez plus jamais des abonnements.',
       pricing: { onetime: '3000' },
@@ -171,18 +177,21 @@ export const PRICING_PLANS = {
   ],
   es: [
     { 
+      id: 'solo',
       name: 'Solo', 
       description: 'Para el detallista individual que está empezando.', 
       pricing: { monthly: '60', yearly: '550' },
       features: ['1 Usuario', 'Reservas ilimitadas', 'Página de reserva gratuita', 'Análisis básicos'] 
     },
     { 
+      id: 'business',
       name: 'Business', 
       description: 'Para empresas con múltiples empleados que requieren diferentes roles.', 
       pricing: { monthly: '150', yearly: '1500' },
       features: ['Usuarios ilimitados', 'Permisos basados en roles', 'Acceso API', 'Gestor de cuenta dedicado', 'Soporte prioritario'] 
     },
     {
+      id: 'lifetime',
       name: 'De por vida',
       description: 'Un pago único para acceso de por vida. No te preocupes más por las suscripciones.',
       pricing: { onetime: '3000' },
@@ -231,9 +240,24 @@ export const SHOWCASE_ITEMS = {
 };
 
 export const STRIPE_PRICE_IDS = {
-  // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard (in Test Mode).
-  // You need to create a yearly subscription price for Solo and Business, and a one-time product price for Lifetime.
-  soloEarlyAccess: 'price_1S6udBJDxn6jAPmdEOxqj4v3',
-  businessEarlyAccess: 'price_1S6udfJDxn6jAPmdwfdcDM3P',
-  lifetimeEarlyAccess: 'price_1S6ue9JDxn6jAPmdATcV5PFq',
+  earlyAccess: {
+    solo: 'price_1S6udBJDxn6jAPmdEOxqj4v3',
+    business: 'price_1S6udfJDxn6jAPmdwfdcDM3P',
+    lifetime: 'price_1S6ue9JDxn6jAPmdATcV5PFq',
+  },
+  // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard.
+  // Create monthly and yearly recurring prices for Solo and Business, and a one-time price for Lifetime.
+  regular: {
+    solo: {
+      monthly: 'price_REPLACE_WITH_SOLO_MONTHLY_ID',
+      yearly: 'price_REPLACE_WITH_SOLO_YEARLY_ID',
+    },
+    business: {
+      monthly: 'price_REPLACE_WITH_BUSINESS_MONTHLY_ID',
+      yearly: 'price_REPLACE_WITH_BUSINESS_YEARLY_ID',
+    },
+    lifetime: {
+      onetime: 'price_REPLACE_WITH_LIFETIME_ONETIME_ID',
+    }
+  }
 };

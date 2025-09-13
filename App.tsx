@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -11,18 +12,34 @@ import AuthModal from './components/AuthModal';
 import EarlyAccessModal from './components/EarlyAccessModal';
 import WaitingListModal from './components/WaitingListModal';
 import OnboardingModal from './components/OnboardingModal';
+import PaymentModal from './components/PaymentModal';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
+
+export interface SelectedPlan {
+  id: 'solo' | 'business' | 'lifetime';
+  name: string;
+  billingCycle: 'monthly' | 'yearly' | 'onetime';
+  price: string;
+}
 
 const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
+
 
   const handleSignUpSuccess = () => {
     setIsAuthModalOpen(false);
     setIsOnboardingModalOpen(true);
+  };
+
+  const handleChoosePlan = (plan: SelectedPlan) => {
+    setSelectedPlan(plan);
+    setIsPaymentModalOpen(true);
   };
 
   return (
@@ -38,7 +55,7 @@ const App: React.FC = () => {
             <HowItWorks />
             <Features />
             <Showcase />
-            <Pricing />
+            <Pricing onChoosePlan={handleChoosePlan} />
             <FAQ />
           </main>
           <Footer />
@@ -59,6 +76,13 @@ const App: React.FC = () => {
             isOpen={isOnboardingModalOpen}
             onClose={() => setIsOnboardingModalOpen(false)}
           />
+          {selectedPlan && (
+            <PaymentModal
+              isOpen={isPaymentModalOpen}
+              onClose={() => setIsPaymentModalOpen(false)}
+              plan={selectedPlan}
+            />
+          )}
         </div>
       </AuthProvider>
     </LanguageProvider>

@@ -126,14 +126,16 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
       const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
       
       let priceId;
-      const mode: 'payment' | 'subscription' = selectedPlan === 'lifetime' ? 'payment' : 'subscription';
+      // All early access offers are treated as one-time payments for this initial transaction.
+      const mode: 'payment' | 'subscription' = 'payment';
 
+      // Fix: Correctly access the nested early access price IDs.
       if (selectedPlan === 'solo') {
-        priceId = STRIPE_PRICE_IDS.soloEarlyAccess;
+        priceId = STRIPE_PRICE_IDS.earlyAccess.solo;
       } else if (selectedPlan === 'business') {
-        priceId = STRIPE_PRICE_IDS.businessEarlyAccess;
+        priceId = STRIPE_PRICE_IDS.earlyAccess.business;
       } else {
-        priceId = STRIPE_PRICE_IDS.lifetimeEarlyAccess;
+        priceId = STRIPE_PRICE_IDS.earlyAccess.lifetime;
       }
 
       const { error: stripeError } = await stripe.redirectToCheckout({
