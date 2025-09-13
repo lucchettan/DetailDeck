@@ -94,9 +94,9 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
       });
 
       if (shopError) {
-        // In a real app, we might want to handle this more gracefully
-        // (e.g., delete the user or flag for manual intervention)
-        console.error("Shop creation failed after user signup:", shopError);
+        // Provide detailed error logging for easier debugging of RLS policies.
+        const detailedError = `Shop creation failed. Supabase error: [${shopError.code}] ${shopError.message}. This is likely a Row Level Security (RLS) policy issue. Ensure the 'authenticated' role has INSERT permission on the 'shops' table with a 'WITH CHECK' policy like 'auth.uid() = owner_id'.`;
+        console.error(detailedError, shopError);
         throw new Error('Your account was created, but we failed to set up your shop. Please contact support.');
       }
 

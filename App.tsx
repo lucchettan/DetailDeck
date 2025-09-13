@@ -51,6 +51,12 @@ const App: React.FC = () => {
     setSelectedPlan(plan);
     setIsPaymentModalOpen(true);
   };
+  
+  const handleSwitchToLogin = () => {
+    setIsPaymentModalOpen(false);
+    setIsEarlyAccessModalOpen(false);
+    setIsAuthModalOpen(true);
+  };
 
   if (showPaymentSuccess) {
     return (
@@ -87,6 +93,7 @@ const App: React.FC = () => {
           <EarlyAccessModal
             isOpen={isEarlyAccessModalOpen}
             onClose={() => setIsEarlyAccessModalOpen(false)}
+            onLoginClick={handleSwitchToLogin}
           />
           <WaitingListModal
             isOpen={isWaitingListModalOpen}
@@ -101,6 +108,7 @@ const App: React.FC = () => {
               isOpen={isPaymentModalOpen}
               onClose={() => setIsPaymentModalOpen(false)}
               plan={selectedPlan}
+              onLoginClick={handleSwitchToLogin}
             />
           )}
         </div>

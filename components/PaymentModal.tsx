@@ -14,6 +14,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: SelectedPlan;
+  onLoginClick: () => void;
 }
 
 interface FormData {
@@ -32,7 +33,7 @@ interface FormErrors {
   phone?: string;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan, onLoginClick }) => {
   const { t } = useLanguage();
   const modalRef = useRef<HTMLDivElement>(null);
   
@@ -46,12 +47,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [userExists, setUserExists] = useState(false);
 
   const resetState = () => {
     setFormData({ shopName: '', email: '', shopType: '', address: '', phone: '' });
     setErrors({});
     setLoading(false);
     setApiError('');
+    setUserExists(false);
   }
 
   const handleClose = () => {
@@ -84,6 +87,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError('');
+    setUserExists(false);
+
     if (!validate()) {
       return;
     }
@@ -100,7 +105,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
     }
 
     try {
-      // Step 1: Save data to Supabase (as a sales lead)
+      // Step 1: Check if user already exists BEFORE payment
+      const { data: userExists, error: rpcError } = await supabase.rpc('check_user_exists', { email_to_check: formData.email });
+
+      if (rpcError) {
+          throw new Error("Could not verify your email. Please try again.");
+      }
+
+      if (userExists) {
+          setApiError(t.emailExistsError);
+          setUserExists(true);
+          setLoading(false);
+          return;
+      }
+
+      // Step 2: Save data to Supabase (as a sales lead)
       const { error: dbError } = await supabase.from('sales_leads').insert({
         shop_name: formData.shopName,
         email: formData.email,
@@ -114,7 +133,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
         throw new Error(dbError.message);
       }
       
-      // Step 2: Redirect to Stripe
+      // Step 3: Redirect to Stripe
       if (!VITE_STRIPE_PUBLISHABLE_KEY) {
         throw new Error('Stripe publishable key is not set.');
       }
@@ -170,6 +189,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
     setFormData(prev => ({ ...prev, [name]: value }));
     if(errors[name as keyof FormErrors]) {
         setErrors(prev => ({...prev, [name]: undefined}));
+    }
+    if (userExists) {
+        setUserExists(false);
+        setApiError('');
     }
   };
 
@@ -275,10 +298,23 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
                 </div>
             </div>
 
-            {apiError && <p className="text-red-500 text-sm text-center mb-4">{apiError}</p>}
+            {apiError && (
+              <div className="text-center bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-red-700 text-sm">{apiError}</p>
+                  {userExists && (
+                      <button
+                          type="button"
+                          onClick={onLoginClick}
+                          className="mt-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-all text-sm"
+                      >
+                          {t.login}
+                      </button>
+                  )}
+              </div>
+            )}
 
             <button type="submit" disabled={loading} className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
-                {loading ? t.redirecting : t.claimDiscountAndPay}
+                {loading ? t.redirecting : 'Proceed to Payment'}
             </button>
         </form>
       </div>

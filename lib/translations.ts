@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     // Header & Auth
@@ -12,6 +13,7 @@ export const translations = {
     unconfirmedEmailError: 'Your email is not confirmed. Please check your inbox.',
     resendConfirmation: 'Resend confirmation email',
     confirmationSent: 'A new confirmation link has been sent to your email.',
+    emailExistsError: 'An account with this email already exists. Please log in or use a different email.',
     // Hero
     heroTitle1: 'Drive More Bookings.',
     heroTitle2: 'Effortlessly.',
@@ -149,6 +151,7 @@ export const translations = {
     unconfirmedEmailError: "Votre e-mail n'est pas confirmé. Veuillez vérifier votre boîte de réception.",
     resendConfirmation: "Renvoyer l'e-mail de confirmation",
     confirmationSent: "Un nouveau lien de confirmation a été envoyé à votre adresse e-mail.",
+    emailExistsError: "Un compte avec cet e-mail existe déjà. Veuillez vous connecter ou utiliser une autre adresse e-mail.",
     // Hero
     heroTitle1: 'Boostez vos Réservations.',
     heroTitle2: 'Sans Effort.',
@@ -286,6 +289,7 @@ export const translations = {
     unconfirmedEmailError: 'Tu correo electrónico no está confirmado. Por favor, revisa tu bandeja de entrada.',
     resendConfirmation: 'Reenviar correo de confirmación',
     confirmationSent: 'Se ha enviado un nuevo enlace de confirmación a tu correo electrónico.',
+    emailExistsError: 'Ya existe una cuenta con este correo electrónico. Por favor, inicia sesión o utiliza una dirección de correo electrónico diferente.',
     // Hero
     heroTitle1: 'Excelencia,',
     heroTitle2: 'sin esfuerzo.',
