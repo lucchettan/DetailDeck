@@ -107,6 +107,20 @@ export const translations = {
     // FAQ
     faqTitle: 'Frequently Asked Questions',
     faqSubtitle: 'Your most common questions, answered.',
+    // Payment Success
+    paymentSuccessTitle: 'Payment Successful!',
+    paymentSuccessSubtitle: 'Thank you! Now, let\'s create your account to get you started.',
+    backToHomepage: 'Back to Homepage',
+    setupAccountTitle: 'One Last Step: Secure Your Account',
+    setupAccountSubtitle: "Create a password for your new account associated with",
+    setPassword: 'Set Your Password',
+    confirmPassword: 'Confirm Your Password',
+    passwordMismatch: 'Passwords do not match.',
+    completeAccountSetup: 'Complete Account Setup',
+    creatingYourAccount: 'Creating Your Account...',
+    accountCreatedTitle: 'Account Created!',
+    accountCreatedSubtitle: 'Success! Please check your email to verify your account. You can now log in.',
+    accountExistsError: 'An account with this email already exists. Please log in instead.',
     // Footer
     footerDescription: 'DetailDeck is the ultimate platform for auto detailers, built to streamline your operations, boost your bookings, and accelerate your growth.',
     product: 'Product',
@@ -227,6 +241,20 @@ export const translations = {
     // FAQ
     faqTitle: 'Foire aux questions',
     faqSubtitle: 'Les réponses à vos questions les plus fréquentes.',
+    // Payment Success
+    paymentSuccessTitle: 'Paiement Réussi !',
+    paymentSuccessSubtitle: 'Merci ! Maintenant, créons votre compte pour commencer.',
+    backToHomepage: 'Retour à l\'accueil',
+    setupAccountTitle: 'Dernière étape : Sécurisez votre compte',
+    setupAccountSubtitle: "Créez un mot de passe pour votre nouveau compte associé à",
+    setPassword: 'Définir votre mot de passe',
+    confirmPassword: 'Confirmer le mot de passe',
+    passwordMismatch: 'Les mots de passe ne correspondent pas.',
+    completeAccountSetup: 'Terminer la création du compte',
+    creatingYourAccount: 'Création de votre compte...',
+    accountCreatedTitle: 'Compte Créé !',
+    accountCreatedSubtitle: 'Succès ! Veuillez consulter vos e-mails pour vérifier votre compte. Vous pouvez maintenant vous connecter.',
+    accountExistsError: 'Un compte avec cet e-mail existe déjà. Veuillez vous connecter.',
     // Footer
     footerDescription: 'DetailDeck est la plateforme qui accompagne les detailers vers le succès, en simplifiant leur gestion et en boostant leur croissance.',
     product: 'Produit',
@@ -347,6 +375,20 @@ export const translations = {
     // FAQ
     faqTitle: 'Preguntas frecuentes',
     faqSubtitle: 'Las respuestas a tus preguntas más comunes.',
+    // Payment Success
+    paymentSuccessTitle: '¡Pago Exitoso!',
+    paymentSuccessSubtitle: '¡Gracias! Ahora, creemos tu cuenta para que puedas empezar.',
+    backToHomepage: 'Volver a la página principal',
+    setupAccountTitle: 'Último paso: Asegura tu cuenta',
+    setupAccountSubtitle: "Crea una contraseña para tu nueva cuenta asociada con",
+    setPassword: 'Establece tu contraseña',
+    confirmPassword: 'Confirmar contraseña',
+    passwordMismatch: 'Las contraseñas no coinciden.',
+    completeAccountSetup: 'Completar la creación de la cuenta',
+    creatingYourAccount: 'Creando tu cuenta...',
+    accountCreatedTitle: '¡Cuenta Creada!',
+    accountCreatedSubtitle: '¡Éxito! Por favor, revisa tu correo para verificar tu cuenta. Ya puedes iniciar sesión.',
+    accountExistsError: 'Ya existe una cuenta con este correo. Por favor, inicia sesión.',
     // Footer
     footerDescription: 'DetailDeck es la plataforma definitiva para detallistas de coches, creada para optimizar tus operaciones, impulsar tus reservas y acelerar tu crecimiento.',
     product: 'Producto',

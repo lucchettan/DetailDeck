@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -13,6 +13,7 @@ import EarlyAccessModal from './components/EarlyAccessModal';
 import WaitingListModal from './components/WaitingListModal';
 import OnboardingModal from './components/OnboardingModal';
 import PaymentModal from './components/PaymentModal';
+import PaymentSuccess from './components/PaymentSuccess';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -30,7 +31,16 @@ const App: React.FC = () => {
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_success') === 'true') {
+      setShowPaymentSuccess(true);
+      // Clean up the URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   const handleSignUpSuccess = () => {
     setIsAuthModalOpen(false);
@@ -41,6 +51,14 @@ const App: React.FC = () => {
     setSelectedPlan(plan);
     setIsPaymentModalOpen(true);
   };
+
+  if (showPaymentSuccess) {
+    return (
+      <LanguageProvider>
+        <PaymentSuccess onReturnToHome={() => setShowPaymentSuccess(false)} />
+      </LanguageProvider>
+    );
+  }
 
   return (
     <LanguageProvider>

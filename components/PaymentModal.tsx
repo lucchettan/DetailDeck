@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -118,6 +119,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
         throw new Error('Stripe publishable key is not set.');
       }
 
+      // Save user info to local storage to be picked up on the success page
+      localStorage.setItem('pendingSignup', JSON.stringify({ formData, plan }));
+
       const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
       
       const { id, billingCycle } = plan;
@@ -146,6 +150,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan }) =>
 
       if (stripeError) {
         console.error("Stripe redirectToCheckout error:", stripeError);
+        localStorage.removeItem('pendingSignup'); // Clean up on failure
         throw new Error(stripeError.message);
       }
 

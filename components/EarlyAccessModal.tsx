@@ -123,6 +123,9 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
         throw new Error('Stripe publishable key is not set.');
       }
 
+      // Save user info to local storage to be picked up on the success page
+      localStorage.setItem('pendingSignup', JSON.stringify({ formData, plan: { id: selectedPlan } }));
+
       const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
       
       let priceId;
@@ -149,6 +152,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
       if (stripeError) {
         console.error("Stripe redirectToCheckout error:", stripeError);
         console.error("Attempted to use Price ID:", priceId, "for plan:", selectedPlan);
+        localStorage.removeItem('pendingSignup'); // Clean up on failure
         throw new Error(stripeError.message);
       }
 
