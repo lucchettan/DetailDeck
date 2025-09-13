@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CarWashIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const LanguageSwitcher: React.FC = () => {
     const { language, setLanguage } = useLanguage();
@@ -98,6 +99,7 @@ const LanguageSwitcher: React.FC = () => {
 
 const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick }) => {
   const { t } = useLanguage();
+  const { user, logOut } = useAuth();
 
   return (
     <header className="sticky top-0 bg-white/80 backdrop-blur-sm z-50 shadow-md">
@@ -109,14 +111,30 @@ const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick
           </div>
           <nav className="flex items-center space-x-3 sm:space-x-6">
             <LanguageSwitcher />
-            <a href="#pricing" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.pricing}</a>
-            <a href="#faq" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.faq}</a>
-            <button 
-              onClick={onGetStartedClick}
-              className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
-            >
-              {t.getStarted}
-            </button>
+            {user ? (
+              <>
+                 <a href="#dashboard" className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base">
+                  {t.dashboard}
+                </a>
+                <button 
+                  onClick={logOut}
+                  className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
+                >
+                  {t.logout}
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="#pricing" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.pricing}</a>
+                <a href="#faq" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.faq}</a>
+                <button 
+                  onClick={onGetStartedClick}
+                  className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
+                >
+                  {t.getStarted}
+                </button>
+              </>
+            )}
           </nav>
         </div>
       </div>

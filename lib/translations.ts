@@ -1,9 +1,14 @@
 export const translations = {
   en: {
-    // Header
+    // Header & Auth
     pricing: 'Pricing',
     faq: 'FAQ',
     getStarted: 'Get Started',
+    dashboard: 'Dashboard',
+    logout: 'Log Out',
+    login: 'Log In',
+    signup: 'Sign Up',
+    password: 'Password',
     // Hero
     heroTitle1: 'Drive More Bookings.',
     heroTitle2: 'Effortlessly.',
@@ -60,11 +65,21 @@ export const translations = {
     phoneNumberPlaceholder: "+1 (555) 123-4567",
     requiredField: "This field is required.",
     invalidPhone: "Please enter a valid phone number.",
-    // Get Started Modal
-    getStartedTitle: 'Let\'s get you set up',
-    getStartedSubtitle: 'Enter your email to create your account and receive your personal booking page.',
+    // Onboarding Modal
+    onboardingTitle: "Welcome to DetailDeck!",
+    onboardingSubtitle: "Let's set up your shop. This information will be used to create your public booking page.",
+    createShop: "Create My Shop",
+    creatingShop: "Creating...",
+    // Get Started / Auth Modal
+    getStartedTitle: 'Create your account',
+    getStartedSubtitle: 'And receive your personal booking page.',
+    loginTitle: 'Welcome Back!',
+    loginSubtitle: 'Log in to manage your business.',
     emailPlaceholder: 'you@example.com',
+    passwordPlaceholder: 'Your password',
     continue: 'Continue',
+    alreadyHaveAccount: 'Already have an account?',
+    dontHaveAccount: "Don't have an account?",
     // Features
     featuresTitle: 'Powerful Tools, Designed for Detailing Artisans',
     featuresSubtitle: 'Focus on your craft. We handle the rest.',
@@ -105,10 +120,15 @@ export const translations = {
     copyright: 'All rights reserved.'
   },
   fr: {
-    // Header
+    // Header & Auth
     pricing: 'Tarifs',
     faq: 'FAQ',
     getStarted: 'Commencer',
+    dashboard: 'Tableau de bord',
+    logout: 'Déconnexion',
+    login: 'Connexion',
+    signup: 'Inscription',
+    password: 'Mot de passe',
     // Hero
     heroTitle1: 'Boostez vos Réservations.',
     heroTitle2: 'Sans Effort.',
@@ -165,11 +185,21 @@ export const translations = {
     phoneNumberPlaceholder: "+33 6 12 34 56 78",
     requiredField: "Ce champ est obligatoire.",
     invalidPhone: "Veuillez entrer un numéro de téléphone valide.",
-    // Get Started Modal
-    getStartedTitle: 'Configurons votre compte',
-    getStartedSubtitle: 'Entrez votre e-mail pour créer votre compte et recevoir votre page de réservation personnelle.',
+    // Onboarding Modal
+    onboardingTitle: "Bienvenue sur DetailDeck !",
+    onboardingSubtitle: "Configurons votre atelier. Ces informations seront utilisées pour créer votre page de réservation publique.",
+    createShop: "Créer mon Atelier",
+    creatingShop: "Création...",
+    // Get Started / Auth Modal
+    getStartedTitle: 'Créez votre compte',
+    getStartedSubtitle: 'Et recevez votre page de réservation personnelle.',
+    loginTitle: 'Content de vous revoir !',
+    loginSubtitle: 'Connectez-vous pour gérer votre entreprise.',
     emailPlaceholder: 'vous@exemple.com',
+    passwordPlaceholder: 'Votre mot de passe',
     continue: 'Continuer',
+    alreadyHaveAccount: 'Vous avez déjà un compte ?',
+    dontHaveAccount: "Vous n'avez pas de compte ?",
     // Features
     featuresTitle: 'Des outils puissants, conçus pour les artisans du détail',
     featuresSubtitle: 'Concentrez-vous sur votre art. Nous gérons le reste.',
@@ -210,10 +240,15 @@ export const translations = {
     copyright: 'Tous droits réservés.'
   },
   es: {
-    // Header
+    // Header & Auth
     pricing: 'Precios',
     faq: 'FAQ',
     getStarted: 'Comenzar',
+    dashboard: 'Panel de control',
+    logout: 'Cerrar sesión',
+    login: 'Iniciar sesión',
+    signup: 'Registrarse',
+    password: 'Contraseña',
     // Hero
     heroTitle1: 'Excelencia,',
     heroTitle2: 'sin esfuerzo.',
@@ -270,11 +305,21 @@ export const translations = {
     phoneNumberPlaceholder: "+34 912 34 56 78",
     requiredField: "Este campo es obligatorio.",
     invalidPhone: "Por favor, introduce un número de teléfono válido.",
-    // Get Started Modal
-    getStartedTitle: 'Vamos a configurarlo',
-    getStartedSubtitle: 'Ingresa tu correo electrónico para crear tu cuenta y recibir tu página de reserva personal.',
+     // Onboarding Modal
+    onboardingTitle: "¡Bienvenido a DetailDeck!",
+    onboardingSubtitle: "Vamos a configurar tu taller. Esta información se usará para crear tu página de reserva pública.",
+    createShop: "Crear mi Taller",
+    creatingShop: "Creando...",
+    // Get Started / Auth Modal
+    getStartedTitle: 'Crea tu cuenta',
+    getStartedSubtitle: 'Y recibe tu página de reserva personal.',
+    loginTitle: '¡Bienvenido de nuevo!',
+    loginSubtitle: 'Inicia sesión para gestionar tu negocio.',
     emailPlaceholder: 'tu@ejemplo.com',
+    passwordPlaceholder: 'Tu contraseña',
     continue: 'Continuar',
+    alreadyHaveAccount: '¿Ya tienes una cuenta?',
+    dontHaveAccount: '¿No tienes una cuenta?',
     // Features
     featuresTitle: 'Herramientas Potentes, Diseñadas para Artesanos del Detalle',
     featuresSubtitle: 'Concéntrate en tu arte. Nosotros nos encargamos del resto.',

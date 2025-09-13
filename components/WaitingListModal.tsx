@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon, CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import { supabase } from '../lib/supabaseClient';
 
 interface WaitingListModalProps {
   isOpen: boolean;
@@ -39,11 +40,19 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
     }
     setLoading(true);
 
-    // Simulate API call to a backend that would store the email
-    setTimeout(() => {
-      setLoading(false);
+    const { error } = await supabase.from('waiting_list').insert({ email: email });
+
+    setLoading(false);
+    if (error) {
+      // Basic error handling for unique constraint violation
+      if (error.code === '23505') {
+        setError('This email is already on the waiting list.');
+      } else {
+        setError(error.message);
+      }
+    } else {
       setSuccess(true);
-    }, 1500);
+    }
   };
 
   useEffect(() => {

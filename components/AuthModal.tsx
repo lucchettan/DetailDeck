@@ -1,4 +1,3 @@
-// This file has been renamed to AuthModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';

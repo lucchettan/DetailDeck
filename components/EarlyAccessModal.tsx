@@ -3,6 +3,7 @@ import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { STRIPE_PRICE_IDS } from '../constants';
 import StepTransition from './StepTransition';
+import { supabase } from '../lib/supabaseClient';
 
 // This is necessary when using the Stripe script via a CDN
 declare const Stripe: any;
@@ -91,16 +92,27 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
 
     setLoading(true);
 
-    const stripePublishableKey = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
-
-    if (!stripePublishableKey) {
-      console.error('Stripe publishable key is not set. Make sure VITE_STRIPE_PUBLISHABLE_KEY is set in your environment.');
-      setApiError('Payment processing is not available at the moment.');
-      setLoading(false);
-      return;
-    }
-
     try {
+      // Step 1: Save data to Supabase
+      const { error: dbError } = await supabase.from('early_access_signups').insert({
+        shop_name: formData.shopName,
+        email: formData.email,
+        shop_type: formData.shopType,
+        address: formData.address,
+        phone: formData.phone,
+        selected_plan: selectedPlan,
+      });
+
+      if (dbError) {
+        throw new Error(dbError.message);
+      }
+      
+      // Step 2: Redirect to Stripe if DB insert is successful
+      const stripePublishableKey = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
+      if (!stripePublishableKey) {
+        throw new Error('Stripe publishable key is not set.');
+      }
+
       const stripe = Stripe(stripePublishableKey);
       
       let priceId;
@@ -114,7 +126,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
         priceId = STRIPE_PRICE_IDS.lifetimeEarlyAccess;
       }
 
-      const { error } = await stripe.redirectToCheckout({
+      const { error: stripeError } = await stripe.redirectToCheckout({
         lineItems: [{ price: priceId, quantity: 1 }],
         mode: mode,
         customerEmail: formData.email,
@@ -122,14 +134,13 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
         cancelUrl: window.location.origin,
       });
 
-      if (error) {
-        console.error('Stripe Checkout error:', error);
-        setApiError(error.message);
-        setLoading(false);
+      if (stripeError) {
+        throw new Error(stripeError.message);
       }
-    } catch (e) {
-      console.error('Stripe initialization error:', e);
-      setApiError('Could not connect to payment processor.');
+
+    } catch (e: any) {
+      console.error('Early Access Submission Error:', e);
+      setApiError(e.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
