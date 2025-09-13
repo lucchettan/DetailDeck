@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CarWashIcon, CalendarIcon, CatalogIcon, UpsellIcon, CompanyIcon, WebpageIcon } from './components/Icons';
 
@@ -232,7 +233,7 @@ export const SHOWCASE_ITEMS = {
 export const STRIPE_PRICE_IDS = {
   // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard (in Test Mode).
   // You need to create a yearly subscription price for Solo and Business, and a one-time product price for Lifetime.
-  soloEarlyAccess: 'price_1PexampleSoloEarlyAccess0001',
-  businessEarlyAccess: 'price_1PexampleBusinessEarlyAccess0002',
-  lifetimeEarlyAccess: 'price_1PexampleLifetimeEarlyAccess0003',
+  soloEarlyAccess: 'price_1S6udBJDxn6jAPmdEOxqj4v3',
+  businessEarlyAccess: 'price_1S6udfJDxn6jAPmdwfdcDM3P',
+  lifetimeEarlyAccess: 'price_1S6ue9JDxn6jAPmdATcV5PFq',
 };

@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } from './env';
 
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase environment variables are missing. Please create a .env.local file in the root of your project and add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from your Supabase project dashboard.');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// The supabase client is initialized with either the real environment variables
+// or the mock values from env.ts. This ensures the app can run without crashing
+// in a preview environment where these variables might not be set.
+export const supabase = createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY);

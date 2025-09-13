@@ -3,6 +3,7 @@ import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
+import { IS_MOCK_MODE } from '../lib/env';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -62,15 +63,27 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError('');
-    if (!validate() || !user) {
+    if (!validate()) {
+      return;
+    }
+    if (!IS_MOCK_MODE && !user) {
       return;
     }
 
     setLoading(true);
 
+    if (IS_MOCK_MODE) {
+      console.log("Mock Mode: Simulating shop creation.", { formData });
+      setTimeout(() => {
+          setLoading(false);
+          handleClose();
+      }, 1500);
+      return;
+    }
+
     try {
       const { error } = await supabase.from('shops').insert({
-        owner_id: user.id,
+        owner_id: user!.id,
         name: formData.shopName,
         shop_type: formData.shopType,
         // This is a simplified address for now. We can expand this later.

@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { STRIPE_PRICE_IDS } from '../constants';
 import StepTransition from './StepTransition';
 import { supabase } from '../lib/supabaseClient';
+import { IS_MOCK_MODE, VITE_STRIPE_PUBLISHABLE_KEY } from '../lib/env';
 
 // This is necessary when using the Stripe script via a CDN
 declare const Stripe: any;
@@ -92,6 +93,16 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
 
     setLoading(true);
 
+    if (IS_MOCK_MODE) {
+      console.log("Mock Mode: Simulating form submission.", { formData, selectedPlan });
+      // Simulate a short delay for a more realistic feel
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      alert("This is a mock checkout flow. Your data has been logged to the console, and you would normally be redirected to Stripe to complete your payment.");
+      setLoading(false);
+      handleClose();
+      return;
+    }
+
     try {
       // Step 1: Save data to Supabase
       const { error: dbError } = await supabase.from('early_access_signups').insert({
@@ -108,12 +119,11 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
       }
       
       // Step 2: Redirect to Stripe if DB insert is successful
-      const stripePublishableKey = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
-      if (!stripePublishableKey) {
+      if (!VITE_STRIPE_PUBLISHABLE_KEY) {
         throw new Error('Stripe publishable key is not set.');
       }
 
-      const stripe = Stripe(stripePublishableKey);
+      const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
       
       let priceId;
       const mode: 'payment' | 'subscription' = selectedPlan === 'lifetime' ? 'payment' : 'subscription';

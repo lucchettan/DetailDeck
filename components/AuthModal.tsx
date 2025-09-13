@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { IS_MOCK_MODE } from '../lib/env';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -49,6 +50,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
     setLoading(true);
     setError('');
     setMessage('');
+
+    if (IS_MOCK_MODE) {
+        console.log("Mock Mode: Simulating auth.", { email, isLoginView });
+        setTimeout(() => {
+            if (isLoginView) {
+                handleClose();
+            } else {
+                if (onSignUpSuccess) {
+                    onSignUpSuccess();
+                } else {
+                    handleClose();
+                }
+            }
+            setLoading(false);
+        }, 1000);
+        return;
+    }
 
     if (isLoginView) {
       const { error } = await logIn({ email, password });

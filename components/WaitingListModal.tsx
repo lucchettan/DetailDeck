@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon, CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
+import { IS_MOCK_MODE } from '../lib/env';
 
 interface WaitingListModalProps {
   isOpen: boolean;
@@ -39,6 +40,15 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
       return;
     }
     setLoading(true);
+
+    if (IS_MOCK_MODE) {
+        console.log("Mock Mode: Simulating adding email to waiting list.", { email });
+        setTimeout(() => {
+            setLoading(false);
+            setSuccess(true);
+        }, 1000);
+        return;
+    }
 
     const { error } = await supabase.from('waiting_list').insert({ email: email });
 
