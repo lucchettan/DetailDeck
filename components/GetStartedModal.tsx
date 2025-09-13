@@ -56,33 +56,33 @@ const GetStartedModal: React.FC<GetStartedModalProps> = ({ isOpen, onClose }) =>
         <button 
           onClick={onClose} 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close modal"
+          aria-label={t.closeModal}
         >
           <CloseIcon className="w-6 h-6" />
         </button>
         
         <div className="text-center">
           <h2 id="modal-title" className="text-2xl font-bold text-brand-dark mb-2">
-            Let's get you set up
+            {t.getStartedTitle}
           </h2>
           <p className="text-brand-gray mb-6">
-            Enter your email to create your account and receive your personal booking page.
+            {t.getStartedSubtitle}
           </p>
 
           <form onSubmit={(e) => e.preventDefault()}>
             <div className="space-y-4">
               <input
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t.emailPlaceholder}
                 className="w-full px-4 py-3 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
-                aria-label="Email address"
+                aria-label={t.emailAddress}
                 required
               />
               <button 
                 type="submit"
                 className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30"
               >
-                Continue
+                {t.continue}
               </button>
             </div>
           </form>

@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { STRIPE_PRICE_IDS } from '../constants';
+import StepTransition from './StepTransition';
 
 // This is necessary when using the Stripe script via a CDN
 declare const Stripe: any;
@@ -12,32 +12,90 @@ interface EarlyAccessModalProps {
   onClose: () => void;
 }
 
+interface FormData {
+  shopName: string;
+  email: string;
+  shopType: 'mobile' | 'fixed' | '';
+  address: string;
+  phone: string;
+}
+
+interface FormErrors {
+  shopName?: string;
+  email?: string;
+  shopType?: string;
+  address?: string;
+  phone?: string;
+}
+
 const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) => {
   const { t } = useLanguage();
   const modalRef = useRef<HTMLDivElement>(null);
+  
+  const [step, setStep] = useState('1');
   const [selectedPlan, setSelectedPlan] = useState<'solo' | 'business' | 'lifetime'>('business');
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState<FormData>({
+    shopName: '',
+    email: '',
+    shopType: '',
+    address: '',
+    phone: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [apiError, setApiError] = useState('');
+
+  const resetState = () => {
+    setStep('1');
+    setSelectedPlan('business');
+    setFormData({ shopName: '', email: '', shopType: '', address: '', phone: '' });
+    setErrors({});
+    setLoading(false);
+    setApiError('');
+  }
+
+  const handleClose = () => {
+    // Add a small delay to allow the modal to animate out before resetting state
+    setTimeout(() => {
+        resetState();
+    }, 300);
+    onClose();
+  };
+
+  const validateStep2 = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.shopName.trim()) newErrors.shopName = t.requiredField;
+    if (!formData.email.trim()) {
+      newErrors.email = t.requiredField;
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = t.emailValidationError;
+    }
+    if (!formData.shopType) newErrors.shopType = t.requiredField;
+    if (!formData.address.trim()) newErrors.address = t.requiredField;
+    if (!formData.phone.trim()) {
+      newErrors.phone = t.requiredField;
+    } else if (!/^\+?[0-9\s-()]{7,}$/.test(formData.phone)) { // Basic phone validation
+      newErrors.phone = t.invalidPhone;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      setError('Please enter a valid email address.');
-      setLoading(false);
+    setApiError('');
+    if (!validateStep2()) {
       return;
     }
 
-    // In a Vite project, client-side environment variables must be prefixed with VITE_
-    // Fix: Use type assertion for import.meta.env as Vite client types are not available.
+    setLoading(true);
+
     const stripePublishableKey = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
 
     if (!stripePublishableKey) {
       console.error('Stripe publishable key is not set. Make sure VITE_STRIPE_PUBLISHABLE_KEY is set in your environment.');
-      setError('Payment processing is not available at the moment.');
+      setApiError('Payment processing is not available at the moment.');
       setLoading(false);
       return;
     }
@@ -56,38 +114,55 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
         priceId = STRIPE_PRICE_IDS.lifetimeEarlyAccess;
       }
 
-
       const { error } = await stripe.redirectToCheckout({
         lineItems: [{ price: priceId, quantity: 1 }],
         mode: mode,
-        customerEmail: email,
+        customerEmail: formData.email,
         successUrl: `${window.location.origin}?payment_success=true`,
         cancelUrl: window.location.origin,
       });
 
       if (error) {
         console.error('Stripe Checkout error:', error);
-        setError(error.message);
+        setApiError(error.message);
         setLoading(false);
       }
     } catch (e) {
       console.error('Stripe initialization error:', e);
-      setError('Could not connect to payment processor.');
+      setApiError('Could not connect to payment processor.');
       setLoading(false);
     }
   };
 
+  const handlePlanSelectAndProceed = (plan: 'solo' | 'business' | 'lifetime') => {
+    setSelectedPlan(plan);
+    setStep('2');
+  };
+
+  const handlePrevStep = () => {
+    setApiError('');
+    setErrors({});
+    setStep('1');
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if(errors[name as keyof FormErrors]) {
+        setErrors(prev => ({...prev, [name]: undefined}));
+    }
+  };
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        handleClose();
       }
     };
 
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
+        handleClose();
       }
     };
 
@@ -108,6 +183,26 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
     return null;
   }
 
+  const planDetails = {
+    solo: { 
+      title: t.soloPlanTitle, 
+      price: '€400', 
+      period: t.perFirstYear 
+    },
+    business: { 
+      title: t.businessPlanTitle, 
+      price: '€750', 
+      period: t.perFirstYear 
+    },
+    lifetime: { 
+      title: t.earlyAccessLifetimeTitle, 
+      price: '€1250', 
+      period: ` / ${t.lifetime}` 
+    },
+  };
+  const selectedPlanDetails = planDetails[selectedPlan];
+
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 transition-opacity duration-300"
@@ -117,109 +212,128 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
     >
       <div
         ref={modalRef}
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl p-8 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+        className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
         style={{ animationFillMode: 'forwards' }}
       >
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close modal"
+          aria-label={t.closeModal}
         >
           <CloseIcon className="w-6 h-6" />
         </button>
 
         <div className="text-center">
-          <h2 id="modal-title" className="text-3xl font-bold text-brand-dark mb-2">
-            {t.earlyAccessTitle}
-          </h2>
-          <p className="text-brand-gray mb-8 max-w-lg mx-auto">
-            {t.earlyAccessSubtitle}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
-            {/* Solo Plan Offer */}
-            <button
-              type="button"
-              onClick={() => setSelectedPlan('solo')}
-              className={`border rounded-lg p-6 bg-brand-light text-left transition-all duration-300 focus:outline-none h-full ${
-                selectedPlan === 'solo' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'
-                }`}
-            >
-              <h3 className="text-xl font-bold text-brand-dark">Solo Plan</h3>
-              <p className="text-brand-gray mt-1">For individual detailers</p>
-              <div className="my-4">
-                <span className="text-4xl font-extrabold text-brand-dark">€400</span>
-                <span className="text-brand-gray"> / first year</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                <span className="line-through">€550</span> standard price
-              </p>
-            </button>
-
-            {/* Business Plan Offer */}
-            <button
-              type="button"
-              onClick={() => setSelectedPlan('business')}
-              className={`border rounded-lg p-6 bg-blue-50 relative text-left transition-all duration-300 focus:outline-none h-full ${
-                selectedPlan === 'business' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'
-                }`}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full">{t.bestValue}</div>
-              <h3 className="text-xl font-bold text-brand-dark">Business Plan</h3>
-              <p className="text-brand-gray mt-1">For established shops</p>
-              <div className="my-4">
-                <span className="text-4xl font-extrabold text-brand-dark">€750</span>
-                <span className="text-brand-gray"> / first year</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                <span className="line-through">€1500</span> standard price
-              </p>
-            </button>
-
-            {/* Lifetime Plan Offer */}
-            <button
-              type="button"
-              onClick={() => setSelectedPlan('lifetime')}
-              className={`border rounded-lg p-6 bg-yellow-50 relative text-left transition-all duration-300 focus:outline-none h-full ${
-                selectedPlan === 'lifetime' ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-gray-200 hover:border-gray-400'
-                }`}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">{t.bestDeal}</div>
-              <h3 className="text-xl font-bold text-brand-dark">{t.earlyAccessLifetimeTitle}</h3>
-              <p className="text-brand-gray mt-1">{t.earlyAccessLifetimeDescription}</p>
-              <div className="my-4">
-                <span className="text-4xl font-extrabold text-brand-dark">€1250</span>
-                <span className="text-brand-gray"> / {t.lifetime}</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                <span className="line-through">€3000</span> standard price
-              </p>
-            </button>
-          </div>
-
-
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-            <div className="space-y-4">
-              <input
-                type="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
-                aria-label="Email address"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30 disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Redirecting...' : t.claimOffer}
-              </button>
-            </div>
-          </form>
+            <h2 id="modal-title" className="text-2xl sm:text-3xl font-bold text-brand-dark mb-2">
+                {t.earlyAccessTitle}
+            </h2>
+            <p className="text-brand-gray mb-6 text-sm sm:text-base">
+                {step === '1' ? t.earlyAccessStep1 : t.earlyAccessStep2}
+            </p>
         </div>
+
+        <StepTransition currentStep={step}>
+            <div key="1" data-step="1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 md:min-h-[280px]">
+                    {/* Solo Plan */}
+                    <button type="button" onClick={() => handlePlanSelectAndProceed('solo')} className={`border rounded-lg p-4 bg-brand-light transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'solo' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
+                        <div>
+                          <h3 className="text-lg font-bold text-brand-dark">{t.soloPlanTitle}</h3>
+                          <p className="text-brand-gray text-sm mt-1">{t.soloPlanDescription}</p>
+                          <div className="my-3">
+                              <span className="text-3xl font-extrabold text-brand-dark">€400</span>
+                              <span className="text-brand-gray text-sm"> {t.perFirstYear}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500"><span className="line-through">€550</span> {t.standardPrice}</p>
+                    </button>
+
+                    {/* Business Plan */}
+                    <button type="button" onClick={() => handlePlanSelectAndProceed('business')} className={`border rounded-lg p-4 bg-blue-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'business' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full">{t.bestValue}</div>
+                        <div>
+                          <h3 className="text-lg font-bold text-brand-dark">{t.businessPlanTitle}</h3>
+                          <p className="text-brand-gray text-sm mt-1">{t.businessPlanDescription}</p>
+                          <div className="my-3">
+                              <span className="text-3xl font-extrabold text-brand-dark">€750</span>
+                              <span className="text-brand-gray text-sm"> {t.perFirstYear}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500"><span className="line-through">€1500</span> {t.standardPrice}</p>
+                    </button>
+
+                    {/* Lifetime Plan */}
+                     <button type="button" onClick={() => handlePlanSelectAndProceed('lifetime')} className={`border rounded-lg p-4 bg-yellow-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlan === 'lifetime' ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-gray-200 hover:border-gray-400'}`}>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">{t.bestDeal}</div>
+                        <div>
+                          <h3 className="text-lg font-bold text-brand-dark">{t.earlyAccessLifetimeTitle}</h3>
+                          <p className="text-brand-gray text-sm mt-1">{t.earlyAccessLifetimeDescription}</p>
+                          <div className="my-3">
+                              <span className="text-3xl font-extrabold text-brand-dark">€1250</span>
+                              <span className="text-brand-gray text-sm"> / {t.lifetime}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500"><span className="line-through">€3000</span> {t.standardPrice}</p>
+                    </button>
+                </div>
+            </div>
+
+            <form key="2" data-step="2" onSubmit={handleSubmit} noValidate>
+                <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm">
+                    <p className="text-brand-gray">{t.youSelected} <span className="font-bold text-brand-dark">{selectedPlanDetails.title} ({selectedPlanDetails.price}{selectedPlanDetails.period})</span></p>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    {/* Shop Name & Type */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="shopName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
+                            <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                            {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="shopType" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopType}</label>
+                            <select name="shopType" id="shopType" value={formData.shopType} onChange={handleInputChange} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopType ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required>
+                                <option value="" disabled>{t.shopTypeSelect}</option>
+                                <option value="mobile">{t.mobileShop}</option>
+                                <option value="fixed">{t.fixedLocationShop}</option>
+                            </select>
+                            {errors.shopType && <p className="text-red-500 text-xs text-left mt-1">{errors.shopType}</p>}
+                        </div>
+                    </div>
+                    {/* Address */}
+                    <div>
+                        <label htmlFor="address" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
+                        <input type="text" name="address" id="address" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                        {errors.address && <p className="text-red-500 text-xs text-left mt-1">{errors.address}</p>}
+                    </div>
+                    {/* Email & Phone */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.emailAddress}</label>
+                            <input type="email" name="email" id="email" value={formData.email} onChange={handleInputChange} placeholder={t.emailPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.email ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                            {errors.email && <p className="text-red-500 text-xs text-left mt-1">{errors.email}</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="phone" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.phoneNumber}</label>
+                            <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleInputChange} placeholder={t.phoneNumberPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.phone ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                            {errors.phone && <p className="text-red-500 text-xs text-left mt-1">{errors.phone}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {apiError && <p className="text-red-500 text-sm text-center mb-4">{apiError}</p>}
+
+                <div className="flex flex-col-reverse sm:flex-row gap-3">
+                    <button type="button" onClick={handlePrevStep} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-3 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all duration-300">
+                        {t.previousStep}
+                    </button>
+                    <button type="submit" disabled={loading} className="flex-grow bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
+                        {loading ? t.redirecting : t.claimDiscountAndPay}
+                    </button>
+                </div>
+            </form>
+        </StepTransition>
       </div>
       <style>{`
         @keyframes fade-in-scale {

@@ -19,9 +19,9 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-brand-dark font-semibold mb-4">{t.product}</h4>
             <ul className="space-y-2">
-              <li><a href="#features" className="text-brand-gray hover:text-brand-blue transition-colors">Features</a></li>
+              <li><a href="#features" className="text-brand-gray hover:text-brand-blue transition-colors">{t.features}</a></li>
               <li><a href="#pricing" className="text-brand-gray hover:text-brand-blue transition-colors">{t.pricing}</a></li>
-              <li><a href="#how-it-works" className="text-brand-gray hover:text-brand-blue transition-colors">How it Works</a></li>
+              <li><a href="#how-it-works" className="text-brand-gray hover:text-brand-blue transition-colors">{t.howItWorks}</a></li>
               <li><a href="#faq" className="text-brand-gray hover:text-brand-blue transition-colors">{t.faq}</a></li>
             </ul>
           </div>

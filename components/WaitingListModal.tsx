@@ -34,7 +34,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
     e.preventDefault();
     setError('');
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      setError('Please enter a valid email address.');
+      setError(t.emailValidationError);
       return;
     }
     setLoading(true);
@@ -91,7 +91,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
         <button 
           onClick={handleClose} 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close modal"
+          aria-label={t.closeModal}
         >
           <CloseIcon className="w-6 h-6" />
         </button>
@@ -111,7 +111,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
                 onClick={handleClose}
                 className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300"
               >
-                Close
+                {t.close}
               </button>
           </div>
         ) : (

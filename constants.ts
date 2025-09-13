@@ -230,7 +230,9 @@ export const SHOWCASE_ITEMS = {
 };
 
 export const STRIPE_PRICE_IDS = {
-  soloEarlyAccess: 'price_1PexampleSoloEarlyAccess0001', // Replace with your actual Stripe Price ID
-  businessEarlyAccess: 'price_1PexampleBusinessEarlyAccess0002', // Replace with your actual Stripe Price ID
-  lifetimeEarlyAccess: 'price_1PexampleLifetimeEarlyAccess0003', // Replace with your actual Stripe Price ID
+  // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard (in Test Mode).
+  // You need to create a yearly subscription price for Solo and Business, and a one-time product price for Lifetime.
+  soloEarlyAccess: 'price_1PexampleSoloEarlyAccess0001',
+  businessEarlyAccess: 'price_1PexampleBusinessEarlyAccess0002',
+  lifetimeEarlyAccess: 'price_1PexampleLifetimeEarlyAccess0003',
 };
