@@ -145,12 +145,19 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose }) 
       });
 
       if (stripeError) {
+        console.error("Stripe redirectToCheckout error:", stripeError);
+        console.error("Attempted to use Price ID:", priceId, "for plan:", selectedPlan);
         throw new Error(stripeError.message);
       }
 
     } catch (e: any) {
       console.error('Early Access Submission Error:', e);
-      setApiError(e.message || 'An unexpected error occurred. Please try again.');
+      let userMessage = e.message || 'An unexpected error occurred. Please try again.';
+      // Provide a more user-friendly error for the most common Stripe issue.
+      if (typeof e.message === 'string' && e.message.includes('No such price')) {
+          userMessage = "It seems there's an issue with the selected payment plan. Please contact support.";
+      }
+      setApiError(userMessage);
       setLoading(false);
     }
   };
