@@ -12,13 +12,11 @@ interface OnboardingModalProps {
 
 interface FormData {
   shopName: string;
-  shopType: 'mobile' | 'fixed' | '';
   address: string;
 }
 
 interface FormErrors {
   shopName?: string;
-  shopType?: string;
   address?: string;
 }
 
@@ -29,7 +27,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
-    shopType: '',
     address: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -37,7 +34,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   const [apiError, setApiError] = useState('');
 
   const resetState = () => {
-    setFormData({ shopName: '', shopType: '', address: '' });
+    setFormData({ shopName: '', address: '' });
     setErrors({});
     setLoading(false);
     setApiError('');
@@ -53,7 +50,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!formData.shopName.trim()) newErrors.shopName = t.requiredField;
-    if (!formData.shopType) newErrors.shopType = t.requiredField;
     if (!formData.address.trim()) newErrors.address = t.requiredField;
     
     setErrors(newErrors);
@@ -85,8 +81,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
       const { error } = await supabase.from('shops').insert({
         owner_id: user!.id,
         name: formData.shopName,
-        shop_type: formData.shopType,
-        // This is a simplified address for now. We can expand this later.
         address_line1: formData.address, 
       });
 
@@ -95,7 +89,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
       }
       
       // On success, close the modal.
-      // In a real app, we would likely redirect to the new dashboard.
       handleClose();
 
     } catch (e: any) {
@@ -167,24 +160,15 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
             <div className="space-y-4 mb-6">
                 {/* Shop Name */}
                 <div>
-                    <label htmlFor="shopName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
-                    <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                    <label htmlFor="shopNameOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
+                    <input type="text" name="shopName" id="shopNameOnboarding" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
                     {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
                 </div>
-                 {/* Shop Type */}
-                <div>
-                    <label htmlFor="shopType" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopType}</label>
-                    <select name="shopType" id="shopType" value={formData.shopType} onChange={handleInputChange} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopType ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required>
-                        <option value="" disabled>{t.shopTypeSelect}</option>
-                        <option value="mobile">{t.mobileShop}</option>
-                        <option value="fixed">{t.fixedLocationShop}</option>
-                    </select>
-                    {errors.shopType && <p className="text-red-500 text-xs text-left mt-1">{errors.shopType}</p>}
-                </div>
+                
                 {/* Address */}
                 <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
-                    <input type="text" name="address" id="address" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                    <label htmlFor="addressOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
+                    <input type="text" name="address" id="addressOnboarding" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
                     {errors.address && <p className="text-red-500 text-xs text-left mt-1">{errors.address}</p>}
                 </div>
             </div>

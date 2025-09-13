@@ -69,8 +69,8 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
         options: {
             data: {
                 shop_name: pendingSignupData.formData.shopName,
-                first_name: pendingSignupData.formData.firstName,
-                last_name: pendingSignupData.formData.lastName,
+                user_first_name: pendingSignupData.formData.firstName, // Renamed key
+                user_last_name: pendingSignupData.formData.lastName,   // Renamed key
                 address: pendingSignupData.formData.address,
                 // Pass purchase data
                 plan_id: pendingSignupData.plan.id,
