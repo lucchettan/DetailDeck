@@ -137,9 +137,9 @@ export const PRICING_PLANS = {
     },
     { 
       name: 'Business', 
-      description: 'For established shops with multiple locations.', 
+      description: 'For businesses with multiple employees requiring different roles.', 
       pricing: { monthly: '150', yearly: '1500' },
-      features: ['Unlimited Users', 'Multi-location Support', 'API Access', 'Dedicated Account Manager', 'Priority Support'] 
+      features: ['Unlimited Users', 'Role-based permissions', 'API Access', 'Dedicated Account Manager', 'Priority Support'] 
     },
     {
       name: 'Lifetime',
@@ -157,9 +157,9 @@ export const PRICING_PLANS = {
     },
     { 
       name: 'Business', 
-      description: 'Pour les entreprises établies avec plusieurs sites.', 
+      description: 'Pour les entreprises avec plusieurs employés nécessitant différents rôles.', 
       pricing: { monthly: '150', yearly: '1500' },
-      features: ['Utilisateurs illimités', 'Support multi-sites', 'Accès API', 'Gestionnaire de compte dédié', 'Support prioritaire'] 
+      features: ['Utilisateurs illimités', 'Permissions basées sur les rôles', 'Accès API', 'Gestionnaire de compte dédié', 'Support prioritaire'] 
     },
     {
       name: 'À Vie',
@@ -177,9 +177,9 @@ export const PRICING_PLANS = {
     },
     { 
       name: 'Business', 
-      description: 'Para talleres establecidos con múltiples ubicaciones.', 
+      description: 'Para empresas con múltiples empleados que requieren diferentes roles.', 
       pricing: { monthly: '150', yearly: '1500' },
-      features: ['Usuarios ilimitados', 'Soporte multi-ubicación', 'Acceso API', 'Gestor de cuenta dedicado', 'Soporte prioritario'] 
+      features: ['Usuarios ilimitados', 'Permisos basados en roles', 'Acceso API', 'Gestor de cuenta dedicado', 'Soporte prioritario'] 
     },
     {
       name: 'De por vida',

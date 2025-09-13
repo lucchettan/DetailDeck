@@ -7,11 +7,11 @@ export const translations = {
     // Hero
     heroTitle1: 'Drive More Bookings.',
     heroTitle2: 'Effortlessly.',
-    heroSubtitle: 'THE EASIEST TOOL to sell your services and manage your bookings. Get your free, professional booking page today.',
+    heroSubtitle: 'The all-in-one platform designed for detailing pros. Turn your passion into a thriving business with a booking page that works for you, 24/7.',
     startTrial: 'Start Your Free Trial',
     learnMore: 'Learn More',
     launchingSoon: 'Launching November 1st!',
-    getEarlyAccess: 'Get Early Access',
+    getEarlyAccess: 'Claim Exclusive Offer',
     joinWaitingList: 'Join Waiting List',
     // Waiting List Modal
     waitingListTitle: 'Join the Waiting List',
@@ -32,8 +32,8 @@ export const translations = {
     bestDeal: 'Best Deal',
     claimOffer: 'Claim My Discount',
     // Features
-    featuresTitle: 'Everything You Need to Grow Your Business',
-    featuresSubtitle: 'From booking to billing, we\'ve got you covered.',
+    featuresTitle: 'Powerful Tools, Designed for Detailing Artisans',
+    featuresSubtitle: 'Focus on your craft. We handle the rest.',
     // How It Works
     howItWorksTitle: 'Reach your clientele online in 30minutes',
     howItWorksSubtitle: 'Set up in 3 steps and start taking appointments!',
@@ -46,8 +46,8 @@ export const translations = {
     showcaseItem4Title: 'Services Catalog',
     showcaseItem5Title: 'Business Profile',
     // Pricing
-    pricingTitle: 'Simple, Transparent Pricing',
-    pricingSubtitle: 'Choose the plan that\'s right for your business. No hidden fees.',
+    pricingTitle: 'Simple Pricing. No Surprises.',
+    pricingSubtitle: 'The perfect fit for your shop, whether you\'re a one-person show or a growing team. No hidden fees, ever.',
     choosePlan: 'Choose Plan',
     monthly: 'Monthly',
     yearly: 'Yearly',
@@ -57,9 +57,9 @@ export const translations = {
     save25: 'Save 25%',
     // FAQ
     faqTitle: 'Frequently Asked Questions',
-    faqSubtitle: 'Have questions? We\'ve got answers.',
+    faqSubtitle: 'Your most common questions, answered.',
     // Footer
-    footerDescription: 'The ultimate software solution to help auto detailers streamline operations, increase bookings, and grow their business.',
+    footerDescription: 'DetailDeck is the ultimate platform for auto detailers, built to streamline your operations, boost your bookings, and accelerate your growth.',
     product: 'Product',
     company: 'Company',
     aboutUs: 'About Us',
@@ -74,13 +74,13 @@ export const translations = {
     faq: 'FAQ',
     getStarted: 'Commencer',
     // Hero
-    heroTitle1: 'Plus de réservations.',
-    heroTitle2: 'Sans effort.',
-    heroSubtitle: 'L\'OUTIL LE PLUS SIMPLE pour vendre vos services et gérer vos réservations. Obtenez votre page de réservation professionnelle et gratuite dès aujourd\'hui.',
+    heroTitle1: 'Boostez vos Réservations.',
+    heroTitle2: 'Sans Effort.',
+    heroSubtitle: 'La plateforme tout-en-un conçue pour les professionnels du detailing. Boostez votre business avec une plateforme de réservation qui travaille pour vous, 24/7.',
     startTrial: 'Commencez votre essai gratuit',
     learnMore: 'En savoir plus',
     launchingSoon: 'Lancement le 1er Novembre !',
-    getEarlyAccess: 'Accès Anticipé',
+    getEarlyAccess: 'Profiter de l\'Offre Exclusive',
     joinWaitingList: 'Rejoindre la liste d\'attente',
     // Waiting List Modal
     waitingListTitle: 'Rejoindre la liste d\'attente',
@@ -101,11 +101,11 @@ export const translations = {
     bestDeal: 'Meilleure Offre',
     claimOffer: 'Réclamer ma réduction',
     // Features
-    featuresTitle: 'Tout ce dont vous avez besoin pour développer votre entreprise',
-    featuresSubtitle: 'De la réservation à la facturation, nous nous occupons de tout.',
+    featuresTitle: 'Des outils puissants, conçus pour les artisans du détail',
+    featuresSubtitle: 'Concentrez-vous sur votre art. Nous gérons le reste.',
     // How It Works
     howItWorksTitle: 'Atteignez votre clientèle en ligne en 30 minutes',
-    howItWorksSubtitle: 'Set up en 3 étapes et commencez à prendre des rendez-vous !',
+    howItWorksSubtitle: 'Configurez en 3 étapes et recevez vos premières réservations !',
     // Showcase
     showcaseTitle: 'Votre entreprise, en un coup d\'œil',
     showcaseSubtitle: 'Un tableau de bord puissant et étonnamment simple à utiliser.',
@@ -115,8 +115,8 @@ export const translations = {
     showcaseItem4Title: 'Catalogue de services',
     showcaseItem5Title: 'Profil de l\'entreprise',
     // Pricing
-    pricingTitle: 'Des tarifs simples et transparents',
-    pricingSubtitle: 'Choisissez le plan adapté à votre entreprise. Sans frais cachés.',
+    pricingTitle: 'Une tarification simple, sans surprise',
+    pricingSubtitle: 'La solution parfaite pour votre atelier, que vous soyez seul ou en équipe. Sans frais cachés, jamais.',
     choosePlan: 'Choisir ce plan',
     monthly: 'Mensuel',
     yearly: 'Annuel',
@@ -126,9 +126,9 @@ export const translations = {
     save25: 'Économisez 25%',
     // FAQ
     faqTitle: 'Foire aux questions',
-    faqSubtitle: 'Vous avez des questions ? Nous avons les réponses.',
+    faqSubtitle: 'Les réponses à vos questions les plus fréquentes.',
     // Footer
-    footerDescription: 'La solution logicielle ultime pour aider les detailers automobiles à optimiser leurs opérations, augmenter les réservations et développer leur activité.',
+    footerDescription: 'DetailDeck est la plateforme qui accompagne les detailers vers le succès, en simplifiant leur gestion et en boostant leur croissance.',
     product: 'Produit',
     company: 'Entreprise',
     aboutUs: 'À propos de nous',
@@ -143,13 +143,13 @@ export const translations = {
     faq: 'FAQ',
     getStarted: 'Comenzar',
     // Hero
-    heroTitle1: 'Consigue más reservas.',
-    heroTitle2: 'Sin esfuerzo.',
-    heroSubtitle: 'LA HERRAMIENTA MÁS FÁCIL para vender tus servicios y gestionar tus reservas. Obtén tu página de reservas profesional y gratuita hoy.',
+    heroTitle1: 'Excelencia,',
+    heroTitle2: 'sin esfuerzo.',
+    heroSubtitle: 'La plataforma todo en uno diseñada para profesionales del detailing. Convierte tu pasión en un negocio próspero con una página de reservas que trabaja para ti, 24/7.',
     startTrial: 'Inicia tu prueba gratuita',
     learnMore: 'Saber más',
     launchingSoon: '¡Lanzamiento el 1 de Noviembre!',
-    getEarlyAccess: 'Obtener Acceso Anticipado',
+    getEarlyAccess: 'Aprovechar Oferta Exclusiva',
     joinWaitingList: 'Unirse a la lista de espera',
     // Waiting List Modal
     waitingListTitle: 'Únete a la lista de espera',
@@ -170,11 +170,11 @@ export const translations = {
     bestDeal: 'Mejor Oferta',
     claimOffer: 'Reclamar mi descuento',
     // Features
-    featuresTitle: 'Todo lo que necesitas para hacer crecer tu negocio',
-    featuresSubtitle: 'Desde la reserva hasta la facturación, te tenemos cubierto.',
+    featuresTitle: 'Herramientas Potentes, Diseñadas para Artesanos del Detalle',
+    featuresSubtitle: 'Concéntrate en tu arte. Nosotros nos encargamos del resto.',
     // How It Works
-    howItWorksTitle: 'Llegue a su clientela en línea en 30 minutos',
-    howItWorksSubtitle: '¡Configúralo en 3 pasos y empieza a recibir citas!',
+    howItWorksTitle: 'Conecta con tus clientes online en 30 minutos',
+    howItWorksSubtitle: '¡Configura en 3 pasos y empieza a recibir reservas!',
     // Showcase
     showcaseTitle: 'Tu negocio, de un vistazo',
     showcaseSubtitle: 'Un panel de control potente y sorprendentemente fácil de usar.',
@@ -184,8 +184,8 @@ export const translations = {
     showcaseItem4Title: 'Catálogo de servicios',
     showcaseItem5Title: 'Perfil del negocio',
     // Pricing
-    pricingTitle: 'Precios simples y transparentes',
-    pricingSubtitle: 'Elige el plan adecuado para tu negocio. Sin cargos ocultos.',
+    pricingTitle: 'Precios Sencillos, Sin Sorpresas',
+    pricingSubtitle: 'El plan perfecto para tu taller, ya seas tú solo o un equipo en crecimiento. Sin comisiones ocultas, nunca.',
     choosePlan: 'Elegir plan',
     monthly: 'Mensual',
     yearly: 'Anual',
@@ -195,9 +195,9 @@ export const translations = {
     save25: 'Ahorra 25%',
     // FAQ
     faqTitle: 'Preguntas frecuentes',
-    faqSubtitle: '¿Tienes preguntas? Tenemos las respuestas.',
+    faqSubtitle: 'Las respuestas a tus preguntas más comunes.',
     // Footer
-    footerDescription: 'La solución de software definitiva para ayudar a los detallistas de automóviles a optimizar operaciones, aumentar reservas y hacer crecer su negocio.',
+    footerDescription: 'DetailDeck es la plataforma definitiva para detallistas de coches, creada para optimizar tus operaciones, impulsar tus reservas y acelerar tu crecimiento.',
     product: 'Producto',
     company: 'Compañía',
     aboutUs: 'Sobre nosotros',
