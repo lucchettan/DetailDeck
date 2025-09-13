@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon } from './Icons';
-import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PaymentSuccessProps {
@@ -61,10 +60,18 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
     setLoading(true);
 
     try {
-      // 1. Create the user account
-      const { data: authData, error: authError } = await signUp({
+      // Create the user. The database trigger `handle_new_user_with_shop` will
+      // automatically create the associated shop using the metadata passed here.
+      const { error: authError } = await signUp({
         email: pendingSignupData.formData.email,
         password: password,
+        options: {
+            data: {
+                shop_name: pendingSignupData.formData.shopName,
+                shop_type: pendingSignupData.formData.shopType,
+                address: pendingSignupData.formData.address,
+            }
+        }
       });
 
       if (authError) {
@@ -79,28 +86,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
         throw authError;
       }
 
-      if (!authData.user) {
-        throw new Error('User creation failed. Please try again.');
-      }
-      const user = authData.user;
-
-      // 2. Create the shop profile, linked to the new user
-      const { error: shopError } = await supabase.from('shops').insert({
-        owner_id: user.id,
-        name: pendingSignupData.formData.shopName,
-        shop_type: pendingSignupData.formData.shopType,
-        address_line1: pendingSignupData.formData.address,
-        // We can add more fields here if needed in the future
-      });
-
-      if (shopError) {
-        // Provide detailed error logging for easier debugging of RLS policies.
-        const detailedError = `Shop creation failed. Supabase error: [${shopError.code}] ${shopError.message}. This is likely a Row Level Security (RLS) policy issue. Ensure the 'authenticated' role has INSERT permission on the 'shops' table with a 'WITH CHECK' policy like 'auth.uid() = owner_id'.`;
-        console.error(detailedError, shopError);
-        throw new Error('Your account was created, but we failed to set up your shop. Please contact support.');
-      }
-
-      // 3. Success! Clean up and show final message.
+      // Success! If signUp doesn't throw an error, we assume the trigger worked.
       localStorage.removeItem('pendingSignup');
       setPageState(PageState.FinalSuccess);
 

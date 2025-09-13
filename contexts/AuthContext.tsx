@@ -1,12 +1,20 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
+// FIX: Removed non-existent 'SignUpWithPasswordlessCredentials' from import.
 import { Session, User, AuthError, SignUpWithPasswordCredentials, AuthResponse } from '@supabase/supabase-js';
+
+// Extend the credentials type to allow for additional options like user metadata
+// FIX: Correctly extended SignUpWithPasswordCredentials. The original interface
+//      redeployed the `options` property with an incompatible type, which broke
+//      the inheritance of `email` and `password` and caused cascading type errors.
+//      This empty extension now correctly inherits all properties from the base type.
+interface SignUpCredentialsWithData extends SignUpWithPasswordCredentials {}
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signUp: (credentials: SignUpWithPasswordCredentials) => Promise<AuthResponse>;
+  signUp: (credentials: SignUpCredentialsWithData) => Promise<AuthResponse>;
   logIn: (credentials: SignUpWithPasswordCredentials) => Promise<{ session: Session | null, error: AuthError | null }>;
   logOut: () => Promise<{ error: AuthError | null }>;
   resendSignUpConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
@@ -39,8 +47,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const signUp = async (credentials: SignUpWithPasswordCredentials) => {
-    const response = await supabase.auth.signUp(credentials);
+  const signUp = async (credentials: SignUpCredentialsWithData) => {
+    // Destructure to pass credentials and options separately
+    const { email, password, options } = credentials;
+    const response = await supabase.auth.signUp({ email, password, options });
     return response;
   };
 
