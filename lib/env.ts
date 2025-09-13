@@ -5,19 +5,32 @@
 // Safely access environment variables to prevent crashes if `import.meta.env` is undefined.
 const env = (typeof import.meta !== 'undefined' && (import.meta as any).env) ? (import.meta as any).env : {};
 
-export const IS_MOCK_MODE = !env.VITE_SUPABASE_URL;
+// Essential keys for the app to function with real services.
+const VITE_SUPABASE_URL_VAR = env.VITE_SUPABASE_URL;
+const VITE_SUPABASE_ANON_KEY_VAR = env.VITE_SUPABASE_ANON_KEY;
+const VITE_STRIPE_PUBLISHABLE_KEY_VAR = env.VITE_STRIPE_PUBLISHABLE_KEY;
+
+// Mock mode is active if any of the essential keys are missing.
+export const IS_MOCK_MODE = !VITE_SUPABASE_URL_VAR || !VITE_SUPABASE_ANON_KEY_VAR || !VITE_STRIPE_PUBLISHABLE_KEY_VAR;
 
 // Provide mock values for Supabase to prevent the client from failing to initialize.
 // The anon key is a generic, public key from Supabase examples and is safe to use.
-export const VITE_SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://mock-url.supabase.co';
-export const VITE_SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+export const VITE_SUPABASE_URL = VITE_SUPABASE_URL_VAR || 'https://mock-url.supabase.co';
+export const VITE_SUPABASE_ANON_KEY = VITE_SUPABASE_ANON_KEY_VAR || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
-// Stripe key can be undefined in mock mode.
-export const VITE_STRIPE_PUBLISHABLE_KEY = env.VITE_STRIPE_PUBLISHABLE_KEY;
+// Export the Stripe key. It will be undefined if not set, which is handled by the mock mode check.
+export const VITE_STRIPE_PUBLISHABLE_KEY = VITE_STRIPE_PUBLISHABLE_KEY_VAR;
 
 if (IS_MOCK_MODE) {
+    const missingKeys = [];
+    if (!VITE_SUPABASE_URL_VAR) missingKeys.push('VITE_SUPABASE_URL');
+    if (!VITE_SUPABASE_ANON_KEY_VAR) missingKeys.push('VITE_SUPABASE_ANON_KEY');
+    if (!VITE_STRIPE_PUBLISHABLE_KEY_VAR) missingKeys.push('VITE_STRIPE_PUBLISHABLE_KEY');
+    
     console.warn(
-        "Running in MOCK MODE. Supabase and Stripe calls will be simulated. " +
-        "To connect to real services, provide VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_STRIPE_PUBLISHABLE_KEY environment variables."
+        `%cRunning in MOCK MODE because the following environment variables are missing: %c${missingKeys.join(', ')}`,
+        'color: orange; font-weight: bold;',
+        'color: red; font-weight: bold;'
     );
+    console.warn("Supabase and Stripe calls will be simulated. To connect to real services, please provide all the keys listed above.");
 }
