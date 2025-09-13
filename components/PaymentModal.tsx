@@ -113,6 +113,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, plan, onLo
       const { data: userExists, error: rpcError } = await supabase.rpc('check_user_exists', { email_to_check: formData.email });
 
       if (rpcError) {
+          console.error("RPC Error (check_user_exists):", rpcError);
           throw new Error("Could not verify your email. Please try again.");
       }
 
