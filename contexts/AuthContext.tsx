@@ -9,6 +9,7 @@ interface AuthContextType {
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<AuthResponse>;
   logIn: (credentials: SignUpWithPasswordCredentials) => Promise<{ session: Session | null, error: AuthError | null }>;
   logOut: () => Promise<{ error: AuthError | null }>;
+  resendSignUpConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,6 +54,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
+  const resendSignUpConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    return { error };
+  };
+
   const value = {
     session,
     user,
@@ -60,6 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     logIn,
     logOut,
+    resendSignUpConfirmation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

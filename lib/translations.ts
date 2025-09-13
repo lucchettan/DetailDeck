@@ -9,6 +9,9 @@ export const translations = {
     login: 'Log In',
     signup: 'Sign Up',
     password: 'Password',
+    unconfirmedEmailError: 'Your email is not confirmed. Please check your inbox.',
+    resendConfirmation: 'Resend confirmation email',
+    confirmationSent: 'A new confirmation link has been sent to your email.',
     // Hero
     heroTitle1: 'Drive More Bookings.',
     heroTitle2: 'Effortlessly.',
@@ -143,6 +146,9 @@ export const translations = {
     login: 'Connexion',
     signup: 'Inscription',
     password: 'Mot de passe',
+    unconfirmedEmailError: "Votre e-mail n'est pas confirmé. Veuillez vérifier votre boîte de réception.",
+    resendConfirmation: "Renvoyer l'e-mail de confirmation",
+    confirmationSent: "Un nouveau lien de confirmation a été envoyé à votre adresse e-mail.",
     // Hero
     heroTitle1: 'Boostez vos Réservations.',
     heroTitle2: 'Sans Effort.',
@@ -277,6 +283,9 @@ export const translations = {
     login: 'Iniciar sesión',
     signup: 'Registrarse',
     password: 'Contraseña',
+    unconfirmedEmailError: 'Tu correo electrónico no está confirmado. Por favor, revisa tu bandeja de entrada.',
+    resendConfirmation: 'Reenviar correo de confirmación',
+    confirmationSent: 'Se ha enviado un nuevo enlace de confirmación a tu correo electrónico.',
     // Hero
     heroTitle1: 'Excelencia,',
     heroTitle2: 'sin esfuerzo.',

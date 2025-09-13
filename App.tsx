@@ -55,7 +55,9 @@ const App: React.FC = () => {
   if (showPaymentSuccess) {
     return (
       <LanguageProvider>
-        <PaymentSuccess onReturnToHome={() => setShowPaymentSuccess(false)} />
+        <AuthProvider>
+          <PaymentSuccess onReturnToHome={() => setShowPaymentSuccess(false)} />
+        </AuthProvider>
       </LanguageProvider>
     );
   }

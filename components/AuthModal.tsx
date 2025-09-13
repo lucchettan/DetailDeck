@@ -12,7 +12,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess }) => {
   const { t } = useLanguage();
-  const { signUp, logIn } = useAuth();
+  const { signUp, logIn, resendSignUpConfirmation } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
 
   const [isLoginView, setIsLoginView] = useState(false);
@@ -21,6 +21,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showResend, setShowResend] = useState(false);
 
   const resetState = () => {
     setIsLoginView(false);
@@ -29,6 +30,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
     setLoading(false);
     setError('');
     setMessage('');
+    setShowResend(false);
   };
 
   const handleClose = () => {
@@ -45,11 +47,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
     }
   }, [isOpen]);
 
+  const handleResend = async () => {
+    setLoading(true);
+    setError('');
+    setMessage('');
+    const { error } = await resendSignUpConfirmation(email);
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage(t.confirmationSent);
+      setShowResend(false);
+    }
+    setLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
+    setShowResend(false);
 
     if (IS_MOCK_MODE) {
         console.log("Mock Mode: Simulating auth.", { email, isLoginView });
@@ -71,7 +88,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
     if (isLoginView) {
       const { error } = await logIn({ email, password });
       if (error) {
-        setError(error.message);
+        if (error.message === 'Email not confirmed') {
+          setError(t.unconfirmedEmailError);
+          setShowResend(true);
+        } else {
+          setError(error.message);
+        }
       } else {
         handleClose();
       }
@@ -80,17 +102,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
       if (error) {
         setError(error.message);
       } else {
-        if (data.user) {
-          if (onSignUpSuccess) {
-            onSignUpSuccess();
-          } else {
-            handleClose();
-          }
-        } else {
-          // Fallback for cases where user confirmation is required
-          setMessage('Check your email for the confirmation link!');
-          setTimeout(handleClose, 3000);
-        }
+        // Confirmation is required, so we show a message.
+        setMessage('Check your email for the confirmation link!');
+        // We don't close the modal immediately, so they see the message.
+        // We can let them close it themselves or add a timeout.
+        // For now, let's assume they'll close it.
+        // The onSignUpSuccess flow is for instant-login scenarios, which we don't have.
       }
     }
     setLoading(false);
@@ -126,6 +143,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
   if (!isOpen) {
     return null;
   }
+
+  const toggleView = () => {
+    setIsLoginView(!isLoginView);
+    setError('');
+    setMessage('');
+    setShowResend(false);
+  };
 
   return (
     <div 
@@ -177,6 +201,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
               />
 
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+              
+              {showResend && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={loading}
+                  className="text-sm text-brand-blue hover:underline disabled:opacity-70 disabled:cursor-wait"
+                >
+                  {t.resendConfirmation}
+                </button>
+              )}
+
               {message && <p className="text-green-600 text-sm text-center">{message}</p>}
 
               <button 
@@ -190,7 +226,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
           </form>
 
            <div className="mt-6 text-sm">
-            <button onClick={() => setIsLoginView(!isLoginView)} className="text-brand-blue hover:underline">
+            <button onClick={toggleView} className="text-brand-blue hover:underline">
               {isLoginView ? t.dontHaveAccount : t.alreadyHaveAccount} {isLoginView ? t.signup : t.login}
             </button>
           </div>
