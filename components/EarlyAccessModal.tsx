@@ -19,7 +19,8 @@ interface EarlyAccessModalProps {
 interface FormData {
   shopName: string;
   email: string;
-  shopType: 'mobile' | 'fixed' | '';
+  firstName: string;
+  lastName: string;
   address: string;
   phone: string;
 }
@@ -27,7 +28,8 @@ interface FormData {
 interface FormErrors {
   shopName?: string;
   email?: string;
-  shopType?: string;
+  firstName?: string;
+  lastName?: string;
   address?: string;
   phone?: string;
 }
@@ -41,7 +43,8 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
     email: '',
-    shopType: '',
+    firstName: '',
+    lastName: '',
     address: '',
     phone: '',
   });
@@ -53,7 +56,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const resetState = () => {
     setStep('1');
     setSelectedPlan('business');
-    setFormData({ shopName: '', email: '', shopType: '', address: '', phone: '' });
+    setFormData({ shopName: '', email: '', firstName: '', lastName: '', address: '', phone: '' });
     setErrors({});
     setLoading(false);
     setApiError('');
@@ -71,12 +74,13 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const validateStep2 = (): boolean => {
     const newErrors: FormErrors = {};
     if (!formData.shopName.trim()) newErrors.shopName = t.requiredField;
+    if (!formData.firstName.trim()) newErrors.firstName = t.requiredField;
+    if (!formData.lastName.trim()) newErrors.lastName = t.requiredField;
     if (!formData.email.trim()) {
       newErrors.email = t.requiredField;
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = t.emailValidationError;
     }
-    if (!formData.shopType) newErrors.shopType = t.requiredField;
     if (!formData.address.trim()) newErrors.address = t.requiredField;
     if (!formData.phone.trim()) {
       newErrors.phone = t.requiredField;
@@ -128,7 +132,8 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
       const { error: dbError } = await supabase.from('early_access_signups').insert({
         shop_name: formData.shopName,
         email: formData.email,
-        shop_type: formData.shopType,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         address: formData.address,
         phone: formData.phone,
         selected_plan: selectedPlan,
@@ -343,21 +348,23 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                 </div>
 
                 <div className="space-y-4 mb-6">
-                    {/* Shop Name & Type */}
+                    {/* Shop Name */}
+                    <div>
+                        <label htmlFor="shopName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
+                        <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                        {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
+                    </div>
+                     {/* Name */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="shopName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
-                            <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                            {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
+                            <label htmlFor="firstName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.firstName}</label>
+                            <input type="text" name="firstName" id="firstName" value={formData.firstName} onChange={handleInputChange} placeholder={t.firstNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.firstName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                            {errors.firstName && <p className="text-red-500 text-xs text-left mt-1">{errors.firstName}</p>}
                         </div>
                         <div>
-                            <label htmlFor="shopType" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopType}</label>
-                            <select name="shopType" id="shopType" value={formData.shopType} onChange={handleInputChange} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopType ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required>
-                                <option value="" disabled>{t.shopTypeSelect}</option>
-                                <option value="mobile">{t.mobileShop}</option>
-                                <option value="fixed">{t.fixedLocationShop}</option>
-                            </select>
-                            {errors.shopType && <p className="text-red-500 text-xs text-left mt-1">{errors.shopType}</p>}
+                            <label htmlFor="lastName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.lastName}</label>
+                             <input type="text" name="lastName" id="lastName" value={formData.lastName} onChange={handleInputChange} placeholder={t.lastNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.lastName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                            {errors.lastName && <p className="text-red-500 text-xs text-left mt-1">{errors.lastName}</p>}
                         </div>
                     </div>
                     {/* Address */}

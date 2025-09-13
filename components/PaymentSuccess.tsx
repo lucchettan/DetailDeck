@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon } from './Icons';
@@ -68,7 +69,8 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
         options: {
             data: {
                 shop_name: pendingSignupData.formData.shopName,
-                shop_type: pendingSignupData.formData.shopType,
+                first_name: pendingSignupData.formData.firstName,
+                last_name: pendingSignupData.formData.lastName,
                 address: pendingSignupData.formData.address,
             }
         }
@@ -92,7 +94,13 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
 
     } catch (e: any) {
       console.error('Account setup error:', e);
-      setError(e.message || 'An unexpected error occurred.');
+      // Improve error message for RLS issues.
+      let friendlyError = e.message || 'An unexpected error occurred.';
+      if (e.message?.includes('violates row-level security policy')) {
+        friendlyError = 'Your account was created, but we failed to set up your shop. Please ensure your database security policies are configured correctly or contact support.';
+      }
+      console.error('Detailed Error:', e);
+      setError(friendlyError);
       setPageState(PageState.Error);
     } finally {
       setLoading(false);

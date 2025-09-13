@@ -4,11 +4,11 @@ import { supabase } from '../lib/supabaseClient';
 import { Session, User, AuthError, SignUpWithPasswordCredentials, AuthResponse } from '@supabase/supabase-js';
 
 // Extend the credentials type to allow for additional options like user metadata
-// FIX: Correctly extended SignUpWithPasswordCredentials. The original interface
-//      redeployed the `options` property with an incompatible type, which broke
-//      the inheritance of `email` and `password` and caused cascading type errors.
-//      This empty extension now correctly inherits all properties from the base type.
-interface SignUpCredentialsWithData extends SignUpWithPasswordCredentials {}
+// FIX: Changed from an interface extending a type to a simple type alias. The previous
+//      `interface extends type` approach caused inheritance issues in some TypeScript
+//      setups, leading to properties like `email` and `password` not being recognized.
+//      A direct type alias is safer and achieves the same goal.
+type SignUpCredentialsWithData = SignUpWithPasswordCredentials;
 
 interface AuthContextType {
   session: Session | null;

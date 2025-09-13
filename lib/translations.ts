@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     // Header & Auth
@@ -60,10 +59,10 @@ export const translations = {
     previousStep: "Previous Step",
     shopName: "Shop Name",
     shopNamePlaceholder: "e.g., John's Premium Detailing",
-    shopType: "Shop Type",
-    shopTypeSelect: "Select a type...",
-    mobileShop: "Mobile (I travel to clients)",
-    fixedLocationShop: "Fixed Location (Clients come to me)",
+    firstName: "First Name",
+    firstNamePlaceholder: "e.g., John",
+    lastName: "Last Name",
+    lastNamePlaceholder: "e.g., Doe",
     address: "Business Address",
     addressPlaceholder: "123 Main St, Anytown",
     phoneNumber: "Phone Number",
@@ -73,6 +72,11 @@ export const translations = {
     // Onboarding Modal
     onboardingTitle: "Welcome to DetailDeck!",
     onboardingSubtitle: "Let's set up your shop. This information will be used to create your public booking page.",
+    // FIX: Add missing translation keys for OnboardingModal
+    shopType: "Shop Type",
+    shopTypeSelect: "Select a shop type",
+    mobileShop: "Mobile (I travel to clients)",
+    fixedLocationShop: "Fixed Location (Clients come to me)",
     createShop: "Create My Shop",
     creatingShop: "Creating...",
     // Get Started / Auth Modal
@@ -198,10 +202,10 @@ export const translations = {
     previousStep: "Étape précédente",
     shopName: "Nom de l'atelier",
     shopNamePlaceholder: "Ex: John's Detailing Premium",
-    shopType: "Type d'atelier",
-    shopTypeSelect: "Sélectionnez un type...",
-    mobileShop: "Mobile (Je me déplace chez les clients)",
-    fixedLocationShop: "Lieu fixe (Les clients viennent à moi)",
+    firstName: "Prénom",
+    firstNamePlaceholder: "Ex: John",
+    lastName: "Nom de famille",
+    lastNamePlaceholder: "Ex: Doe",
     address: "Adresse de l'entreprise",
     addressPlaceholder: "123 Rue Principale, Ville",
     phoneNumber: "Numéro de téléphone",
@@ -211,6 +215,11 @@ export const translations = {
     // Onboarding Modal
     onboardingTitle: "Bienvenue sur DetailDeck !",
     onboardingSubtitle: "Configurons votre atelier. Ces informations seront utilisées pour créer votre page de réservation publique.",
+    // FIX: Add missing translation keys for OnboardingModal
+    shopType: "Type d'atelier",
+    shopTypeSelect: "Sélectionnez un type d'atelier",
+    mobileShop: "Mobile (Je me déplace chez les clients)",
+    fixedLocationShop: "Emplacement Fixe (Les clients viennent à moi)",
     createShop: "Créer mon Atelier",
     creatingShop: "Création...",
     // Get Started / Auth Modal
@@ -336,10 +345,10 @@ export const translations = {
     previousStep: "Paso Anterior",
     shopName: "Nombre del Taller",
     shopNamePlaceholder: "Ej: Detallado Premium de John",
-    shopType: "Tipo de Taller",
-    shopTypeSelect: "Selecciona un tipo...",
-    mobileShop: "Móvil (Voy a la ubicación del cliente)",
-    fixedLocationShop: "Ubicación Fija (Los clientes vienen a mí)",
+    firstName: "Nombre",
+    firstNamePlaceholder: "Ej: John",
+    lastName: "Apellido",
+    lastNamePlaceholder: "Ej: Doe",
     address: "Dirección del Negocio",
     addressPlaceholder: "123 Calle Principal, Ciudad",
     phoneNumber: "Número de Teléfono",
@@ -349,6 +358,11 @@ export const translations = {
      // Onboarding Modal
     onboardingTitle: "¡Bienvenido a DetailDeck!",
     onboardingSubtitle: "Vamos a configurar tu taller. Esta información se usará para crear tu página de reserva pública.",
+    // FIX: Add missing translation keys for OnboardingModal
+    shopType: "Tipo de Taller",
+    shopTypeSelect: "Selecciona un tipo de taller",
+    mobileShop: "Móvil (Me desplazo a los clientes)",
+    fixedLocationShop: "Ubicación Fija (Los clientes vienen a mí)",
     createShop: "Crear mi Taller",
     creatingShop: "Creando...",
     // Get Started / Auth Modal
