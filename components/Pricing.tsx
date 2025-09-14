@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PRICING_PLANS } from '../constants';
+import { PRICING_PLANS, PricingPlan } from '../constants';
 import { CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -11,7 +11,7 @@ type BillingCycle = 'monthly' | 'yearly';
 
 const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
   const { language, t } = useLanguage();
-  const plans = PRICING_PLANS[language];
+  const plans: PricingPlan[] = PRICING_PLANS[language];
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
   const handleToggle = (cycle: BillingCycle) => {
@@ -53,6 +53,10 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
             const pricingInfo = 'onetime' in plan.pricing 
               ? plan.pricing.onetime 
               : plan.pricing[billingCycle];
+
+            if (!pricingInfo) {
+              return null;
+            }
             
             return (
               <div key={plan.id} className={`relative bg-brand-light rounded-xl p-8 border ${isFeatured ? 'border-yellow-400' : 'border-gray-200'} transition-all duration-300 flex flex-col hover:shadow-xl hover:border-brand-blue`}>
@@ -65,11 +69,11 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                   <div className="mb-8">
                     { 'earlyBird' in pricingInfo ? (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-extrabold text-brand-dark">€{String(pricingInfo.earlyBird)}</span>
-                        <span className="text-xl font-medium text-brand-gray line-through">€{String(pricingInfo.regular)}</span>
+                        <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
+                        <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
                       </div>
                     ) : (
-                      <span className="text-5xl font-extrabold text-brand-dark">€{String(pricingInfo.regular)}</span>
+                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
                     )}
 
                     <span className="text-lg text-brand-gray">
@@ -82,8 +86,8 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                       return (
                         <li key={i} className="flex items-center">
                           <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                          {/* FIX: Explicitly cast feature to a string to satisfy ReactNode type. */}
-                          <span className="text-brand-gray">{String(feature)}</span>
+                          {/* FIX: Explicitly cast feature to ReactNode to resolve the type error. */}
+                          <span className="text-brand-gray">{feature as React.ReactNode}</span>
                         </li>
                       );
                     })}

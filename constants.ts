@@ -98,7 +98,27 @@ export const HOW_IT_WORKS_STEPS = {
   ]
 };
 
-export const PRICING_PLANS = {
+export interface PricingPlan {
+  id: 'solo' | 'lifetime';
+  name: string;
+  description: string;
+  disabled: boolean;
+  pricing: {
+    monthly?: { regular: string };
+    yearly?: { regular: string; earlyBird: string };
+    onetime?: { regular: string; earlyBird: string };
+  };
+  features: string[];
+}
+
+export interface PricingPlans {
+  en: PricingPlan[];
+  fr: PricingPlan[];
+  es: PricingPlan[];
+}
+
+
+export const PRICING_PLANS: PricingPlans = {
   en: [
     { 
       id: 'solo',
