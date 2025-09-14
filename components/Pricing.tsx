@@ -56,12 +56,7 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
             
             return (
               <div key={plan.id} className={`relative bg-brand-light rounded-xl p-8 border ${isFeatured ? 'border-yellow-400' : 'border-gray-200'} transition-all duration-300 flex flex-col hover:shadow-xl hover:border-brand-blue`}>
-                {plan.disabled && (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl z-10">
-                    <span className="bg-brand-dark text-white font-bold py-2 px-4 rounded-lg">{t.availableOnDate}</span>
-                  </div>
-                )}
-                <div className={`transition-opacity ${plan.disabled ? 'opacity-40' : ''}`}>
+                <div>
                   <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t.earlyBird}</div>
                   
                   <h3 className="text-2xl font-semibold text-brand-dark mt-4">{plan.name}</h3>
@@ -87,7 +82,7 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                       return (
                         <li key={i} className="flex items-center">
                           <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                          {/* FIX: Type 'unknown' is not assignable to type 'ReactNode'. Explicitly convert feature to a string. */}
+                          {/* FIX: Explicitly cast feature to a string to satisfy ReactNode type. */}
                           <span className="text-brand-gray">{String(feature)}</span>
                         </li>
                       );
@@ -95,8 +90,7 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                   </ul>
                   <button 
                     onClick={onChoosePlan}
-                    disabled={plan.disabled}
-                    className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${isFeatured ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                    className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${isFeatured ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
                     {t.choosePlan}
                   </button>
                 </div>

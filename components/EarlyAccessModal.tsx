@@ -1,8 +1,7 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon, CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
-import { STRIPE_PRICE_IDS, PRICING_PLANS } from '../constants';
+import { STRIPE_PRICE_IDS } from '../constants';
 import StepTransition from './StepTransition';
 import { supabase } from '../lib/supabaseClient';
 import { IS_MOCK_MODE, VITE_STRIPE_PUBLISHABLE_KEY } from '../lib/env';
@@ -36,11 +35,11 @@ interface FormErrors {
 }
 
 const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, onLoginClick }) => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const modalRef = useRef<HTMLDivElement>(null);
   
   const [step, setStep] = useState('1');
-  const [selectedPlanId, setSelectedPlanId] = useState<SelectedPlanId>('lifetime'); // Default to the available plan
+  const [selectedPlanId, setSelectedPlanId] = useState<SelectedPlanId>('solo'); // Default to solo
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
     email: '',
@@ -58,12 +57,10 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     solo: { id: 'solo', name: t.soloPlanTitle, billingCycle: 'yearly', price: '400' },
     lifetime: { id: 'lifetime', name: t.lifetimePlanTitle, billingCycle: 'onetime', price: '1000' }
   };
-  const soloPlanConstants = PRICING_PLANS[language].find(p => p.id === 'solo');
-  const lifetimePlanConstants = PRICING_PLANS[language].find(p => p.id === 'lifetime');
-
+ 
   const resetState = () => {
     setStep('1');
-    setSelectedPlanId('lifetime');
+    setSelectedPlanId('solo');
     setFormData({ shopName: '', email: '', firstName: '', lastName: '', address: '', phone: '' });
     setErrors({});
     setLoading(false);
@@ -253,8 +250,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                         priceInfo={t.soloPlanPrice}
                         tag={t.bestValue} 
                         isSelected={selectedPlanId === 'solo'}
-                        onClick={() => {}}
-                        disabled={soloPlanConstants?.disabled}
+                        onClick={() => handlePlanSelect('solo')}
                       />
                       {/* Lifetime Plan */}
                       <PlanCard 
@@ -266,7 +262,6 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                         isFeatured={true}
                         isSelected={selectedPlanId === 'lifetime'}
                         onClick={() => handlePlanSelect('lifetime')}
-                        disabled={lifetimePlanConstants?.disabled}
                       />
                   </div>
               </div>
@@ -324,18 +319,13 @@ const PlanCard: React.FC<{
     tag: string, 
     isSelected: boolean, 
     onClick: ()=>void, 
-    isFeatured?: boolean,
-    disabled?: boolean
-}> = ({title, description, features, priceInfo, tag, isSelected, onClick, isFeatured, disabled}) => {
+    isFeatured?: boolean
+}> = ({title, description, features, priceInfo, tag, isSelected, onClick, isFeatured}) => {
+    // FIX: Get translation object 't' from useLanguage hook to use in the component.
     const { t } = useLanguage();
     return (
-        <button type="button" onClick={onClick} disabled={disabled} className={`relative border rounded-lg p-4 text-left w-full h-full transition-all duration-300 focus:outline-none flex flex-col ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'} ${isFeatured ? 'bg-yellow-50' : 'bg-white'} disabled:cursor-not-allowed`}>
-            {disabled && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10">
-                <span className="bg-brand-dark text-white font-bold py-2 px-4 rounded-lg">{t.availableOnDate}</span>
-              </div>
-            )}
-            <div className={`transition-opacity ${disabled ? 'opacity-40' : ''}`}>
+        <button type="button" onClick={onClick} className={`relative border rounded-lg p-4 text-left w-full h-full transition-all duration-300 focus:outline-none flex flex-col ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'} ${isFeatured ? 'bg-yellow-50' : 'bg-white'}`}>
+            <div>
               <div className={`absolute -top-3 left-4 text-xs font-bold px-3 py-1 rounded-full ${isFeatured ? 'bg-yellow-400 text-yellow-900' : 'bg-brand-blue text-white'}`}>{tag}</div>
               <div className="mb-3">
                   <h3 className="text-lg font-bold text-brand-dark">{title}</h3>
