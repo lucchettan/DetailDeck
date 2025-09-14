@@ -70,11 +70,11 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                   <div className="mb-8">
                     { 'earlyBird' in pricingInfo ? (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
-                        <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
+                        <span className="text-5xl font-extrabold text-brand-dark">€{String(pricingInfo.earlyBird)}</span>
+                        <span className="text-xl font-medium text-brand-gray line-through">€{String(pricingInfo.regular)}</span>
                       </div>
                     ) : (
-                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
+                      <span className="text-5xl font-extrabold text-brand-dark">€{String(pricingInfo.regular)}</span>
                     )}
 
                     <span className="text-lg text-brand-gray">
