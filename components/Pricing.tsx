@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PRICING_PLANS } from '../constants';
 import { CheckIcon } from './Icons';
@@ -84,13 +83,15 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                   </div>
 
                   <ul className="space-y-4 mb-8 flex-grow">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
-                        <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                        {/* FIX: Type 'unknown' is not assignable to type 'ReactNode'. Explicitly convert feature to a string. */}
-                        <span className="text-brand-gray">{String(feature)}</span>
-                      </li>
-                    ))}
+                    {plan.features.map((feature, i) => {
+                      return (
+                        <li key={i} className="flex items-center">
+                          <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
+                          {/* FIX: Type 'unknown' is not assignable to type 'ReactNode'. Explicitly convert feature to a string. */}
+                          <span className="text-brand-gray">{String(feature)}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <button 
                     onClick={onChoosePlan}

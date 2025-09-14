@@ -104,7 +104,7 @@ export const PRICING_PLANS = {
       id: 'solo',
       name: 'Solo', 
       description: 'For the individual detailer getting started.',
-      disabled: true,
+      disabled: false,
       pricing: { 
         monthly: { regular: '100' },
         yearly: { regular: '900', earlyBird: '400' } 
@@ -127,7 +127,7 @@ export const PRICING_PLANS = {
       id: 'solo',
       name: 'Solo', 
       description: 'Pour l\'artisan indépendant qui se lance.',
-      disabled: true,
+      disabled: false,
       pricing: { 
         monthly: { regular: '100' }, 
         yearly: { regular: '900', earlyBird: '400' }
@@ -150,7 +150,7 @@ export const PRICING_PLANS = {
       id: 'solo',
       name: 'Solo', 
       description: 'Para el detallista individual que está empezando.',
-      disabled: true,
+      disabled: false,
       pricing: { 
         monthly: { regular: '100' },
         yearly: { regular: '900', earlyBird: '400' }
@@ -187,8 +187,8 @@ export const FAQ_ITEMS = {
 
 export const STRIPE_PRICE_IDS = {
   earlyAccess: {
-    solo: 'price_1S6udBJDxn6jAPmdEOxqj4v3',
-    lifetime: 'price_1S6ue9JDxn6jAPmdATcV5PFq',
+    solo: 'price_1S7K9pJ6ahugFRx7pjhzkB9n',
+    lifetime: 'price_1S7K9vJ6ahugFRx70OCj4CPp',
   },
   // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard.
   regular: {
