@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { CarWashIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -105,10 +105,11 @@ const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick
     <header className="sticky top-0 bg-white/80 backdrop-blur-sm z-50 shadow-md">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <CarWashIcon className="w-8 h-8 text-brand-blue" />
-            <span className="text-xl sm:text-2xl font-bold text-brand-dark">DetailDeck</span>
-          </div>
+          <a href="#" className="flex items-center">
+             <h1 className="text-2xl font-bold text-brand-dark">
+              <span>Resa</span><span className="text-brand-blue">One</span>
+            </h1>
+          </a>
           <nav className="flex items-center space-x-3 sm:space-x-6">
             <LanguageSwitcher />
             {user ? (

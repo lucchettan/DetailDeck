@@ -55,6 +55,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
     }
     if (!pendingSignupData?.formData?.email || !pendingSignupData?.plan) {
       setError("Required information is missing. Cannot create account.");
+      setPageState(PageState.Error);
       return;
     }
 
@@ -89,7 +90,7 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
             setLoading(false);
             return;
         }
-        throw authError;
+        throw new Error(authError.message || 'Database error saving new user');
       }
       
       localStorage.removeItem('pendingSignup');
@@ -113,10 +114,9 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
     } catch (e: any) {
       console.error('Account setup error:', e);
       let friendlyError = e.message || 'An unexpected error occurred.';
-      if (e.message?.includes('violates row-level security policy')) {
-        friendlyError = 'Your account was created, but we failed to set up your shop. Please ensure your database security policies are configured correctly or contact support.';
+      if (typeof e.message === 'string' && e.message.includes('Database error saving new user')) {
+          friendlyError = 'Database error saving new user'
       }
-      console.error('Detailed Error:', e);
       setError(friendlyError);
       setPageState(PageState.Error);
     } finally {

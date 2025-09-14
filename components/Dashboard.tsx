@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,7 +10,9 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-brand-light">
       <header className="bg-white shadow-md">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-brand-dark">DetailDeck</h1>
+          <h1 className="text-2xl font-bold text-brand-dark">
+            <span>Resa</span><span className="text-brand-blue">One</span>
+          </h1>
           <button
             onClick={logOut}
             className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300"

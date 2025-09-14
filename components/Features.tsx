@@ -13,7 +13,7 @@ const Features: React.FC = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">{t.featuresTitle}</h2>
           <p className="text-lg text-brand-gray mt-4 max-w-2xl mx-auto">{t.featuresSubtitle}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
             <div key={index} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-brand-blue hover:shadow-xl hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">

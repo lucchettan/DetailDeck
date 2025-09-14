@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { CloseIcon } from './Icons';
+import { CloseIcon, CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { STRIPE_PRICE_IDS } from '../constants';
 import StepTransition from './StepTransition';
 import { supabase } from '../lib/supabaseClient';
 import { IS_MOCK_MODE, VITE_STRIPE_PUBLISHABLE_KEY } from '../lib/env';
-import { SelectedPlan } from '../App';
+import { SelectedPlan, SelectedPlanId } from '../App';
 
 // This is necessary when using the Stripe script via a CDN
 declare const Stripe: any;
@@ -21,7 +21,6 @@ interface FormData {
   shopName: string;
   email: string;
   firstName: string;
-
   lastName: string;
   address: string;
   phone: string;
@@ -41,7 +40,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const modalRef = useRef<HTMLDivElement>(null);
   
   const [step, setStep] = useState('1');
-  const [selectedPlanId, setSelectedPlanId] = useState<'solo' | 'business' | 'lifetime'>('business');
+  const [selectedPlanId, setSelectedPlanId] = useState<SelectedPlanId>('solo');
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
     email: '',
@@ -55,15 +54,14 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   const [apiError, setApiError] = useState('');
   const [userExists, setUserExists] = useState(false);
 
-  const planInfo: Record<'solo' | 'business' | 'lifetime', SelectedPlan> = {
+  const planInfo: Record<SelectedPlanId, SelectedPlan> = {
     solo: { id: 'solo', name: t.soloPlanTitle, billingCycle: 'yearly', price: '400' },
-    business: { id: 'business', name: t.businessPlanTitle, billingCycle: 'yearly', price: '750' },
-    lifetime: { id: 'lifetime', name: t.earlyAccessLifetimeTitle, billingCycle: 'onetime', price: '1250' }
+    lifetime: { id: 'lifetime', name: t.lifetimePlanTitle, billingCycle: 'onetime', price: '1000' }
   };
 
   const resetState = () => {
     setStep('1');
-    setSelectedPlanId('business');
+    setSelectedPlanId('solo');
     setFormData({ shopName: '', email: '', firstName: '', lastName: '', address: '', phone: '' });
     setErrors({});
     setLoading(false);
@@ -72,10 +70,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
   }
 
   const handleClose = () => {
-    // Add a small delay to allow the modal to animate out before resetting state
-    setTimeout(() => {
-        resetState();
-    }, 300);
+    setTimeout(resetState, 300);
     onClose();
   };
 
@@ -105,39 +100,31 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     setApiError('');
     setUserExists(false);
 
-    if (!validateStep2()) {
-      return;
-    }
-
+    if (!validateStep2()) return;
     setLoading(true);
 
     if (IS_MOCK_MODE) {
       console.log("Mock Mode: Simulating form submission.", { formData, selectedPlanId });
-      // Simulate a short delay for a more realistic feel
       await new Promise(resolve => setTimeout(resolve, 1500));
-      alert("This is a mock checkout flow. Your data has been logged to the console, and you would normally be redirected to Stripe to complete your payment.");
+      alert("This is a mock checkout flow. Your data has been logged to the console.");
       setLoading(false);
       handleClose();
       return;
     }
 
     try {
-      // Step 1: Check if user already exists BEFORE payment
-      const { data: userExists, error: rpcError } = await supabase.rpc('check_user_exists', { email_to_check: formData.email });
-      
+      const { data: userExistsData, error: rpcError } = await supabase.rpc('check_user_exists', { email_to_check: formData.email });
       if (rpcError) {
-        console.error("RPC Error (check_user_exists):", rpcError);
-        throw new Error("Could not verify your email. Please try again.");
+          console.error("RPC Error:", rpcError);
+          throw new Error("Could not verify your email. Please try again.");
       }
-
-      if (userExists) {
+      if (userExistsData) {
         setApiError(t.emailExistsError);
         setUserExists(true);
         setLoading(false);
         return;
       }
 
-      // Step 2: Save data to Supabase
       const { error: dbError } = await supabase.from('early_access_signups').insert({
         shop_name: formData.shopName,
         email: formData.email,
@@ -147,45 +134,26 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
         phone: formData.phone,
         selected_plan: selectedPlanId,
       });
-
-      if (dbError) {
-        throw new Error(dbError.message);
-      }
+      if (dbError) throw new Error(dbError.message);
       
-      // Step 3: Redirect to Stripe if DB insert is successful
-      if (!VITE_STRIPE_PUBLISHABLE_KEY) {
-        throw new Error('Stripe publishable key is not set.');
-      }
+      if (!VITE_STRIPE_PUBLISHABLE_KEY) throw new Error('Stripe publishable key is not set.');
 
       const planToSave = planInfo[selectedPlanId];
-      // Save user info to local storage to be picked up on the success page
       localStorage.setItem('pendingSignup', JSON.stringify({ formData, plan: planToSave }));
 
       const stripe = Stripe(VITE_STRIPE_PUBLISHABLE_KEY);
-      
-      let priceId;
-      const mode: 'payment' | 'subscription' = 'payment';
-
-      if (selectedPlanId === 'solo') {
-        priceId = STRIPE_PRICE_IDS.earlyAccess.solo;
-      } else if (selectedPlanId === 'business') {
-        priceId = STRIPE_PRICE_IDS.earlyAccess.business;
-      } else {
-        priceId = STRIPE_PRICE_IDS.earlyAccess.lifetime;
-      }
+      const priceId = STRIPE_PRICE_IDS.earlyAccess[selectedPlanId];
 
       const { error: stripeError } = await stripe.redirectToCheckout({
         lineItems: [{ price: priceId, quantity: 1 }],
-        mode: mode,
+        mode: 'payment',
         customerEmail: formData.email,
         successUrl: `${window.location.origin}?payment_success=true`,
         cancelUrl: window.location.origin,
       });
 
       if (stripeError) {
-        console.error("Stripe redirectToCheckout error:", stripeError);
-        console.error("Attempted to use Price ID:", priceId, "for plan:", selectedPlanId);
-        localStorage.removeItem('pendingSignup'); // Clean up on failure
+        localStorage.removeItem('pendingSignup');
         throw new Error(stripeError.message);
       }
 
@@ -200,11 +168,11 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  const handlePlanSelectAndProceed = (plan: 'solo' | 'business' | 'lifetime') => {
+  const handlePlanSelect = (plan: SelectedPlanId) => {
     setSelectedPlanId(plan);
-    setStep('2');
+    setStep('2'); // Automatically go to the next step
   };
-
+  
   const handlePrevStep = () => {
     setApiError('');
     setErrors({});
@@ -212,7 +180,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
     setStep('1');
   };
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if(errors[name as keyof FormErrors]) {
@@ -226,218 +194,170 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClose();
-      }
+      if (event.key === 'Escape') handleClose();
     };
-
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        handleClose();
-      }
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) handleClose();
     };
-
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       document.addEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'hidden';
     }
-
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
-  const planDetails = {
-    solo: { 
-      title: t.soloPlanTitle, 
-      price: '€400', 
-      period: t.perFirstYear 
-    },
-    business: { 
-      title: t.businessPlanTitle, 
-      price: '€750', 
-      period: t.perFirstYear 
-    },
-    lifetime: { 
-      title: t.earlyAccessLifetimeTitle, 
-      price: '€1250', 
-      period: ` / ${t.lifetime}` 
-    },
-  };
-  const selectedPlanDetails = planDetails[selectedPlanId];
-
+  const selectedPlanDetails = planInfo[selectedPlanId];
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 transition-opacity duration-300"
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
+      className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-4 overflow-y-auto transition-opacity duration-300"
+      role="dialog" aria-modal="true"
     >
       <div
         ref={modalRef}
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-4xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale my-8"
         style={{ animationFillMode: 'forwards' }}
       >
         <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label={t.closeModal}
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20"
+            aria-label={t.closeModal}
         >
-          <CloseIcon className="w-6 h-6" />
+            <CloseIcon className="w-6 h-6" />
         </button>
+        
+        <div className="p-6 sm:p-8 relative overflow-hidden">
+          <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-brand-dark mb-2">{t.earlyAccessTitle}</h2>
+              <p className="text-brand-gray text-sm sm:text-base">{t.earlyAccessSubtitle}</p>
+              <p className="text-brand-gray text-xs sm:text-sm mt-2 font-semibold">{step === '1' ? t.earlyAccessStep1 : t.earlyAccessStep2}</p>
+          </div>
 
-        <div className="text-center">
-            <h2 id="modal-title" className="text-2xl sm:text-3xl font-bold text-brand-dark mb-2">
-                {t.earlyAccessTitle}
-            </h2>
-            <p className="text-brand-gray mb-6 text-sm sm:text-base">
-                {step === '1' ? t.earlyAccessStep1 : t.earlyAccessStep2}
-            </p>
+          <StepTransition currentStep={step}>
+              <div key="1" data-step="1">
+                  <div className="flex flex-col md:flex-row gap-4">
+                      {/* Solo Plan */}
+                      <PlanCard 
+                        title={t.soloPlanTitle} 
+                        description={t.soloPlanCardTitle}
+                        features={[t.soloPlanFeature1, t.soloPlanFeature2, t.soloPlanFeature3]}
+                        priceInfo={t.soloPlanPrice}
+                        tag={t.bestValue} 
+                        isSelected={selectedPlanId === 'solo'}
+                        onClick={() => handlePlanSelect('solo')}
+                      />
+                      {/* Lifetime Plan */}
+                      <PlanCard 
+                        title={t.lifetimePlanTitle} 
+                        description={t.lifetimePlanCardTitle}
+                        features={[t.lifetimePlanFeature1, t.lifetimePlanFeature2, t.lifetimePlanFeature3]}
+                        priceInfo={t.lifetimePlanPrice}
+                        tag={t.bestDeal} 
+                        isFeatured={true}
+                        isSelected={selectedPlanId === 'lifetime'}
+                        onClick={() => handlePlanSelect('lifetime')}
+                      />
+                  </div>
+              </div>
+
+              <form key="2" data-step="2" onSubmit={handleSubmit} noValidate>
+                  <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm">
+                      <p className="text-brand-gray">{t.youSelected} <span className="font-bold text-brand-dark">{selectedPlanDetails.name}</span></p>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <InputField label={t.firstName} name="firstName" value={formData.firstName} onChange={handleInputChange} placeholder={t.firstNamePlaceholder} error={errors.firstName} />
+                        <InputField label={t.lastName} name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder={t.lastNamePlaceholder} error={errors.lastName} />
+                      </div>
+                      <InputField label={t.shopName} name="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} error={errors.shopName} />
+                      <InputField label={t.address} name="address" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} error={errors.address} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <InputField label={t.emailAddress} name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder={t.emailPlaceholder} error={errors.email} />
+                          <InputField label={t.phoneNumber} name="phone" type="tel" value={formData.phone} onChange={handleInputChange} placeholder={t.phoneNumberPlaceholder} error={errors.phone} />
+                      </div>
+                  </div>
+
+                  {apiError && (
+                      <div className="text-center bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                          <p className="text-red-700 text-sm">{apiError}</p>
+                          {userExists && (
+                              <button type="button" onClick={onLoginClick} className="mt-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 text-sm">{t.login}</button>
+                          )}
+                      </div>
+                  )}
+
+                  <div className="flex flex-col-reverse sm:flex-row gap-3">
+                      <button type="button" onClick={handlePrevStep} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-3 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all">{t.previousStep}</button>
+                      <button type="submit" disabled={loading} className="flex-grow bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-75 disabled:cursor-not-allowed">
+                          {loading ? t.redirecting : t.claimDiscountAndPay}
+                      </button>
+                  </div>
+              </form>
+          </StepTransition>
         </div>
-
-        <StepTransition currentStep={step}>
-            <div key="1" data-step="1">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 md:min-h-[280px]">
-                    {/* Solo Plan */}
-                    <button type="button" onClick={() => handlePlanSelectAndProceed('solo')} className={`border rounded-lg p-4 bg-brand-light transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'solo' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
-                        <div>
-                          <h3 className="text-lg font-bold text-brand-dark">{t.soloPlanTitle}</h3>
-                          <p className="text-brand-gray text-sm mt-1">{t.soloPlanDescription}</p>
-                          <div className="my-3">
-                              <span className="text-3xl font-extrabold text-brand-dark">€400</span>
-                              <span className="text-brand-gray text-sm"> {t.perFirstYear}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500"><span className="line-through">€550</span> {t.standardPrice}</p>
-                    </button>
-
-                    {/* Business Plan */}
-                    <button type="button" onClick={() => handlePlanSelectAndProceed('business')} className={`border rounded-lg p-4 bg-blue-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'business' ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'}`}>
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full">{t.bestValue}</div>
-                        <div>
-                          <h3 className="text-lg font-bold text-brand-dark">{t.businessPlanTitle}</h3>
-                          <p className="text-brand-gray text-sm mt-1">{t.businessPlanDescription}</p>
-                          <div className="my-3">
-                              <span className="text-3xl font-extrabold text-brand-dark">€750</span>
-                              <span className="text-brand-gray text-sm"> {t.perFirstYear}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500"><span className="line-through">€1500</span> {t.standardPrice}</p>
-                    </button>
-
-                    {/* Lifetime Plan */}
-                     <button type="button" onClick={() => handlePlanSelectAndProceed('lifetime')} className={`border rounded-lg p-4 bg-yellow-50 relative transition-all duration-300 focus:outline-none h-full ${selectedPlanId === 'lifetime' ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-gray-200 hover:border-gray-400'}`}>
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">{t.bestDeal}</div>
-                        <div>
-                          <h3 className="text-lg font-bold text-brand-dark">{t.earlyAccessLifetimeTitle}</h3>
-                          <p className="text-brand-gray text-sm mt-1">{t.earlyAccessLifetimeDescription}</p>
-                          <div className="my-3">
-                              <span className="text-3xl font-extrabold text-brand-dark">€1250</span>
-                              <span className="text-brand-gray text-sm"> / {t.lifetime}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500"><span className="line-through">€3000</span> {t.standardPrice}</p>
-                    </button>
-                </div>
-            </div>
-
-            <form key="2" data-step="2" onSubmit={handleSubmit} noValidate>
-                <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm">
-                    <p className="text-brand-gray">{t.youSelected} <span className="font-bold text-brand-dark">{selectedPlanDetails.title} ({selectedPlanDetails.price}{selectedPlanDetails.period})</span></p>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                    {/* Shop Name */}
-                    <div>
-                        <label htmlFor="shopName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
-                        <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                        {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
-                    </div>
-                     {/* Name */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="firstName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.firstName}</label>
-                            <input type="text" name="firstName" id="firstName" value={formData.firstName} onChange={handleInputChange} placeholder={t.firstNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.firstName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                            {errors.firstName && <p className="text-red-500 text-xs text-left mt-1">{errors.firstName}</p>}
-                        </div>
-                        <div>
-                            <label htmlFor="lastName" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.lastName}</label>
-                             <input type="text" name="lastName" id="lastName" value={formData.lastName} onChange={handleInputChange} placeholder={t.lastNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.lastName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                            {errors.lastName && <p className="text-red-500 text-xs text-left mt-1">{errors.lastName}</p>}
-                        </div>
-                    </div>
-                    {/* Address */}
-                    <div>
-                        <label htmlFor="address" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
-                        <input type="text" name="address" id="address" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                        {errors.address && <p className="text-red-500 text-xs text-left mt-1">{errors.address}</p>}
-                    </div>
-                    {/* Email & Phone */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.emailAddress}</label>
-                            <input type="email" name="email" id="email" value={formData.email} onChange={handleInputChange} placeholder={t.emailPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.email ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                            {errors.email && <p className="text-red-500 text-xs text-left mt-1">{errors.email}</p>}
-                        </div>
-                        <div>
-                            <label htmlFor="phone" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.phoneNumber}</label>
-                            <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleInputChange} placeholder={t.phoneNumberPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.phone ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
-                            {errors.phone && <p className="text-red-500 text-xs text-left mt-1">{errors.phone}</p>}
-                        </div>
-                    </div>
-                </div>
-
-                {apiError && (
-                    <div className="text-center bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                        <p className="text-red-700 text-sm">{apiError}</p>
-                        {userExists && (
-                            <button
-                                type="button"
-                                onClick={onLoginClick}
-                                className="mt-2 bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-all text-sm"
-                            >
-                                {t.login}
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                <div className="flex flex-col-reverse sm:flex-row gap-3">
-                    <button type="button" onClick={handlePrevStep} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-3 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all duration-300">
-                        {t.previousStep}
-                    </button>
-                    <button type="submit" disabled={loading} className="flex-grow bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
-                        {loading ? t.redirecting : t.claimDiscountAndPay}
-                    </button>
-                </div>
-            </form>
-        </StepTransition>
       </div>
       <style>{`
-        @keyframes fade-in-scale {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        .animate-fade-in-scale {
-          animation: fade-in-scale 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-        }
+        @keyframes fade-in-scale { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-fade-in-scale { animation: fade-in-scale 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
       `}</style>
     </div>
   );
 };
+
+const PlanCard: React.FC<{
+    title: string, 
+    description: string, 
+    features: string[], 
+    priceInfo: { new: string, period: string, old: string }, 
+    tag: string, 
+    isSelected: boolean, 
+    onClick: ()=>void, 
+    isFeatured?: boolean
+}> = ({title, description, features, priceInfo, tag, isSelected, onClick, isFeatured}) => {
+    const { t } = useLanguage();
+    return (
+        <button type="button" onClick={onClick} className={`border rounded-lg p-4 text-left w-full h-full relative transition-all duration-300 focus:outline-none flex flex-col ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'} ${isFeatured ? 'bg-yellow-50' : 'bg-white'}`}>
+            <div className={`absolute -top-3 left-4 text-xs font-bold px-3 py-1 rounded-full ${isFeatured ? 'bg-yellow-400 text-yellow-900' : 'bg-brand-blue text-white'}`}>{tag}</div>
+            <div className="mb-3">
+                <h3 className="text-lg font-bold text-brand-dark">{title}</h3>
+                <p className="text-brand-gray text-sm mt-1">{description}</p>
+            </div>
+            <ul className="space-y-2 mb-4 text-sm flex-grow">
+                {features.map((feature, i) => (
+                    <li key={i} className="flex items-start">
+                    <CheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-brand-gray">{feature}</span>
+                    </li>
+                ))}
+            </ul>
+             <div className="mt-auto text-center pt-4">
+                <p className="text-4xl font-extrabold text-brand-dark tracking-tight">{priceInfo.new}</p>
+                <p className="text-brand-gray text-sm -mt-1">{priceInfo.period}</p>
+                <p className="text-xs text-brand-gray mt-2">
+                    <span className="line-through">{priceInfo.old}</span>
+                    <span className="font-semibold"> {t.standardPrice}</span>
+                </p>
+            </div>
+        </button>
+    );
+};
+
+const InputField: React.FC<{label: string, name: string, type?: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder: string, error?: string}> = 
+({label, name, type = 'text', value, onChange, placeholder, error}) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-brand-dark text-left mb-1">{label}</label>
+        <input type={type} name={name} id={name} value={value} onChange={onChange} placeholder={placeholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+        {error && <p className="text-red-500 text-xs text-left mt-1">{error}</p>}
+    </div>
+);
+
 
 export default EarlyAccessModal;

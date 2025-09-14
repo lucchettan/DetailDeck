@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { PRICING_PLANS } from '../constants';
 import { CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
-import { SelectedPlan } from '../App';
-
-type BillingCycle = 'monthly' | 'yearly';
 
 interface PricingProps {
-  onChoosePlan: (plan: SelectedPlan) => void;
+  onChoosePlan: () => void;
 }
+
+type BillingCycle = 'monthly' | 'yearly';
 
 const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
   const { language, t } = useLanguage();
@@ -45,50 +44,58 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
             <div 
               className={`absolute top-1 left-1 bg-brand-blue w-28 h-9 rounded-full transition-transform duration-300 ease-in-out ${billingCycle === 'yearly' ? 'translate-x-full' : ''}`}
             />
-             <span className="absolute -top-3 -right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full transform rotate-12">{t.save25}</span>
+             <span className="absolute -top-3 -right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full transform rotate-12">{t.annualPromo}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-          {plans.map((plan) => (
-            <div key={plan.name} className={`bg-brand-light rounded-xl p-8 border ${plan.name === 'Lifetime' || plan.name === 'À Vie' || plan.name === 'De por vida' ? 'border-yellow-400' : 'border-gray-200'} transition-all duration-300 flex flex-col hover:shadow-xl hover:border-brand-blue`}>
-              <h3 className="text-2xl font-semibold text-brand-dark">{plan.name}</h3>
-              <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
-              
-              <div className="mb-8">
-                {'onetime' in plan.pricing ? (
-                  <>
-                    <span className="text-5xl font-extrabold text-brand-dark">€{plan.pricing.onetime}</span>
-                    <span className="text-lg text-brand-gray"> / {t.lifetime}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-5xl font-extrabold text-brand-dark">€{plan.pricing[billingCycle]}</span>
-                    <span className="text-lg text-brand-gray">/ {billingCycle === 'monthly' ? t.month : t.year}</span>
-                  </>
-                )}
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch justify-center">
+          {plans.map((plan) => {
+            const isFeatured = plan.id === 'lifetime';
+            const pricingInfo = 'onetime' in plan.pricing 
+              ? plan.pricing.onetime 
+              : plan.pricing[billingCycle];
+            
+            return (
+              <div key={plan.id} className={`relative bg-brand-light rounded-xl p-8 border ${isFeatured ? 'border-yellow-400' : 'border-gray-200'} transition-all duration-300 flex flex-col hover:shadow-xl hover:border-brand-blue`}>
+                <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t.earlyBird}</div>
+                
+                <h3 className="text-2xl font-semibold text-brand-dark mt-4">{plan.name}</h3>
+                <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
+                
+                <div className="mb-8">
+                  { 'earlyBird' in pricingInfo ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
+                      <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
+                    </div>
+                  ) : (
+                    <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
+                  )}
 
-              <ul className="space-y-4 mb-8 flex-grow">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center">
-                    <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                    <span className="text-brand-gray">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <button 
-                onClick={() => {
-                  const cycle = 'onetime' in plan.pricing ? 'onetime' : billingCycle;
-                  const price = 'onetime' in plan.pricing ? plan.pricing.onetime : plan.pricing[billingCycle];
-                  // @ts-ignore - The id property is guaranteed to be there after our constants update
-                  onChoosePlan({ id: plan.id, name: plan.name, billingCycle: cycle, price });
-                }}
-                className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${plan.name === 'Lifetime' || plan.name === 'À Vie' || plan.name === 'De por vida' ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
-                {t.choosePlan}
-              </button>
-            </div>
-          ))}
+                  <span className="text-lg text-brand-gray">
+                    / { 'onetime' in plan.pricing ? t.lifetime : (billingCycle === 'monthly' ? t.month : t.year)}
+                  </span>
+                </div>
+
+                <ul className="space-y-4 mb-8 flex-grow">
+                  {plan.features.map((feature, i) => {
+                    // FIX: Explicitly convert feature to a string. Due to the complex type of PRICING_PLANS, TypeScript infers `feature` as `unknown`, which cannot be rendered as a ReactNode.
+                    return (
+                    <li key={i} className="flex items-center">
+                      <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
+                      <span className="text-brand-gray">{String(feature)}</span>
+                    </li>
+                    );
+                  })}
+                </ul>
+                <button 
+                  onClick={onChoosePlan}
+                  className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${isFeatured ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
+                  {t.choosePlan}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

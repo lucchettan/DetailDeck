@@ -7,7 +7,7 @@ interface StepTransitionProps {
 
 const StepTransition: React.FC<StepTransitionProps> = ({ currentStep, children }) => {
   return (
-    <div className="grid">
+    <div className="grid items-start">
       {React.Children.map(children, (child) => {
         // Fix: Add a type guard to ensure the child is a valid React element before accessing its props.
         if (!React.isValidElement(child)) {

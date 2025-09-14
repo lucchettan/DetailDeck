@@ -4,7 +4,6 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
-import Showcase from './components/Showcase';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
@@ -12,14 +11,15 @@ import AuthModal from './components/AuthModal';
 import EarlyAccessModal from './components/EarlyAccessModal';
 import WaitingListModal from './components/WaitingListModal';
 import OnboardingModal from './components/OnboardingModal';
-import PaymentModal from './components/PaymentModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import Dashboard from './components/Dashboard';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
+// This is a central type used across payment flows.
+export type SelectedPlanId = 'solo' | 'lifetime';
 export interface SelectedPlan {
-  id: 'solo' | 'business' | 'lifetime';
+  id: SelectedPlanId;
   name: string;
   billingCycle: 'monthly' | 'yearly' | 'onetime';
   price: string;
@@ -31,8 +31,6 @@ const AppContent: React.FC = () => {
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   useEffect(() => {
@@ -48,13 +46,12 @@ const AppContent: React.FC = () => {
     setIsOnboardingModalOpen(true);
   };
 
-  const handleChoosePlan = (plan: SelectedPlan) => {
-    setSelectedPlan(plan);
-    setIsPaymentModalOpen(true);
+  // Unified flow: all "choose plan" buttons now open the early access modal.
+  const handleChoosePlan = () => {
+    setIsEarlyAccessModalOpen(true);
   };
   
   const handleSwitchToLogin = () => {
-    setIsPaymentModalOpen(false);
     setIsEarlyAccessModalOpen(false);
     setIsAuthModalOpen(true);
   };
@@ -85,7 +82,6 @@ const AppContent: React.FC = () => {
         />
         <HowItWorks />
         <Features />
-        <Showcase />
         <Pricing onChoosePlan={handleChoosePlan} />
         <FAQ />
       </main>
@@ -108,14 +104,6 @@ const AppContent: React.FC = () => {
         isOpen={isOnboardingModalOpen}
         onClose={() => setIsOnboardingModalOpen(false)}
       />
-      {selectedPlan && (
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          plan={selectedPlan}
-          onLoginClick={handleSwitchToLogin}
-        />
-      )}
     </div>
   );
 }

@@ -102,12 +102,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
       if (error) {
         setError(error.message);
       } else {
-        // Confirmation is required, so we show a message.
-        setMessage('Check your email for the confirmation link!');
-        // We don't close the modal immediately, so they see the message.
-        // We can let them close it themselves or add a timeout.
-        // For now, let's assume they'll close it.
-        // The onSignUpSuccess flow is for instant-login scenarios, which we don't have.
+        if(onSignUpSuccess) {
+            onSignUpSuccess();
+        } else {
+            // Confirmation is required, so we show a message.
+            setMessage('Check your email for the confirmation link!');
+        }
       }
     }
     setLoading(false);
