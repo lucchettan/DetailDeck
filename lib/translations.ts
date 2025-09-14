@@ -21,7 +21,7 @@ export const translations = {
     startTrial: 'Start Your Free Trial',
     learnMore: 'Learn More',
     launchingSoon: 'Available November 1st!',
-    getEarlyAccess: 'Claim Exclusive Offer',
+    getEarlyAccess: 'Pre-order Promotion',
     joinWaitingList: 'Learn More!',
     // Modals General
     closeModal: 'Close modal',
@@ -105,6 +105,7 @@ export const translations = {
     lifetime: 'one time',
     annualPromo: 'Annual Promo',
     earlyBird: 'Early Bird Offer',
+    availableOnDate: 'Available Nov. 1st',
     // FAQ
     faqTitle: 'Frequently Asked Questions',
     faqSubtitle: 'Your most common questions, answered.',
@@ -157,7 +158,7 @@ export const translations = {
     startTrial: 'Commencez votre essai gratuit',
     learnMore: 'En savoir plus',
     launchingSoon: 'Disponible le 1er Novembre !',
-    getEarlyAccess: 'Profiter de l\'Offre Exclusive',
+    getEarlyAccess: 'Promotion pour les pré-commandes',
     joinWaitingList: 'En savoir plus !',
     // Modals General
     closeModal: 'Fermer la modale',
@@ -241,6 +242,7 @@ export const translations = {
     lifetime: 'unique',
     annualPromo: 'Promo Annuel',
     earlyBird: 'Offre Early Bird',
+    availableOnDate: 'Disponible le 1er Nov.',
     // FAQ
     faqTitle: 'Foire aux questions',
     faqSubtitle: 'Les réponses à vos questions les plus fréquentes.',
@@ -293,7 +295,7 @@ export const translations = {
     startTrial: 'Inicia tu prueba gratuita',
     learnMore: 'Saber más',
     launchingSoon: '¡Disponible el 1 de Noviembre!',
-    getEarlyAccess: 'Aprovechar Oferta Exclusiva',
+    getEarlyAccess: 'Promoción de pre-pedido',
     joinWaitingList: '¡Saber más!',
     // Modals General
     closeModal: 'Cerrar modal',
@@ -377,6 +379,7 @@ export const translations = {
     lifetime: 'pago único',
     annualPromo: 'Promo Anual',
     earlyBird: 'Oferta Anticipada',
+    availableOnDate: 'Disponible el 1 de Nov.',
     // FAQ
     faqTitle: 'Preguntas frecuentes',
     faqSubtitle: 'Las respuestas a tus preguntas más comunes.',

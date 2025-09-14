@@ -103,7 +103,8 @@ export const PRICING_PLANS = {
     { 
       id: 'solo',
       name: 'Solo', 
-      description: 'For the individual detailer getting started.', 
+      description: 'For the individual detailer getting started.',
+      disabled: true,
       pricing: { 
         monthly: { regular: '100' },
         yearly: { regular: '900', earlyBird: '400' } 
@@ -114,6 +115,7 @@ export const PRICING_PLANS = {
       id: 'lifetime',
       name: 'Lifetime',
       description: 'One payment for lifetime access. Never worry about subscriptions again.',
+      disabled: false,
       pricing: { 
         onetime: { regular: '1500', earlyBird: '1000' }
       },
@@ -124,7 +126,8 @@ export const PRICING_PLANS = {
     { 
       id: 'solo',
       name: 'Solo', 
-      description: 'Pour l\'artisan indépendant qui se lance.', 
+      description: 'Pour l\'artisan indépendant qui se lance.',
+      disabled: true,
       pricing: { 
         monthly: { regular: '100' }, 
         yearly: { regular: '900', earlyBird: '400' }
@@ -135,6 +138,7 @@ export const PRICING_PLANS = {
       id: 'lifetime',
       name: 'À Vie',
       description: 'Un paiement unique pour un accès à vie. Ne vous souciez plus jamais des abonnements.',
+      disabled: false,
       pricing: { 
         onetime: { regular: '1500', earlyBird: '1000' }
       },
@@ -145,7 +149,8 @@ export const PRICING_PLANS = {
     { 
       id: 'solo',
       name: 'Solo', 
-      description: 'Para el detallista individual que está empezando.', 
+      description: 'Para el detallista individual que está empezando.',
+      disabled: true,
       pricing: { 
         monthly: { regular: '100' },
         yearly: { regular: '900', earlyBird: '400' }
@@ -156,6 +161,7 @@ export const PRICING_PLANS = {
       id: 'lifetime',
       name: 'De por vida',
       description: 'Un pago único para acceso de por vida. No te preocupes más por las suscripciones.',
+      disabled: false,
       pricing: { 
         onetime: { regular: '1500', earlyBird: '1000' }
       },

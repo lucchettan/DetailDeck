@@ -15,6 +15,7 @@ import PaymentSuccess from './components/PaymentSuccess';
 import Dashboard from './components/Dashboard';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { trackEvent } from './lib/analytics';
 
 // This is a central type used across payment flows.
 export type SelectedPlanId = 'solo' | 'lifetime';
@@ -34,6 +35,9 @@ const AppContent: React.FC = () => {
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   useEffect(() => {
+    // Track page view for analytics
+    trackEvent('page_view');
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success') === 'true') {
       setShowPaymentSuccess(true);

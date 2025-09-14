@@ -57,42 +57,48 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
             
             return (
               <div key={plan.id} className={`relative bg-brand-light rounded-xl p-8 border ${isFeatured ? 'border-yellow-400' : 'border-gray-200'} transition-all duration-300 flex flex-col hover:shadow-xl hover:border-brand-blue`}>
-                <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t.earlyBird}</div>
-                
-                <h3 className="text-2xl font-semibold text-brand-dark mt-4">{plan.name}</h3>
-                <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
-                
-                <div className="mb-8">
-                  { 'earlyBird' in pricingInfo ? (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
-                      <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
-                    </div>
-                  ) : (
-                    <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
-                  )}
+                {plan.disabled && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl z-10">
+                    <span className="bg-brand-dark text-white font-bold py-2 px-4 rounded-lg">{t.availableOnDate}</span>
+                  </div>
+                )}
+                <div className={`transition-opacity ${plan.disabled ? 'opacity-40' : ''}`}>
+                  <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t.earlyBird}</div>
+                  
+                  <h3 className="text-2xl font-semibold text-brand-dark mt-4">{plan.name}</h3>
+                  <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
+                  
+                  <div className="mb-8">
+                    { 'earlyBird' in pricingInfo ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
+                        <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
+                      </div>
+                    ) : (
+                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
+                    )}
 
-                  <span className="text-lg text-brand-gray">
-                    / { 'onetime' in plan.pricing ? t.lifetime : (billingCycle === 'monthly' ? t.month : t.year)}
-                  </span>
+                    <span className="text-lg text-brand-gray">
+                      / { 'onetime' in plan.pricing ? t.lifetime : (billingCycle === 'monthly' ? t.month : t.year)}
+                    </span>
+                  </div>
+
+                  <ul className="space-y-4 mb-8 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center">
+                        <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
+                        {/* FIX: Type 'unknown' is not assignable to type 'ReactNode'. Explicitly convert feature to a string. */}
+                        <span className="text-brand-gray">{String(feature)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button 
+                    onClick={onChoosePlan}
+                    disabled={plan.disabled}
+                    className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${isFeatured ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                    {t.choosePlan}
+                  </button>
                 </div>
-
-                <ul className="space-y-4 mb-8 flex-grow">
-                  {plan.features.map((feature, i) => {
-                    // FIX: Explicitly convert feature to a string. Due to the complex type of PRICING_PLANS, TypeScript infers `feature` as `unknown`, which cannot be rendered as a ReactNode.
-                    return (
-                    <li key={i} className="flex items-center">
-                      <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                      <span className="text-brand-gray">{String(feature)}</span>
-                    </li>
-                    );
-                  })}
-                </ul>
-                <button 
-                  onClick={onChoosePlan}
-                  className={`w-full mt-auto py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 ${isFeatured ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500' : 'bg-brand-blue text-white hover:bg-blue-600'}`}>
-                  {t.choosePlan}
-                </button>
               </div>
             );
           })}
