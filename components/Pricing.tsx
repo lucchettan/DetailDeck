@@ -50,11 +50,29 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch justify-center">
           {plans.map((plan) => {
             const isFeatured = plan.id === 'lifetime';
-            const pricingInfo = 'onetime' in plan.pricing 
-              ? plan.pricing.onetime 
-              : plan.pricing[billingCycle];
+            
+            // Refactored logic for clarity and type safety
+            const onetimeInfo = plan.pricing.onetime;
+            const yearlyInfo = plan.pricing.yearly;
+            const monthlyInfo = plan.pricing.monthly;
 
-            if (!pricingInfo) {
+            let displayPrice: string | undefined;
+            let originalPrice: string | undefined;
+            let billingPeriod: string;
+
+            if (onetimeInfo) {
+              displayPrice = onetimeInfo.earlyBird;
+              originalPrice = onetimeInfo.regular;
+              billingPeriod = t.lifetime;
+            } else if (billingCycle === 'yearly' && yearlyInfo) {
+              displayPrice = yearlyInfo.earlyBird;
+              originalPrice = yearlyInfo.regular;
+              billingPeriod = t.year;
+            } else if (billingCycle === 'monthly' && monthlyInfo) {
+              displayPrice = monthlyInfo.regular;
+              billingPeriod = t.month;
+            } else {
+              // Skip rendering this plan if no valid price is found for the current toggle state.
               return null;
             }
             
@@ -67,17 +85,17 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                   <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
                   
                   <div className="mb-8">
-                    { 'earlyBird' in pricingInfo ? (
+                    { originalPrice ? (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.earlyBird}</span>
-                        <span className="text-xl font-medium text-brand-gray line-through">€{pricingInfo.regular}</span>
+                        <span className="text-5xl font-extrabold text-brand-dark">€{displayPrice}</span>
+                        <span className="text-xl font-medium text-brand-gray line-through">€{originalPrice}</span>
                       </div>
                     ) : (
-                      <span className="text-5xl font-extrabold text-brand-dark">€{pricingInfo.regular}</span>
+                      <span className="text-5xl font-extrabold text-brand-dark">€{displayPrice}</span>
                     )}
 
                     <span className="text-lg text-brand-gray">
-                      / { 'onetime' in plan.pricing ? t.lifetime : (billingCycle === 'monthly' ? t.month : t.year)}
+                      / {billingPeriod}
                     </span>
                   </div>
 
@@ -86,8 +104,7 @@ const Pricing: React.FC<PricingProps> = ({ onChoosePlan }) => {
                       return (
                         <li key={i} className="flex items-center">
                           <CheckIcon className="w-5 h-5 text-brand-blue mr-3 flex-shrink-0" />
-                          {/* FIX: Explicitly cast feature to ReactNode to resolve the type error. */}
-                          <span className="text-brand-gray">{feature as React.ReactNode}</span>
+                          <span className="text-brand-gray">{feature}</span>
                         </li>
                       );
                     })}
