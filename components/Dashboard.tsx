@@ -74,7 +74,7 @@ export interface Reservation {
 
 
 const Dashboard: React.FC = () => {
-  const { user, logOut } = useAuth();
+  const { user, logOut, session } = useAuth();
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -140,8 +140,9 @@ const Dashboard: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const stripeCode = params.get('code');
 
-    // Only run if we have a stripe code, a user session, and we are not already processing.
-    if (stripeCode && user && !isFinalizingStripe) {
+    // Use the session object as the gatekeeper for readiness. It's more reliable
+    // than the user object immediately after an OAuth redirect.
+    if (stripeCode && session && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
         try {
@@ -150,29 +151,35 @@ const Dashboard: React.FC = () => {
             });
             
             if (functionError) {
-                // Try to get a more specific error message from the function's response body
-                const errorBody = await functionError.context?.json();
-                if (errorBody?.error) {
-                    throw new Error(errorBody.error);
-                }
+                // Throw the whole error object to be caught and displayed below.
                 throw functionError;
             }
             
-            // Refetch data to ensure UI is updated with the new stripe account id and status
             await fetchData();
 
         } catch (error: any) {
             console.error("Error finalizing Stripe connection:", error);
-            alert(`Error finalizing Stripe connection: ${error.message}`);
+            // Enhanced error reporting to aid debugging, as requested.
+            let detailedError = `Message: ${error.message}`;
+            if (error.context) {
+                try {
+                    const errorBody = await error.context.json();
+                    detailedError += `\n\nFunction Response: ${JSON.stringify(errorBody, null, 2)}`;
+                } catch(e) {
+                    detailedError += `\n\nRaw Context: ${JSON.stringify(error.context, null, 2)}`;
+                }
+            } else {
+                detailedError += `\n\nFull Error Object: ${JSON.stringify(error, null, 2)}`;
+            }
+            alert(`Error finalizing Stripe connection:\n${detailedError}`);
         } finally {
-            // Clean up URL
             window.history.replaceState(null, '', window.location.pathname);
             setIsFinalizingStripe(false);
         }
       };
       finalizeConnection();
     }
-  }, [user, isFinalizingStripe, fetchData]);
+  }, [session, isFinalizingStripe, fetchData]);
 
 
   const setupStatus = {
