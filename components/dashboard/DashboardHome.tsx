@@ -58,7 +58,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus }
             <button 
               key={step.id + index}
               onClick={() => onNavigate(step.id)}
-              className="relative bg-brand-light p-6 rounded-lg text-left hover:shadow-lg hover:border-brand-blue border border-gray-200 transition-all duration-300"
+              className={`relative bg-brand-light p-6 rounded-lg text-left border transition-all duration-300 ${step.isComplete ? 'border-green-500' : 'border-gray-200 hover:shadow-lg hover:border-brand-blue'}`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
