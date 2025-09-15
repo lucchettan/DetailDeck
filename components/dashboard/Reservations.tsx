@@ -19,7 +19,8 @@ const getStatusBadgeStyle = (status: Reservation['status']) => {
   }
 }
 
-const getPaymentStatusBadgeStyle = (status: Reservation['payment_status']) => {
+// Fix: Use 'paymentStatus' property from Reservation type.
+const getPaymentStatusBadgeStyle = (status: Reservation['paymentStatus']) => {
   switch (status) {
     case 'paid': return 'bg-green-100 text-green-800';
     case 'pending_deposit': return 'bg-yellow-100 text-yellow-800';
@@ -29,7 +30,8 @@ const getPaymentStatusBadgeStyle = (status: Reservation['payment_status']) => {
 
 const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; services: {name: string, id: string}[] }> = ({ reservation, onEdit }) => {
   const { t } = useLanguage();
-  const { date, start_time, client_name, service_details, status, payment_status } = reservation;
+  // Fix: Use camelCase properties from the 'Reservation' type.
+  const { date, startTime, clientName, serviceDetails, status, paymentStatus } = reservation;
   
   const formattedDate = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -37,19 +39,22 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
     <button onClick={() => onEdit(reservation)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center">
         <div>
-          <p className="font-bold text-brand-dark">{client_name}</p>
-          <p className="text-sm text-brand-gray">{service_details?.name || 'Service not found'}</p>
+          {/* Fix: Use 'clientName' and 'serviceDetails'. */}
+          <p className="font-bold text-brand-dark">{clientName}</p>
+          <p className="text-sm text-brand-gray">{serviceDetails?.name || 'Service not found'}</p>
         </div>
         <div className="mt-2 sm:mt-0 text-right">
-          <p className="font-semibold text-brand-dark">{start_time}</p>
+          {/* Fix: Use 'startTime'. */}
+          <p className="font-semibold text-brand-dark">{startTime}</p>
         </div>
       </div>
       <div className="mt-4 pt-2 border-t flex flex-wrap gap-2 text-xs">
         <span className={`px-2 py-1 rounded-full font-semibold ${getStatusBadgeStyle(status)}`}>
           {t[`status_${status}`]}
         </span>
-        <span className={`px-2 py-1 rounded-full font-semibold ${getPaymentStatusBadgeStyle(payment_status)}`}>
-          {t[`payment_${payment_status}`]}
+        {/* Fix: Use 'paymentStatus'. */}
+        <span className={`px-2 py-1 rounded-full font-semibold ${getPaymentStatusBadgeStyle(paymentStatus)}`}>
+          {t[`payment_${paymentStatus}`]}
         </span>
       </div>
     </button>

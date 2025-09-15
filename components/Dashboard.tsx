@@ -12,12 +12,13 @@ import Analytics from './dashboard/Analytics';
 import Account from './dashboard/Account';
 import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
+import { toCamelCase } from '../lib/utils';
 
 type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics' | 'account';
 
 export interface Service {
   id: string;
-  shop_id?: string;
+  shopId?: string; // Mapped from shop_id
   name: string;
   description: string;
   status: 'active' | 'inactive';
@@ -32,42 +33,42 @@ export interface Service {
 
 export interface Shop {
     id: string;
-    owner_id: string;
+    ownerId: string; // Mapped from owner_id
     name: string;
     phone?: string;
     email?: string;
     shopImageUrl?: string;
     businessType: 'local' | 'mobile';
     address?: string;
-    serviceAreas?: any[]; // Define more strictly if needed
-    schedule: any; // Define more strictly if needed
+    serviceAreas?: any[]; 
+    schedule: any; 
     minBookingNotice: string;
     maxBookingHorizon: string;
     acceptsOnSitePayment: boolean;
     bookingFee: string;
-    stripe_account_id?: string;
-    stripe_account_enabled?: boolean;
+    stripeAccountId?: string;
+    stripeAccountEnabled?: boolean;
 }
 
 export interface Reservation {
     id: string;
-    shop_id: string;
-    service_id: string;
+    shopId: string;
+    serviceId: string;
     date: string; // YYYY-MM-DD
-    start_time: string; // HH:MM
+    startTime: string; // HH:MM
     duration: number; // minutes
     price: number;
-    client_name: string;
-    client_email: string;
-    client_phone: string;
+    clientName: string;
+    clientEmail: string;
+    clientPhone: string;
     status: 'upcoming' | 'completed' | 'cancelled';
-    payment_status: 'paid' | 'pending_deposit' | 'on_site';
-    service_details: {
+    paymentStatus: 'paid' | 'pending_deposit' | 'on_site';
+    serviceDetails: {
         name: string;
         vehicleSize?: 'S' | 'M' | 'L' | 'XL';
         addOns: any[];
     };
-    created_at?: string;
+    createdAt?: string;
 }
 
 
@@ -96,12 +97,11 @@ const Dashboard: React.FC = () => {
                 .eq('owner_id', user.id)
                 .single();
 
-            // This is not an error for a new user, just means they need to create a shop.
-            if (shopError && shopError.code !== 'PGRST116') { // PGRST116 = 0 rows
+            if (shopError && shopError.code !== 'PGRST116') {
                 throw shopError;
             }
             if (shop) {
-                 setShopData(shop as Shop);
+                 setShopData(toCamelCase(shop) as Shop);
             }
            
             if (shop) {
@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
                     .eq('shop_id', shop.id);
                 
                 if (servicesError) throw servicesError;
-                setServices(shopServices as Service[]);
+                setServices(toCamelCase(shopServices) as Service[]);
                 
                 const { data: shopReservations, error: reservationsError } = await supabase
                     .from('reservations')
@@ -121,7 +121,7 @@ const Dashboard: React.FC = () => {
                     .order('start_time', { ascending: true });
 
                 if (reservationsError) throw reservationsError;
-                setReservations(shopReservations as Reservation[]);
+                setReservations(toCamelCase(shopReservations) as Reservation[]);
             }
         } catch (error: any) {
             console.error("Error fetching dashboard data:", error);
@@ -139,7 +139,7 @@ const Dashboard: React.FC = () => {
     shopInfo: !!shopData?.name,
     availability: !!shopData?.schedule, 
     catalog: services.length > 0,
-    stripe: !!shopData?.stripe_account_id && !!shopData?.stripe_account_enabled,
+    stripe: !!shopData?.stripeAccountId && !!shopData?.stripeAccountEnabled,
   };
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
@@ -148,11 +148,25 @@ const Dashboard: React.FC = () => {
         return false;
     };
     
+    // Explicitly map from frontend camelCase to database snake_case
     const servicePayload = {
-      ...serviceToSave,
+      id: serviceToSave.id,
       shop_id: shopData.id,
+      name: serviceToSave.name,
+      description: serviceToSave.description,
+      status: serviceToSave.status,
+      varies: serviceToSave.varies,
+      pricing: serviceToSave.pricing,
+      single_price: serviceToSave.singlePrice,
+      add_ons: serviceToSave.addOns,
+      image_url: serviceToSave.imageUrl,
     };
     
+    // Remove id if it's undefined (for inserts)
+    if (!servicePayload.id) {
+        delete (servicePayload as any).id;
+    }
+
     const { data, error } = await supabase
       .from('services')
       .upsert(servicePayload)
@@ -166,12 +180,13 @@ const Dashboard: React.FC = () => {
     }
 
     if (data) {
+      const savedService = toCamelCase(data) as Service;
       setServices(prev => {
-        const exists = prev.some(s => s.id === data.id);
+        const exists = prev.some(s => s.id === savedService.id);
         if (exists) {
-          return prev.map(s => s.id === data.id ? data as Service : s);
+          return prev.map(s => s.id === savedService.id ? savedService : s);
         }
-        return [...prev, data as Service];
+        return [...prev, savedService];
       });
     }
     
@@ -198,11 +213,35 @@ const Dashboard: React.FC = () => {
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
      
+    // Explicitly map from camelCase to snake_case for the database
+    const payload = {
+      name: updatedShopData.name,
+      phone: updatedShopData.phone,
+      email: updatedShopData.email,
+      shop_image_url: updatedShopData.shopImageUrl,
+      business_type: updatedShopData.businessType,
+      address: updatedShopData.address,
+      service_areas: updatedShopData.serviceAreas,
+      schedule: updatedShopData.schedule,
+      min_booking_notice: updatedShopData.minBookingNotice,
+      max_booking_horizon: updatedShopData.maxBookingHorizon,
+      accepts_on_site_payment: updatedShopData.acceptsOnSitePayment,
+      booking_fee: updatedShopData.bookingFee,
+      stripe_account_id: updatedShopData.stripeAccountId,
+      stripe_account_enabled: updatedShopData.stripeAccountEnabled,
+    };
+
+    // Filter out undefined values to prevent nullifying existing data
+    Object.keys(payload).forEach(key => {
+        if ((payload as any)[key] === undefined) {
+            delete (payload as any)[key];
+        }
+    });
+
      if (shopData) {
-        // --- UPDATE existing shop ---
         const { data, error } = await supabase
             .from('shops')
-            .update(updatedShopData)
+            .update(payload)
             .eq('id', shopData.id)
             .select()
             .single();
@@ -213,13 +252,12 @@ const Dashboard: React.FC = () => {
             return;
         }
         if (data) {
-            setShopData(data as Shop);
+            setShopData(toCamelCase(data) as Shop);
         }
      } else {
-        // --- CREATE new shop ---
         const { data, error } = await supabase
             .from('shops')
-            .insert({ ...updatedShopData, owner_id: user.id })
+            .insert({ ...payload, owner_id: user.id })
             .select()
             .single();
         
@@ -229,7 +267,7 @@ const Dashboard: React.FC = () => {
             return;
         }
         if (data) {
-            setShopData(data as Shop);
+            setShopData(toCamelCase(data) as Shop);
         }
      }
   };
@@ -240,11 +278,28 @@ const Dashboard: React.FC = () => {
         return;
     }
     
+    // Explicitly map from camelCase to snake_case
     const payload = {
-      ...reservationToSave,
+      id: reservationToSave.id,
       shop_id: shopData.id,
+      service_id: reservationToSave.serviceId,
+      date: reservationToSave.date,
+      start_time: reservationToSave.startTime,
+      duration: reservationToSave.duration,
+      price: reservationToSave.price,
+      client_name: reservationToSave.clientName,
+      client_email: reservationToSave.clientEmail,
+      client_phone: reservationToSave.clientPhone,
+      status: reservationToSave.status,
+      payment_status: reservationToSave.paymentStatus,
+      service_details: reservationToSave.serviceDetails,
     };
-    
+
+    // Remove id if it's undefined (for inserts)
+    if (!payload.id) {
+        delete (payload as any).id;
+    }
+
     const { data, error } = await supabase
       .from('reservations')
       .upsert(payload)
@@ -258,12 +313,13 @@ const Dashboard: React.FC = () => {
     }
 
     if (data) {
+      const savedReservation = toCamelCase(data) as Reservation;
       setReservations(prev => {
-        const exists = prev.some(r => r.id === data.id);
+        const exists = prev.some(r => r.id === savedReservation.id);
         if (exists) {
-          return prev.map(r => r.id === data.id ? data as Reservation : r);
+          return prev.map(r => r.id === savedReservation.id ? savedReservation : r);
         }
-        return [...prev, data as Reservation].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return [...prev, savedReservation].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       });
     }
     

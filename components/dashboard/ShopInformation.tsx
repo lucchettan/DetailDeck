@@ -135,7 +135,8 @@ const ShopInformation: React.FC<ShopInformationProps> = ({ shopData, onSave }) =
   const handleSaveClick = async () => {
     setIsSaving(true);
     // Exclude properties that shouldn't be sent in the update payload, like id, owner_id etc.
-    const { id, owner_id, ...updateData } = formData;
+    // Fix: Use camelCase 'ownerId' to match the 'Shop' type.
+    const { id, ownerId, ...updateData } = formData;
     await onSave(updateData);
     setIsSaving(false);
   };

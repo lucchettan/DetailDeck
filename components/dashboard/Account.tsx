@@ -59,7 +59,8 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
         window.location.href = stripeConnectUrl;
     };
 
-    const isStripeConnected = shopData?.stripe_account_id && shopData?.stripe_account_enabled;
+    // Fix: Use camelCase properties to match the 'Shop' type.
+    const isStripeConnected = shopData?.stripeAccountId && shopData?.stripeAccountEnabled;
 
     return (
         <div>
