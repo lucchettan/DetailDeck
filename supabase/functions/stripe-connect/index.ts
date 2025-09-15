@@ -1,13 +1,15 @@
-// Fix: Update the Deno type reference to a stable URL to resolve "Cannot find name 'Deno'" errors.
-/// <reference types="https://unpkg.com/@types/deno/index.d.ts" />
 // supabase/functions/stripe-connect/index.ts
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@15.8.0?target=deno";
+// Fix: Add a triple-slash directive to reference Deno's Deploy types.
+// This informs the TypeScript compiler about the global 'Deno' object and its APIs,
+// resolving the "Cannot find name 'Deno'" errors.
+/// <reference types="https://deno.land/x/deno/types/deploy.d.ts" />
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@11.1.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
 
-// Initialize Stripe client with a recent API version
 const stripe = Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-  apiVersion: "2024-04-10",
+  apiVersion: "2022-11-15",
   httpClient: Stripe.createFetchHttpClient(),
 });
 
