@@ -167,27 +167,29 @@ const Dashboard: React.FC = () => {
         } catch (error: any) {
             console.error("Error finalizing Stripe connection:", error);
             
-            const frontendDebugInfo = `
---- Frontend Info ---
-User ID from Session: ${session?.user?.id || 'Not available'}
-Access Token (partial): ${session?.access_token ? `${session.access_token.substring(0, 8)}...${session.access_token.substring(session.access_token.length - 8)}` : 'Not available'}
-            `;
-            
-            let backendDebugInfo = "\n--- Backend Response ---";
+            let userMessage = "An unknown error occurred while connecting your Stripe account. Please try again or contact support.";
+            let errorBodyJson = null;
+
             if (error.context) {
                 try {
-                    const errorBody = await error.context.json();
-                    backendDebugInfo += `\nMessage: ${error.message}\nFunction Response: ${JSON.stringify(errorBody, null, 2)}`;
+                    errorBodyJson = await error.context.json();
+                    if (errorBodyJson?.error === 'User not found') {
+                        userMessage = "We couldn't find a shop profile associated with your account. This can happen if your shop information wasn't fully saved before starting the connection process. Please go to the 'Shop Information' tab, ensure all details are saved, and then try connecting to Stripe again.";
+                    }
                 } catch(e) {
-                    backendDebugInfo += `\nRaw Context: Could not parse JSON. Message: ${error.message}`;
+                    console.error("Could not parse Stripe error response JSON.", e);
                 }
-            } else {
-                backendDebugInfo += `\nMessage: ${error.message}`;
             }
-
-            const detailedError = `${frontendDebugInfo}${backendDebugInfo}`;
             
-            alert(`Error finalizing Stripe connection:\n${detailedError}`);
+            // For developers, log the full context for easier debugging
+            console.error("Stripe Connection Debug Info:", {
+                sessionUserId: session?.user?.id,
+                errorContext: error.context,
+                parsedErrorBody: errorBodyJson,
+                rawErrorMessage: error.message
+            });
+            
+            alert(`Stripe Connection Failed\n\n${userMessage}`);
             
         } finally {
             window.history.replaceState(null, '', window.location.pathname);
