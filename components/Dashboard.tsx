@@ -81,6 +81,14 @@ const Dashboard: React.FC = () => {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>(initialServices);
 
+  // In a real app, this would be derived from actual data.
+  // For demonstration, we'll assume the user has completed these steps.
+  const setupStatus = {
+    shopInfo: true, // Assume completed for demo
+    availability: true, // Assume completed for demo
+    catalog: services.length > 0,
+  };
+
   const handleSaveService = (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
     if (serviceToSave.id) {
       // Update existing service
@@ -117,7 +125,7 @@ const Dashboard: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'home':
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} />;
+        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} />;
       case 'shop':
         return <ShopInformation />;
       case 'catalog':
@@ -135,7 +143,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       default:
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} />;
+        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} />;
     }
   };
 

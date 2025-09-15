@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { CloseIcon } from '../Icons';
+import CustomSelect from '../CustomSelect';
 
 type TimeFrame = { from: string; to: string };
 type Schedule = {
@@ -24,19 +25,26 @@ const initialSchedule: Schedule = {
 
 type ServiceArea = { id: number; city: string; country: string; range: number; };
 
-const TimePicker: React.FC<{ value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }> = ({ value, onChange }) => {
-  const times = [];
-  for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 15) {
-      const hh = h.toString().padStart(2, '0');
-      const mm = m.toString().padStart(2, '0');
-      times.push(`${hh}:${mm}`);
+const TimePicker: React.FC<{ value: string, onChange: (value: string) => void }> = ({ value, onChange }) => {
+  const timeOptions = useMemo(() => {
+    const times = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        const hh = h.toString().padStart(2, '0');
+        const mm = m.toString().padStart(2, '0');
+        const timeValue = `${hh}:${mm}`;
+        times.push({ value: timeValue, label: timeValue });
+      }
     }
-  }
+    return times;
+  }, []);
+  
   return (
-    <select value={value} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
-      {times.map(time => <option key={time} value={time}>{time}</option>)}
-    </select>
+    <CustomSelect
+      value={value}
+      onChange={onChange}
+      options={timeOptions}
+    />
   );
 };
 
@@ -54,6 +62,28 @@ const ShopInformation: React.FC = () => {
   // Availability
   const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+
+  // Booking Policies
+  const [minBookingNotice, setMinBookingNotice] = useState('4h');
+  const [maxBookingHorizon, setMaxBookingHorizon] = useState('12w');
+  const [acceptsOnSitePayment, setAcceptsOnSitePayment] = useState(true);
+  const [bookingFee, setBookingFee] = useState("20");
+
+  const noticeOptions = [
+    { value: '30m', label: t.notice_30_minutes }, { value: '1h', label: t.notice_1_hour },
+    { value: '2h', label: t.notice_2_hours }, { value: '4h', label: t.notice_4_hours },
+    { value: '8h', label: t.notice_8_hours }, { value: '12h', label: t.notice_12_hours },
+    { value: '1d', label: t.notice_1_day }, { value: '2d', label: t.notice_2_days },
+  ];
+  
+  const horizonOptions = [
+    { value: '1w', label: t.horizon_1_week }, { value: '2w', label: t.horizon_2_weeks },
+    { value: '4w', label: t.horizon_4_weeks }, { value: '8w', label: t.horizon_8_weeks },
+    { value: '12w', label: t.horizon_12_weeks }, { value: '24w', label: t.horizon_24_weeks },
+    { value: '52w', label: t.horizon_52_weeks },
+  ];
+  
+  const bookingFeeOptions = Array.from({ length: 11 }, (_, i) => ({ value: (i * 5).toString(), label: `${i * 5}€` }));
 
   const handleToggleDay = (day: string) => {
     setSchedule(prev => ({
@@ -128,7 +158,7 @@ const ShopInformation: React.FC = () => {
         </div>
         <div className="mb-6">
           <label className="block text-sm font-bold text-brand-dark mb-2">{t.businessType}</label>
-          <div className="flex space-x-4">
+          <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
             <label className="flex items-center p-4 border rounded-lg cursor-pointer flex-1">
               <input type="radio" name="businessType" value="local" checked={businessType === 'local'} onChange={() => setBusinessType('local')} className="h-4 w-4 text-brand-blue"/>
               <span className="ml-3 font-medium text-brand-dark">{t.localBusiness}</span>
@@ -172,6 +202,56 @@ const ShopInformation: React.FC = () => {
         )}
       </div>
 
+      <div className="bg-white p-8 rounded-lg shadow-md mb-8">
+        <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.bookingPolicies}</h3>
+        <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <label htmlFor="minBookingNotice" className="block text-sm font-bold text-brand-dark">{t.minBookingNotice}</label>
+                <p className="text-xs text-brand-gray mb-2">{t.minBookingNoticeSubtitle}</p>
+                <select id="minBookingNotice" value={minBookingNotice} onChange={(e) => setMinBookingNotice(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                    {noticeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+             <div>
+                <label htmlFor="maxBookingHorizon" className="block text-sm font-bold text-brand-dark">{t.maxBookingHorizon}</label>
+                <p className="text-xs text-brand-gray mb-2">{t.maxBookingHorizonSubtitle}</p>
+                <select id="maxBookingHorizon" value={maxBookingHorizon} onChange={(e) => setMaxBookingHorizon(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                    {horizonOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+            </div>
+            <div className="md:col-span-2 border-t pt-8">
+                 <label className="block text-sm font-bold text-brand-dark mb-2">{t.onSitePayment}</label>
+                 <label htmlFor="acceptsOnSitePayment" className="flex items-center mt-2 cursor-pointer">
+                    <div className="relative">
+                        <input id="acceptsOnSitePayment" type="checkbox" className="sr-only" checked={acceptsOnSitePayment} onChange={() => setAcceptsOnSitePayment(!acceptsOnSitePayment)} />
+                        <div className={`block w-14 h-8 rounded-full transition ${acceptsOnSitePayment ? 'bg-brand-blue' : 'bg-gray-300'}`}></div>
+                        <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${acceptsOnSitePayment ? 'transform translate-x-6' : ''}`}></div>
+                    </div>
+                    <span className="ml-4 text-brand-gray">{t.acceptOnSitePayments}</span>
+                 </label>
+            </div>
+            {acceptsOnSitePayment && (
+                 <div className="md:col-span-2">
+                    <label htmlFor="bookingFee" className="block text-sm font-bold text-brand-dark">{t.bookingFee}</label>
+                    <p className="text-xs text-brand-gray mb-2">{t.bookingFeeSubtitle}</p>
+                    <select
+                        id="bookingFee"
+                        value={bookingFee}
+                        onChange={(e) => setBookingFee(e.target.value)}
+                        className="w-full md:w-1/2 p-2 border border-gray-300 rounded-lg bg-white"
+                    >
+                        {bookingFeeOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                 </div>
+            )}
+        </div>
+      </div>
+
       <div className="bg-white p-8 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.businessHours}</h3>
         <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
@@ -194,9 +274,9 @@ const ShopInformation: React.FC = () => {
                         {schedule[day].timeframes.map((frame, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <span className="text-sm text-brand-gray">{t.from}</span>
-                                <TimePicker value={frame.from} onChange={e => handleTimeChange(day, index, 'from', e.target.value)} />
+                                <div className="flex-1"><TimePicker value={frame.from} onChange={value => handleTimeChange(day, index, 'from', value)} /></div>
                                 <span className="text-sm text-brand-gray">{t.to}</span>
-                                <TimePicker value={frame.to} onChange={e => handleTimeChange(day, index, 'to', e.target.value)} />
+                                <div className="flex-1"><TimePicker value={frame.to} onChange={value => handleTimeChange(day, index, 'to', value)} /></div>
                                 {schedule[day].timeframes.length > 0 && 
                                     <button onClick={() => handleRemoveTimeFrame(day, index)} className="text-gray-400 hover:text-red-500"><CloseIcon/></button>
                                 }
@@ -212,7 +292,9 @@ const ShopInformation: React.FC = () => {
       </div>
       
       <div className="mt-8 flex justify-end">
-        <button className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors">{t.saveChanges}</button>
+        <button className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+            {t.saveChanges}
+        </button>
       </div>
     </div>
   );

@@ -6,35 +6,35 @@ import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon } from '../Icons';
 
 interface DashboardHomeProps {
   onNavigate: (view: string) => void;
+  setupStatus: {
+    shopInfo: boolean;
+    availability: boolean;
+    catalog: boolean;
+  };
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   
-  // In a real app, this would come from the user's profile/shop data
-  const isShopInfoComplete = false; 
-  const isAvailabilityComplete = false;
-  const hasServices = false;
-
   const steps = [
     { 
       id: 'shop',
       title: t.setupShopInfo, 
       icon: <StorefrontIcon className="w-8 h-8 text-brand-blue" />, 
-      isComplete: isShopInfoComplete 
+      isComplete: setupStatus.shopInfo 
     },
     { 
       id: 'shop',
       title: t.setupAvailability, 
       icon: <ClockIcon className="w-8 h-8 text-brand-blue" />, 
-      isComplete: isAvailabilityComplete
+      isComplete: setupStatus.availability
     },
     { 
       id: 'catalog',
       title: t.addFirstService, 
       icon: <TagIcon className="w-8 h-8 text-brand-blue" />, 
-      isComplete: hasServices
+      isComplete: setupStatus.catalog
     },
   ];
 
@@ -58,20 +58,20 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             <button 
               key={step.id + index}
               onClick={() => onNavigate(step.id)}
-              className="bg-brand-light p-6 rounded-lg text-left hover:shadow-lg hover:border-brand-blue border border-gray-200 transition-all duration-300"
+              className="relative bg-brand-light p-6 rounded-lg text-left hover:shadow-lg hover:border-brand-blue border border-gray-200 transition-all duration-300"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
                     {step.icon}
                 </div>
-                {step.isComplete && (
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white">
-                    <CheckIcon className="w-4 h-4" />
-                  </div>
-                )}
               </div>
               <p className="text-brand-gray font-semibold text-sm">{t[stepLabels[index]]}</p>
               <h4 className="text-lg font-bold text-brand-dark mt-1">{step.title}</h4>
+               {step.isComplete && (
+                <div className="absolute bottom-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white shadow-lg">
+                  <CheckIcon className="w-5 h-5" />
+                </div>
+              )}
             </button>
           ))}
         </div>
