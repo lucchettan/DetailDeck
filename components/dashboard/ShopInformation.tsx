@@ -24,6 +24,22 @@ const initialSchedule: Schedule = {
 
 type ServiceArea = { id: number; city: string; country: string; range: number; };
 
+const TimePicker: React.FC<{ value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }> = ({ value, onChange }) => {
+  const times = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const hh = h.toString().padStart(2, '0');
+      const mm = m.toString().padStart(2, '0');
+      times.push(`${hh}:${mm}`);
+    }
+  }
+  return (
+    <select value={value} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+      {times.map(time => <option key={time} value={time}>{time}</option>)}
+    </select>
+  );
+};
+
 const ShopInformation: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -103,11 +119,11 @@ const ShopInformation: React.FC = () => {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-6">
             <div>
                 <label htmlFor="email" className="block text-sm font-bold text-brand-dark mb-2">{t.emailAddress}</label>
-                <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
             </div>
              <div>
                 <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-2">{t.phoneNumber}</label>
-                <input type="tel" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                <input type="tel" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
             </div>
         </div>
         <div className="mb-6">
@@ -126,16 +142,16 @@ const ShopInformation: React.FC = () => {
         {businessType === 'local' ? (
           <div>
             <label htmlFor="address" className="block text-sm font-bold text-brand-dark mb-2">{t.address}</label>
-            <input type="text" id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border"/>
+            <input type="text" id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 rounded-lg"/>
           </div>
         ) : (
           <div>
             <label className="block text-sm font-bold text-brand-dark mb-2">{t.serviceAreas}</label>
             <div className="space-y-4">
-              {serviceAreas.map((area, index) => (
+              {serviceAreas.map((area) => (
                 <div key={area.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                    <input type="text" placeholder="City" value={area.city} onChange={(e) => handleServiceAreaChange(area.id, 'city', e.target.value)} className="w-full p-2 border"/>
-                    <select value={area.country} onChange={(e) => handleServiceAreaChange(area.id, 'country', e.target.value)} className="w-full p-2 border bg-white">
+                    <input type="text" placeholder="City" value={area.city} onChange={(e) => handleServiceAreaChange(area.id, 'city', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg"/>
+                    <select value={area.country} onChange={(e) => handleServiceAreaChange(area.id, 'country', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
                         <option value="FR">France</option>
                         <option value="BE">Belgium</option>
                         <option value="CH">Switzerland</option>
@@ -143,7 +159,7 @@ const ShopInformation: React.FC = () => {
                     </select>
                     <div className="flex items-center gap-3">
                         <input type="range" min="5" max="100" value={area.range} onChange={(e) => handleServiceAreaChange(area.id, 'range', parseInt(e.target.value))} className="w-full"/>
-                        <span className="text-sm font-semibold text-brand-dark w-20 text-center">{area.range >= 100 ? '100km +' : `${area.range} km`}</span>
+                        <span className="text-sm font-semibold text-brand-dark w-24 text-center">{area.range >= 100 ? '> 100 km' : `${area.range} km`}</span>
                     </div>
                     <button onClick={() => removeServiceArea(area.id)} className="text-gray-400 hover:text-red-500 justify-self-end">
                         <CloseIcon />
@@ -178,9 +194,9 @@ const ShopInformation: React.FC = () => {
                         {schedule[day].timeframes.map((frame, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <span className="text-sm text-brand-gray">{t.from}</span>
-                                <input type="time" value={frame.from} onChange={e => handleTimeChange(day, index, 'from', e.target.value)} className="w-full p-2 border"/>
+                                <TimePicker value={frame.from} onChange={e => handleTimeChange(day, index, 'from', e.target.value)} />
                                 <span className="text-sm text-brand-gray">{t.to}</span>
-                                <input type="time" value={frame.to} onChange={e => handleTimeChange(day, index, 'to', e.target.value)} className="w-full p-2 border"/>
+                                <TimePicker value={frame.to} onChange={e => handleTimeChange(day, index, 'to', e.target.value)} />
                                 {schedule[day].timeframes.length > 0 && 
                                     <button onClick={() => handleRemoveTimeFrame(day, index)} className="text-gray-400 hover:text-red-500"><CloseIcon/></button>
                                 }

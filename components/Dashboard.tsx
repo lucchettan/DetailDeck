@@ -23,6 +23,7 @@ export interface Service {
   };
   singlePrice: { price?: string; duration?: string };
   addOns: { id: number; name: string; price: string; duration: string }[];
+  imageUrl?: string;
 }
 
 
@@ -40,7 +41,8 @@ const initialServices: Service[] = [
         XL: { price: '240', duration: '210', enabled: true },
     },
     singlePrice: { price: '150', duration: '120' },
-    addOns: []
+    addOns: [],
+    imageUrl: '',
   },
   { 
     id: '2', 
@@ -50,7 +52,8 @@ const initialServices: Service[] = [
     varies: false,
     pricing: {},
     singlePrice: { price: '120', duration: '90' },
-    addOns: []
+    addOns: [],
+    imageUrl: '',
   },
   { 
     id: '3', 
@@ -65,7 +68,8 @@ const initialServices: Service[] = [
         XL: { price: '800', duration: '480', enabled: false },
     },
     singlePrice: { price: '500', duration: '300' },
-    addOns: []
+    addOns: [],
+    imageUrl: '',
   },
 ];
 

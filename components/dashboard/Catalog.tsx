@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
-import { PlusIcon } from '../Icons';
+import { PlusIcon, ImageIcon } from '../Icons';
 
 interface CatalogProps {
   services: Service[];
@@ -47,19 +47,30 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService }) => {
           <div 
             key={service.id} 
             onClick={() => onEditService(service.id)}
-            className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:border-brand-blue border border-transparent transition-all duration-300 cursor-pointer flex flex-col"
+            className="bg-white rounded-lg shadow-md hover:shadow-xl hover:border-brand-blue border border-transparent transition-all duration-300 cursor-pointer flex flex-col overflow-hidden"
           >
-            <div className="flex-grow">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-brand-dark pr-2">{service.name}</h3>
-                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {t[service.status as 'active' | 'inactive']}
-                </span>
-              </div>
-              <p className="text-brand-gray mt-2 text-sm min-h-[40px]">{service.description}</p>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-xl font-bold text-brand-dark">{getPriceDisplay(service)}</p>
+            {service.imageUrl ? (
+                <div className="h-40 w-full">
+                    <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover"/>
+                </div>
+            ) : (
+                <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-300" />
+                </div>
+            )}
+            <div className="p-6 flex flex-col flex-grow">
+                <div className="flex-grow">
+                <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-bold text-brand-dark pr-2">{service.name}</h3>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {t[service.status as 'active' | 'inactive']}
+                    </span>
+                </div>
+                <p className="text-brand-gray mt-2 text-sm min-h-[40px]">{service.description}</p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xl font-bold text-brand-dark">{getPriceDisplay(service)}</p>
+                </div>
             </div>
           </div>
         ))}

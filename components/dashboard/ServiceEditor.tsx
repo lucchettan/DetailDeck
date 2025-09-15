@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon } from '../Icons';
+import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon } from '../Icons';
 import { Service } from '../Dashboard';
 
 interface ServiceEditorProps {
@@ -22,15 +22,37 @@ const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id
     status: 'active',
     varies: true,
     pricing: {
-      S: { price: '', duration: '', enabled: true },
-      M: { price: '', duration: '', enabled: true },
+      S: { price: '150', duration: '120', enabled: true },
+      M: { price: '180', duration: '150', enabled: true },
       L: { price: '', duration: '', enabled: false },
       XL: { price: '', duration: '', enabled: false },
     },
-    singlePrice: { price: '', duration: '' },
+    singlePrice: { price: '120', duration: '90' },
     addOns: [],
+    imageUrl: '',
   };
 };
+
+const DurationPicker: React.FC<{value?: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void, disabled?: boolean, className?: string}> = ({ value, onChange, disabled, className }) => {
+    const options = [];
+    for (let minutes = 15; minutes <= 360; minutes += 15) {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        let label = '';
+        if (h > 0) label += `${h}h`;
+        if (m > 0) {
+            if (h > 0) label += ' ';
+            label += `${m}min`;
+        }
+        options.push({ value: minutes.toString(), label: label || '0' });
+    }
+    return (
+        <select value={value} onChange={onChange} disabled={disabled} className={className}>
+            <option value="">--</option>
+            {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+    );
+}
 
 const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, onDelete }) => {
   const { t } = useLanguage();
@@ -73,21 +95,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
     setFormData(prev => ({ ...prev, singlePrice: { ...prev.singlePrice, [field]: value } }));
   }
 
-  const handleAddOnChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const newAddOns = [...formData.addOns];
-    newAddOns[index] = {...newAddOns[index], [name]: value};
-    setFormData(prev => ({...prev, addOns: newAddOns}));
-  }
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData(prev => ({ ...prev, imageUrl: event.target?.result as string }));
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
 
-  const addNewAddOn = () => {
-      setFormData(prev => ({...prev, addOns: [...prev.addOns, {id: Date.now(), name: '', price: '', duration: ''}]}));
-  }
-
-  const removeAddOn = (index: number) => {
-    setFormData(prev => ({...prev, addOns: prev.addOns.filter((_, i) => i !== index)}));
-  }
-  
   const handleDelete = () => {
     if (service && window.confirm(t.deleteServiceConfirmation)) {
       onDelete(service.id);
@@ -109,15 +126,33 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
       </div>
 
       <div className="bg-white p-8 rounded-lg shadow-md">
+        {/* Image Upload */}
+        <div className="mb-8">
+            <label className="block text-sm font-bold text-brand-dark mb-2">{t.serviceImage} (Optional)</label>
+            <div className="mt-1 flex items-center">
+                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {formData.imageUrl ? (
+                        <img src={formData.imageUrl} alt={t.serviceName} className="w-full h-full object-cover"/>
+                    ) : (
+                        <ImageIcon className="w-10 h-10 text-gray-400" />
+                    )}
+                </div>
+                <label htmlFor="file-upload" className="cursor-pointer ml-5 bg-white py-2 px-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-brand-dark hover:bg-gray-50 transition">
+                    <span>{formData.imageUrl ? t.changeImage : t.uploadImage}</span>
+                    <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*"/>
+                </label>
+            </div>
+        </div>
+
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceName}</label>
-            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-md" required />
+            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-lg" required />
           </div>
           <div>
             <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceStatus}</label>
-            <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md bg-white">
+            <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
               <option value="active">{t.active}</option>
               <option value="inactive">{t.inactive}</option>
             </select>
@@ -125,7 +160,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
         </div>
         <div className="mb-8">
           <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceDescription}</label>
-          <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border border-gray-300 rounded-md"></textarea>
+          <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border border-gray-300 rounded-lg"></textarea>
         </div>
         
         {/* Pricing */}
@@ -133,54 +168,55 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.pricingAndDuration}</h3>
             <div className="flex items-center mb-4">
                  <label className="flex items-center cursor-pointer">
-                  <div className="relative">
-                    <input type="checkbox" className="sr-only" checked={formData.varies} onChange={() => setFormData({...formData, varies: !formData.varies})} />
-                    <div className={`block w-14 h-8 rounded-full transition ${formData.varies ? 'bg-brand-blue' : 'bg-gray-300'}`}></div>
-                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${formData.varies ? 'transform translate-x-6' : ''}`}></div>
-                  </div>
-                  <span className="ml-4 font-semibold text-brand-dark">{t.priceDurationVaries}</span>
+                    <input type="checkbox" className="h-4 w-4 rounded text-brand-blue border-gray-300 focus:ring-brand-blue" checked={formData.varies} onChange={() => setFormData({...formData, varies: !formData.varies})} />
+                    <span className="ml-3 font-semibold text-brand-dark">{t.priceDurationVaries}</span>
                 </label>
             </div>
             {formData.varies ? (
                 <div className="space-y-4">
                     {vehicleSizes.map(size => (
-                        <div key={size} className={`grid grid-cols-1 sm:grid-cols-4 gap-4 items-center p-2 rounded-md transition-opacity ${formData.pricing[size]?.enabled ? 'opacity-100' : 'opacity-50 bg-gray-50'}`}>
-                            <label className="font-semibold text-sm flex items-center">
-                               <input type="checkbox" checked={!!formData.pricing[size]?.enabled} onChange={() => toggleSizeEnabled(size)} className="h-4 w-4 text-brand-blue border-gray-300 rounded focus:ring-brand-blue mr-3"/>
-                               {t[`size_${size}`]}
+                        <div key={size} className={`grid grid-cols-1 sm:grid-cols-3 gap-4 items-center p-4 rounded-lg transition-all ${!formData.pricing[size]?.enabled ? 'bg-gray-50 opacity-60' : ''}`}>
+                            <label className="font-semibold text-sm flex items-center cursor-pointer">
+                                <div className="relative">
+                                    <input type="checkbox" className="sr-only" checked={!!formData.pricing[size]?.enabled} onChange={() => toggleSizeEnabled(size)} />
+                                    <div className={`block w-12 h-7 rounded-full transition ${formData.pricing[size]?.enabled ? 'bg-brand-blue' : 'bg-gray-300'}`}></div>
+                                    <div className={`dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform ${formData.pricing[size]?.enabled ? 'transform translate-x-5' : ''}`}></div>
+                                </div>
+                               <span className="ml-4">{t[`size_${size}`]}</span>
                             </label>
-                            <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-100" />
-                            <input type="number" placeholder={t.duration} value={formData.pricing[size]?.duration || ''} onChange={(e) => handlePricingChange(size, 'duration', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-100" />
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <MoneyIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border border-gray-300 rounded-lg disabled:bg-gray-100" />
+                            </div>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <HourglassIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <DurationPicker value={formData.pricing[size]?.duration} onChange={(e) => handlePricingChange(size, 'duration', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border border-gray-300 rounded-lg disabled:bg-gray-100 bg-white" />
+                            </div>
                         </div>
                     ))}
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-4 max-w-sm">
-                    <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
-                    <input type="number" placeholder={t.duration} value={formData.singlePrice?.duration || ''} onChange={(e) => handleSinglePriceChange('duration', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <MoneyIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <HourglassIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <DurationPicker value={formData.singlePrice?.duration} onChange={(e) => handleSinglePriceChange('duration', e.target.value)} className="w-full p-2 pl-10 border border-gray-300 rounded-lg bg-white" />
+                    </div>
                 </div>
             )}
         </div>
         
-        {/* Add-ons */}
-        <div className="border-t pt-6 mb-8">
-            <h3 className="text-lg font-bold text-brand-dark mb-1">{t.addOns}</h3>
-            <p className="text-brand-gray text-sm mb-4">{t.addOnsSubtitle}</p>
-            <div className="space-y-4">
-                {formData.addOns.map((addOn, index) => (
-                     <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        <input type="text" name="name" value={addOn.name} onChange={e => handleAddOnChange(index, e)} placeholder={t.addOnName} className="md:col-span-2 w-full p-2 border border-gray-300 rounded-md" />
-                        <input type="number" name="price" value={addOn.price} onChange={e => handleAddOnChange(index, e)} placeholder={t.price} className="w-full p-2 border border-gray-300 rounded-md" />
-                        <div className="flex items-center gap-2">
-                             <input type="number" name="duration" value={addOn.duration} onChange={e => handleAddOnChange(index, e)} placeholder={t.duration} className="w-full p-2 border border-gray-300 rounded-md" />
-                             <button type="button" onClick={() => removeAddOn(index)} className="text-gray-400 hover:text-red-500"><CloseIcon/></button>
-                        </div>
-                     </div>
-                ))}
-            </div>
-             <button type="button" onClick={addNewAddOn} className="mt-4 text-sm text-brand-blue font-semibold hover:underline">+ {t.newAddOn}</button>
-        </div>
-
         <div className="mt-8 flex justify-end">
           <button type="button" onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">
             {t.cancel}
