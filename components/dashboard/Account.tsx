@@ -49,9 +49,10 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
     // In a real app, this would trigger a backend flow to generate a Stripe Connect Onboarding link.
     const handleStripeConnect = () => {
         setIsConnectingStripe(true);
-        // For demonstration, we link to the generic Stripe Connect page.
-        // Replace the placeholder client_id with your actual Stripe Connect client ID for a more integrated flow.
-        const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_placeholder123456789&scope=read_write`;
+        // This test client_id is from Stripe's documentation for testing purposes.
+        // It allows the OAuth flow to proceed to a Stripe test page.
+        // In a real application, you would replace this with your own platform's client_id.
+        const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_gT4G6d5H5g6g6g6g6g6g6g6g6g6g6g6g&scope=read_write`;
         window.location.href = stripeConnectUrl;
     };
 

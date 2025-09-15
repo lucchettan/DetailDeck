@@ -18,6 +18,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { trackEvent } from './lib/analytics';
 import BookingPage from './components/BookingPage';
+import Benefits from './components/Benefits';
 
 // This is a central type used across payment flows.
 export type SelectedPlanId = 'solo' | 'lifetime';
@@ -107,6 +108,7 @@ const AppContent: React.FC = () => {
           onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
           onWaitingListClick={() => setIsWaitingListModalOpen(true)}
         />
+        <Benefits />
         <HowItWorks />
         <Features />
         <Pricing onChoosePlan={handleChoosePlan} />

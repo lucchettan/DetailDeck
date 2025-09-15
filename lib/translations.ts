@@ -31,6 +31,10 @@ export const translations = {
     launchingSoon: 'Available November 1st!',
     getEarlyAccess: 'Pre-order Promotion',
     joinWaitingList: 'Learn More!',
+    // Benefits
+    benefit1: 'Showcase Your Craft',
+    benefit2: 'Let Clients Book Online, 24/7',
+    benefit3: 'Save Time with a Smart Schedule',
     // Modals General
     closeModal: 'Close modal',
     // Waiting List Modal
@@ -340,6 +344,10 @@ export const translations = {
     launchingSoon: 'Disponible le 1er Novembre !',
     getEarlyAccess: 'Promotion pour les pré-commandes',
     joinWaitingList: 'En savoir plus !',
+    // Benefits
+    benefit1: 'Mettez en valeur votre savoir-faire',
+    benefit2: 'Laissez vos clients réserver en ligne, 24/7',
+    benefit3: 'Gagnez du temps avec un planning intelligent',
     // Modals General
     closeModal: 'Fermer la modale',
     // Waiting List Modal
@@ -649,6 +657,10 @@ export const translations = {
     launchingSoon: '¡Disponible el 1 de Noviembre!',
     getEarlyAccess: 'Promoción de pre-pedido',
     joinWaitingList: '¡Saber más!',
+    // Benefits
+    benefit1: 'Demuestra tu profesionalidad',
+    benefit2: 'Deja que tus clientes reserven en línea, 24/7',
+    benefit3: 'Ahorra tiempo con un calendario inteligente',
     // Modals General
     closeModal: 'Cerrar modal',
     // Waiting List Modal

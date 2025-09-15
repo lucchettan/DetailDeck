@@ -180,3 +180,24 @@ export const CalendarPlusIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' })
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
+
+// New icons for Benefits section
+export const CustomServicesIcon: React.FC<IconProps> = ({ className = 'w-8 h-8' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L9.75 3.104zM16.5 15.75l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L16.5 15.75zM4.5 9.75l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L4.5 9.75z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 3.104l1.12 2.242 2.242 1.12-2.242 1.12-1.12 2.242-1.12-2.242-2.242-1.12 2.242-1.12 1.12-2.242z" />
+    </svg>
+);
+
+export const AutomatedBookingIcon: React.FC<IconProps> = ({ className = 'w-8 h-8' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 16l2 2 4-4" />
+    </svg>
+);
+
+export const ManagedCalendarIcon: React.FC<IconProps> = ({ className = 'w-8 h-8' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+);
