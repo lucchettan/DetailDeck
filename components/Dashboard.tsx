@@ -165,16 +165,16 @@ const Dashboard: React.FC = () => {
             await fetchData();
 
         } catch (error: any) {
-            console.error("Error finalizing Stripe connection:", error);
-            
             let userMessage = "An unknown error occurred while connecting your Stripe account. Please try again or contact support.";
             let errorBodyJson = null;
 
+            // Attempt to parse the error response from the backend function
             if (error.context) {
                 try {
                     errorBodyJson = await error.context.json();
                     if (errorBodyJson?.error === 'User not found') {
-                        userMessage = "We couldn't find a shop profile associated with your account. This can happen if your shop information wasn't fully saved before starting the connection process. Please go to the 'Shop Information' tab, ensure all details are saved, and then try connecting to Stripe again.";
+                        // This specific error indicates an RLS policy is likely blocking the backend function.
+                        userMessage = "Stripe Connection Failed: The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions. Please try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
                     }
                 } catch(e) {
                     console.error("Could not parse Stripe error response JSON.", e);
@@ -182,14 +182,17 @@ const Dashboard: React.FC = () => {
             }
             
             // For developers, log the full context for easier debugging
-            console.error("Stripe Connection Debug Info:", {
-                sessionUserId: session?.user?.id,
-                errorContext: error.context,
-                parsedErrorBody: errorBodyJson,
-                rawErrorMessage: error.message
-            });
+            const debugInfo = {
+                '--- Frontend Info ---': '',
+                'User ID from Session': session?.user?.id,
+                '\n--- Backend Response ---': '',
+                'Message': error.message,
+                'Function Response': errorBodyJson || 'Could not parse JSON response.'
+            };
+            console.error("Stripe Connection Debug Info:", debugInfo);
             
-            alert(`Stripe Connection Failed\n\n${userMessage}`);
+            // Show the user a clean, actionable message.
+            alert(userMessage);
             
         } finally {
             window.history.replaceState(null, '', window.location.pathname);
