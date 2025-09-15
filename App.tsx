@@ -84,7 +84,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  const reservationMatch = path.match(/^\/reservation\/(\w+)/);
+  const reservationMatch = path.match(/^\/reservation\/([0-9a-fA-F\-]+)/);
   if (reservationMatch) {
     const shopId = reservationMatch[1];
     // In a real app, you might want a different layout for the booking page (e.g., no main header/footer)

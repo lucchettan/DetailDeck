@@ -16,6 +16,7 @@ interface AuthContextType {
   demoLogin: () => Promise<{ session: Session | null, error: AuthError | null }>;
   resendSignUpConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
   resetPasswordForEmail: (email: string) => Promise<{ error: AuthError | null }>;
+  updateUserPassword: (password: string) => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -159,6 +160,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     return { error };
   };
+  
+  const updateUserPassword = async (password: string) => {
+    if (IS_MOCK_MODE) {
+      console.log(`%c[Auth MOCK]%c updateUserPassword called.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      return { error: null };
+    }
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  };
+
 
   const value = {
     session,
@@ -170,6 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     demoLogin,
     resendSignUpConfirmation,
     resetPasswordForEmail,
+    updateUserPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

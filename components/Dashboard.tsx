@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon } from './Icons';
+import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon, UserCircleIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import ShopInformation from './dashboard/ShopInformation';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
 import Reservations from './dashboard/Reservations';
 import Analytics from './dashboard/Analytics';
+import Account from './dashboard/Account';
 import { supabase } from '../lib/supabaseClient';
 
-type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
+type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics' | 'account';
 
 export interface Service {
   id: string;
@@ -43,6 +44,8 @@ export interface Shop {
     maxBookingHorizon: string;
     acceptsOnSitePayment: boolean;
     bookingFee: string;
+    stripe_account_id?: string;
+    stripe_account_enabled?: boolean;
 }
 
 
@@ -182,6 +185,7 @@ const Dashboard: React.FC = () => {
     { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
+    { id: 'account', label: t.account, icon: <UserCircleIcon className="w-6 h-6" /> },
   ];
 
   const renderContent = () => {
@@ -212,6 +216,8 @@ const Dashboard: React.FC = () => {
         return <Reservations />;
       case 'analytics':
         return <Analytics />;
+      case 'account':
+        return <Account shopData={shopData} />;
       default:
         return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
     }
