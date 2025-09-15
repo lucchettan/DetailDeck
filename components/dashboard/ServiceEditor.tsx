@@ -20,7 +20,7 @@ const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id
     name: '',
     description: '',
     status: 'active',
-    varies: true,
+    varies: false,
     pricing: {
       S: { price: '150', duration: '120', enabled: true },
       M: { price: '180', duration: '150', enabled: true },
