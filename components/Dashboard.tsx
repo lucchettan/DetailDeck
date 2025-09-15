@@ -5,19 +5,97 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { StorefrontIcon, ClockIcon, TagIcon, CalendarDaysIcon, ListBulletIcon, ChartPieIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import ShopInformation from './dashboard/ShopInformation';
-import Availability from './dashboard/Availability';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
 import Reservations from './dashboard/Reservations';
 import Analytics from './dashboard/Analytics';
 
-type ViewType = 'home' | 'shop' | 'availability' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
+type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
+
+export interface Service {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'inactive';
+  varies: boolean;
+  pricing: {
+    [key: string]: { price?: string; duration?: string; enabled?: boolean; };
+  };
+  singlePrice: { price?: string; duration?: string };
+  addOns: { id: number; name: string; price: string; duration: string }[];
+}
+
+
+const initialServices: Service[] = [
+  { 
+    id: '1', 
+    name: 'Premium Interior Cleaning', 
+    description: 'Deep clean of all interior surfaces.', 
+    status: 'active', 
+    varies: true,
+    pricing: {
+        S: { price: '150', duration: '120', enabled: true },
+        M: { price: '180', duration: '150', enabled: true },
+        L: { price: '210', duration: '180', enabled: true },
+        XL: { price: '240', duration: '210', enabled: true },
+    },
+    singlePrice: { price: '150', duration: '120' },
+    addOns: []
+  },
+  { 
+    id: '2', 
+    name: 'Exterior Wash & Wax', 
+    description: 'Hand wash, clay bar, and wax.', 
+    status: 'active', 
+    varies: false,
+    pricing: {},
+    singlePrice: { price: '120', duration: '90' },
+    addOns: []
+  },
+  { 
+    id: '3', 
+    name: 'Ceramic Coating Prep', 
+    description: 'Full paint correction for coating application.', 
+    status: 'inactive', 
+    varies: true,
+    pricing: {
+        S: { price: '500', duration: '300', enabled: true },
+        M: { price: '600', duration: '360', enabled: true },
+        L: { price: '700', duration: '420', enabled: false },
+        XL: { price: '800', duration: '480', enabled: false },
+    },
+    singlePrice: { price: '500', duration: '300' },
+    addOns: []
+  },
+];
+
 
 const Dashboard: React.FC = () => {
   const { user, logOut } = useAuth();
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [services, setServices] = useState<Service[]>(initialServices);
+
+  const handleSaveService = (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
+    if (serviceToSave.id) {
+      // Update existing service
+      setServices(services.map(s => s.id === serviceToSave.id ? { ...s, ...serviceToSave } as Service : s));
+    } else {
+      // Create new service
+      const newService: Service = {
+        ...serviceToSave,
+        id: Date.now().toString(),
+      };
+      setServices([...services, newService]);
+    }
+    setActiveView('catalog');
+  };
+
+  const handleDeleteService = (serviceId: string) => {
+    setServices(services.filter(s => s.id !== serviceId));
+    setActiveView('catalog');
+  };
 
   const navigateToServiceEditor = (serviceId: string | null) => {
     setEditingServiceId(serviceId);
@@ -27,7 +105,6 @@ const Dashboard: React.FC = () => {
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
     { id: 'shop', label: t.shopInformation, icon: <StorefrontIcon className="w-6 h-6" /> },
-    { id: 'availability', label: t.availability, icon: <ClockIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
@@ -39,12 +116,16 @@ const Dashboard: React.FC = () => {
         return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} />;
       case 'shop':
         return <ShopInformation />;
-      case 'availability':
-        return <Availability />;
       case 'catalog':
-        return <Catalog onEditService={navigateToServiceEditor} />;
+        return <Catalog services={services} onEditService={navigateToServiceEditor} />;
       case 'serviceEditor':
-        return <ServiceEditor serviceId={editingServiceId} onBack={() => setActiveView('catalog')} />;
+        const service = editingServiceId ? services.find(s => s.id === editingServiceId) : null;
+        return <ServiceEditor 
+                 service={service} 
+                 onBack={() => setActiveView('catalog')} 
+                 onSave={handleSaveService}
+                 onDelete={handleDeleteService}
+               />;
       case 'reservations':
         return <Reservations />;
       case 'analytics':

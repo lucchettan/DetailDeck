@@ -1,52 +1,79 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon } from '../Icons';
+import { Service } from '../Dashboard';
 
 interface ServiceEditorProps {
-  serviceId: string | null;
+  service: Service | null;
   onBack: () => void;
+  onSave: (service: Omit<Service, 'id'> & { id?: string }) => void;
+  onDelete: (serviceId: string) => void;
 }
 
-// FIX: Use 'as const' to create a readonly tuple with literal types.
-// This helps TypeScript infer a more specific type for `size` in the map function,
-// which resolves the issue of `t[...]` being inferred as a broad, un-renderable type.
 const vehicleSizes = ['S', 'M', 'L', 'XL'] as const;
 
-const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
-  const { t } = useLanguage();
-  const isEditing = serviceId !== null;
+const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id?: string } => {
+  if (service) return { ...service };
 
-  // Mock data fetching for editing
-  // In a real app, this would be a `useEffect` hook fetching from the backend
-  const initialData = isEditing ? {
-    name: 'Premium Interior Cleaning',
-    description: 'Deep clean of all interior surfaces, including shampooing carpets and leather conditioning.',
+  return {
+    name: '',
+    description: '',
     status: 'active',
     varies: true,
     pricing: {
-        S: { price: '150', duration: '120' },
-        M: { price: '180', duration: '150' },
-        L: { price: '210', duration: '180' },
-        XL: { price: '240', duration: '210' },
+      S: { price: '', duration: '', enabled: true },
+      M: { price: '', duration: '', enabled: true },
+      L: { price: '', duration: '', enabled: false },
+      XL: { price: '', duration: '', enabled: false },
     },
     singlePrice: { price: '', duration: '' },
-    addOns: [ {id: 1, name: 'Ozone Treatment', price: '50', duration: '30'} ]
-  } : {
-    name: '', description: '', status: 'active', varies: false,
-    pricing: { S: {}, M: {}, L: {}, XL: {} },
-    singlePrice: { price: '', duration: '' },
-    addOns: []
+    addOns: [],
+  };
+};
+
+const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, onDelete }) => {
+  const { t } = useLanguage();
+  const isEditing = service !== null;
+  const [formData, setFormData] = useState(getInitialFormData(service));
+
+  useEffect(() => {
+    setFormData(getInitialFormData(service));
+  }, [service]);
+
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
+    setFormData(prev => ({ ...prev, [name]: checked !== undefined ? checked : value }));
   };
 
-  const [formData, setFormData] = useState(initialData);
+  const handlePricingChange = (size: 'S'|'M'|'L'|'XL', field: 'price'|'duration', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        [size]: { ...prev.pricing[size], [field]: value }
+      }
+    }));
+  }
+  
+  const toggleSizeEnabled = (size: 'S'|'M'|'L'|'XL') => {
+    setFormData(prev => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        [size]: { ...prev.pricing[size], enabled: !prev.pricing[size]?.enabled }
+      }
+    }));
+  }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleSinglePriceChange = (field: 'price'|'duration', value: string) => {
+    setFormData(prev => ({ ...prev, singlePrice: { ...prev.singlePrice, [field]: value } }));
+  }
 
-  const handleAddOnchange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddOnChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const newAddOns = [...formData.addOns];
     newAddOns[index] = {...newAddOns[index], [name]: value};
@@ -62,19 +89,23 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
   }
   
   const handleDelete = () => {
-    if (window.confirm(t.deleteServiceConfirmation)) {
-      console.log("Deleting service...");
-      onBack();
+    if (service && window.confirm(t.deleteServiceConfirmation)) {
+      onDelete(service.id);
     }
   }
 
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  }
+
   return (
-    <div>
+    <form onSubmit={handleSave}>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-brand-dark">{isEditing ? t.editService : t.createService}</h2>
+          <h2 className="text-2xl font-bold text-brand-dark">{isEditing ? t.editService : t.addNewService}</h2>
         </div>
-        <button onClick={onBack} className="text-brand-gray hover:text-brand-dark">&larr; {t.catalog}</button>
+        <button type="button" onClick={onBack} className="text-brand-gray hover:text-brand-dark">&larr; {t.catalog}</button>
       </div>
 
       <div className="bg-white p-8 rounded-lg shadow-md">
@@ -82,11 +113,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceName}</label>
-            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-md" />
+            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-md" required />
           </div>
           <div>
             <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceStatus}</label>
-            <select name="status" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full p-2 border border-gray-300 rounded-md bg-white">
+            <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md bg-white">
               <option value="active">{t.active}</option>
               <option value="inactive">{t.inactive}</option>
             </select>
@@ -113,17 +144,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
             {formData.varies ? (
                 <div className="space-y-4">
                     {vehicleSizes.map(size => (
-                        <div key={size} className="grid grid-cols-3 gap-4 items-center">
-                            <label className="font-semibold text-sm">{t[`size_${size}`]}</label>
-                            <input type="number" placeholder={t.price} className="w-full p-2 border border-gray-300 rounded-md" />
-                            <input type="number" placeholder={t.duration} className="w-full p-2 border border-gray-300 rounded-md" />
+                        <div key={size} className={`grid grid-cols-1 sm:grid-cols-4 gap-4 items-center p-2 rounded-md transition-opacity ${formData.pricing[size]?.enabled ? 'opacity-100' : 'opacity-50 bg-gray-50'}`}>
+                            <label className="font-semibold text-sm flex items-center">
+                               <input type="checkbox" checked={!!formData.pricing[size]?.enabled} onChange={() => toggleSizeEnabled(size)} className="h-4 w-4 text-brand-blue border-gray-300 rounded focus:ring-brand-blue mr-3"/>
+                               {t[`size_${size}`]}
+                            </label>
+                            <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-100" />
+                            <input type="number" placeholder={t.duration} value={formData.pricing[size]?.duration || ''} onChange={(e) => handlePricingChange(size, 'duration', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-100" />
                         </div>
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-4">
-                    <input type="number" placeholder={t.price} className="w-full p-2 border border-gray-300 rounded-md" />
-                    <input type="number" placeholder={t.duration} className="w-full p-2 border border-gray-300 rounded-md" />
+                <div className="grid grid-cols-2 gap-4 max-w-sm">
+                    <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                    <input type="number" placeholder={t.duration} value={formData.singlePrice?.duration || ''} onChange={(e) => handleSinglePriceChange('duration', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
                 </div>
             )}
         </div>
@@ -135,23 +169,23 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
             <div className="space-y-4">
                 {formData.addOns.map((addOn, index) => (
                      <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        <input type="text" name="name" value={addOn.name} onChange={e => handleAddOnchange(index, e)} placeholder={t.addOnName} className="md:col-span-2 w-full p-2 border border-gray-300 rounded-md" />
-                        <input type="number" name="price" value={addOn.price} onChange={e => handleAddOnchange(index, e)} placeholder={t.price} className="w-full p-2 border border-gray-300 rounded-md" />
+                        <input type="text" name="name" value={addOn.name} onChange={e => handleAddOnChange(index, e)} placeholder={t.addOnName} className="md:col-span-2 w-full p-2 border border-gray-300 rounded-md" />
+                        <input type="number" name="price" value={addOn.price} onChange={e => handleAddOnChange(index, e)} placeholder={t.price} className="w-full p-2 border border-gray-300 rounded-md" />
                         <div className="flex items-center gap-2">
-                             <input type="number" name="duration" value={addOn.duration} onChange={e => handleAddOnchange(index, e)} placeholder={t.duration} className="w-full p-2 border border-gray-300 rounded-md" />
-                             <button onClick={() => removeAddOn(index)} className="text-gray-400 hover:text-red-500"><CloseIcon/></button>
+                             <input type="number" name="duration" value={addOn.duration} onChange={e => handleAddOnChange(index, e)} placeholder={t.duration} className="w-full p-2 border border-gray-300 rounded-md" />
+                             <button type="button" onClick={() => removeAddOn(index)} className="text-gray-400 hover:text-red-500"><CloseIcon/></button>
                         </div>
                      </div>
                 ))}
             </div>
-             <button onClick={addNewAddOn} className="mt-4 text-sm text-brand-blue font-semibold hover:underline">+ {t.newAddOn}</button>
+             <button type="button" onClick={addNewAddOn} className="mt-4 text-sm text-brand-blue font-semibold hover:underline">+ {t.newAddOn}</button>
         </div>
 
         <div className="mt-8 flex justify-end">
-          <button onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">
+          <button type="button" onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">
             {t.cancel}
           </button>
-          <button className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">
+          <button type="submit" className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">
             {isEditing ? t.saveChanges : t.createService}
           </button>
         </div>
@@ -161,15 +195,15 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onBack }) => {
         <div className="mt-10 border-t-2 border-red-300 pt-6">
             <h3 className="text-lg font-bold text-red-700">{t.dangerZone}</h3>
             <div className="mt-4 bg-red-50 p-4 rounded-lg flex justify-between items-center">
-                <p className="text-red-800 text-sm">{t.deleteServiceConfirmation}</p>
-                <button onClick={handleDelete} className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                <p className="text-red-800 text-sm max-w-md">{t.deleteServiceConfirmation}</p>
+                <button type="button" onClick={handleDelete} className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex-shrink-0">
                     {t.deleteService}
                 </button>
             </div>
         </div>
       )}
 
-    </div>
+    </form>
   );
 };
 

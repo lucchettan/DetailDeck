@@ -25,7 +25,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
       isComplete: isShopInfoComplete 
     },
     { 
-      id: 'availability',
+      id: 'shop',
       title: t.setupAvailability, 
       icon: <ClockIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: isAvailabilityComplete
@@ -56,7 +56,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {steps.map((step, index) => (
             <button 
-              key={step.id}
+              key={step.id + index}
               onClick={() => onNavigate(step.id)}
               className="bg-brand-light p-6 rounded-lg text-left hover:shadow-lg hover:border-brand-blue border border-gray-200 transition-all duration-300"
             >

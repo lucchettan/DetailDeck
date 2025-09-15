@@ -104,3 +104,9 @@ export const ChartPieIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => 
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
     </svg>
 );
+
+export const PlusIcon: React.FC<IconProps> = ({ className = 'w-8 h-8' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+);
