@@ -148,8 +148,6 @@ const Dashboard: React.FC = () => {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
         try {
-            // FIX: Explicitly pass the Authorization header to ensure the Edge Function
-            // can identify the user correctly, even after a redirect.
             const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
@@ -161,7 +159,6 @@ const Dashboard: React.FC = () => {
                 throw functionError;
             }
             if (data?.error) {
-                // If the function returns a 200 but has an error in the body
                 throw new Error(data.error);
             }
             
@@ -169,16 +166,29 @@ const Dashboard: React.FC = () => {
 
         } catch (error: any) {
             console.error("Error finalizing Stripe connection:", error);
-            let detailedError = `Message: ${error.message}`;
+            
+            const frontendDebugInfo = `
+--- Frontend Info ---
+User ID from Session: ${session?.user?.id || 'Not available'}
+Access Token (partial): ${session?.access_token ? `${session.access_token.substring(0, 8)}...${session.access_token.substring(session.access_token.length - 8)}` : 'Not available'}
+            `;
+            
+            let backendDebugInfo = "\n--- Backend Response ---";
             if (error.context) {
                 try {
                     const errorBody = await error.context.json();
-                    detailedError += `\n\nFunction Response: ${JSON.stringify(errorBody, null, 2)}`;
+                    backendDebugInfo += `\nMessage: ${error.message}\nFunction Response: ${JSON.stringify(errorBody, null, 2)}`;
                 } catch(e) {
-                    detailedError += `\n\nRaw Context: Could not parse JSON.`;
+                    backendDebugInfo += `\nRaw Context: Could not parse JSON. Message: ${error.message}`;
                 }
+            } else {
+                backendDebugInfo += `\nMessage: ${error.message}`;
             }
+
+            const detailedError = `${frontendDebugInfo}${backendDebugInfo}`;
+            
             alert(`Error finalizing Stripe connection:\n${detailedError}`);
+            
         } finally {
             window.history.replaceState(null, '', window.location.pathname);
             setIsFinalizingStripe(false);
@@ -202,6 +212,7 @@ const Dashboard: React.FC = () => {
         return false;
     };
     
+    // Manual mapping from camelCase (app) to snake_case (db)
     const servicePayload = {
       id: serviceToSave.id,
       shop_id: shopData.id,
@@ -265,6 +276,7 @@ const Dashboard: React.FC = () => {
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
      
+    // Manual mapping from camelCase (app) to snake_case (db)
     const payload = {
       name: updatedShopData.name,
       phone: updatedShopData.phone,
@@ -282,6 +294,7 @@ const Dashboard: React.FC = () => {
       stripe_account_enabled: updatedShopData.stripeAccountEnabled,
     };
 
+    // Remove undefined keys to avoid sending them to Supabase
     Object.keys(payload).forEach(key => {
         if ((payload as any)[key] === undefined) {
             delete (payload as any)[key];
@@ -289,6 +302,7 @@ const Dashboard: React.FC = () => {
     });
 
      if (shopData) {
+        // Update existing shop
         const { data, error } = await supabase
             .from('shops')
             .update(payload)
@@ -305,6 +319,7 @@ const Dashboard: React.FC = () => {
             setShopData(toCamelCase(data) as Shop);
         }
      } else {
+        // Create new shop
         const { data, error } = await supabase
             .from('shops')
             .insert({ ...payload, owner_id: user.id })
@@ -328,7 +343,7 @@ const Dashboard: React.FC = () => {
         stripeAccountId: null,
         stripeAccountEnabled: false,
       });
-      await fetchData(); // Refresh data
+      await fetchData(); // Refresh data to update UI
     }
   };
   
@@ -338,6 +353,7 @@ const Dashboard: React.FC = () => {
         return;
     }
     
+    // Manual mapping from camelCase (app) to snake_case (db)
     const payload = {
       id: reservationToSave.id,
       shop_id: shopData.id,
