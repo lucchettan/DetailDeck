@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
-import { PlusIcon, ImageIcon } from '../Icons';
+import { PlusIcon, ImageIcon, MoneyIcon } from '../Icons';
 
 interface CatalogProps {
   services: Service[];
@@ -68,7 +68,8 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService }) => {
                 </div>
                 <p className="text-brand-gray mt-2 text-sm min-h-[40px]">{service.description}</p>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2">
+                    <MoneyIcon className="w-6 h-6 text-gray-400"/>
                     <p className="text-xl font-bold text-brand-dark">{getPriceDisplay(service)}</p>
                 </div>
             </div>

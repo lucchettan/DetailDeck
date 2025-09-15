@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -97,7 +98,7 @@ const LanguageSwitcher: React.FC = () => {
 }
 
 
-const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick }) => {
+const Header: React.FC<{ onGetStartedClick: () => void; onDemoClick: () => void; }> = ({ onGetStartedClick, onDemoClick }) => {
   const { t } = useLanguage();
   const { user, logOut } = useAuth();
 
@@ -128,6 +129,12 @@ const Header: React.FC<{ onGetStartedClick: () => void }> = ({ onGetStartedClick
               <>
                 <a href="#pricing" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.pricing}</a>
                 <a href="#faq" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.faq}</a>
+                <button
+                  onClick={onDemoClick}
+                  className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base"
+                >
+                  {t.accessDemo}
+                </button>
                 <button 
                   onClick={onGetStartedClick}
                   className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"

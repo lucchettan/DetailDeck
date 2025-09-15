@@ -1,10 +1,12 @@
 
+
 export const translations = {
   en: {
     // Header & Auth
     pricing: 'Pricing',
     faq: 'FAQ',
     getStarted: 'Sign In',
+    accessDemo: 'Access Demo',
     dashboard: 'Dashboard',
     logout: 'Log Out',
     login: 'Log In',
@@ -216,6 +218,7 @@ export const translations = {
     pricing: 'Tarifs',
     faq: 'FAQ',
     getStarted: 'Se connecter',
+    accessDemo: 'Accéder à la Démo',
     dashboard: 'Tableau de bord',
     logout: 'Déconnexion',
     login: 'Connexion',
@@ -427,6 +430,7 @@ export const translations = {
     pricing: 'Precios',
     faq: 'FAQ',
     getStarted: 'Iniciar sesión',
+    accessDemo: 'Acceder a la Demo',
     dashboard: 'Panel de control',
     logout: 'Cerrar sesión',
     login: 'Iniciar sesión',

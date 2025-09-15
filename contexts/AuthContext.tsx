@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 // Fix: Removed unused and non-exported types from '@supabase/supabase-js'.
@@ -12,6 +13,7 @@ interface AuthContextType {
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<AuthResponse>;
   logIn: (credentials: SignInWithPasswordCredentials) => Promise<{ session: Session | null, error: AuthError | null }>;
   logOut: () => Promise<{ error: AuthError | null }>;
+  demoLogin: () => Promise<{ session: Session | null, error: AuthError | null }>;
   resendSignUpConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
   resetPasswordForEmail: (email: string) => Promise<{ error: AuthError | null }>;
 }
@@ -133,6 +135,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
+  const demoLogin = () => logIn({
+    email: 'lucchettan@gmail.com',
+    password: 'Potager12',
+  });
+
   const resendSignUpConfirmation = async (email: string) => {
     if (IS_MOCK_MODE) {
         console.log(`%c[Auth MOCK]%c resendSignUpConfirmation called for ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
@@ -160,6 +167,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     logIn,
     logOut,
+    demoLogin,
     resendSignUpConfirmation,
     resetPasswordForEmail,
   };

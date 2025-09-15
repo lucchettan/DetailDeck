@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StorefrontIcon, ClockIcon, TagIcon, CalendarDaysIcon, ListBulletIcon, ChartPieIcon } from './Icons';
+import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import ShopInformation from './dashboard/ShopInformation';
 import Catalog from './dashboard/Catalog';
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
-    { id: 'shop', label: t.shopInformation, icon: <StorefrontIcon className="w-6 h-6" /> },
+    { id: 'shop', label: t.shopInformation, icon: <CompanyIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
@@ -140,9 +140,9 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-light flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-md flex-shrink-0">
+    <div className="min-h-screen bg-brand-light md:flex">
+      {/* Sidebar - Desktop */}
+      <aside className="hidden md:block w-64 bg-white shadow-md flex-shrink-0">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-brand-dark">
             <span>Resa</span><span className="text-brand-blue">One</span>
@@ -163,7 +163,7 @@ const Dashboard: React.FC = () => {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pb-20 md:pb-0">
         <header className="bg-white shadow-sm">
           <div className="container mx-auto px-6 py-4 flex justify-end items-center">
             <div className="text-right mr-4">
@@ -181,6 +181,23 @@ const Dashboard: React.FC = () => {
         <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
           {renderContent()}
         </main>
+        
+        {/* Mobile Navigation - Bottom Bar */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
+            <div className="flex justify-around items-center">
+                {navigationItems.map(item => (
+                    <button
+                        key={item.id}
+                        onClick={() => setActiveView(item.id as ViewType)}
+                        className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${activeView === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
+                        style={{ flexBasis: '0' }}
+                    >
+                        {item.icon}
+                        <span className="text-xs font-medium text-center mt-1">{item.label}</span>
+                    </button>
+                ))}
+            </div>
+        </nav>
       </div>
     </div>
   );

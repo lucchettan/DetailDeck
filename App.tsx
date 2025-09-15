@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -27,7 +28,7 @@ export interface SelectedPlan {
 }
 
 const AppContent: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, demoLogin } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialView, setAuthInitialView] = useState<'login' | 'signup'>('signup');
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
@@ -84,7 +85,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
-      <Header onGetStartedClick={() => openAuthModal('login')} />
+      <Header onGetStartedClick={() => openAuthModal('login')} onDemoClick={demoLogin} />
       <main>
         <Hero 
           onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
