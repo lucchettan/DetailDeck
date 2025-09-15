@@ -17,7 +17,7 @@ enum PageState {
 
 const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
   const { t } = useLanguage();
-  const { signUp, logIn } = useAuth();
+  const { signUp } = useAuth();
 
   const [pageState, setPageState] = useState<PageState>(PageState.Initial);
   const [pendingSignupData, setPendingSignupData] = useState<any | null>(null);
@@ -62,18 +62,17 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
     setLoading(true);
 
     try {
-      // Step 1: Create the user. The database trigger `handle_new_user_with_shop` 
-      // will automatically create the associated shop and purchase record.
-      const { error: authError } = await signUp({
+      // Step 1: Create the user. The `signUp` function in AuthContext now handles
+      // setting the session if email confirmation is disabled.
+      const { data: signUpData, error: authError } = await signUp({
         email: pendingSignupData.formData.email,
         password: password,
         options: {
             data: {
                 shop_name: pendingSignupData.formData.shopName,
-                user_first_name: pendingSignupData.formData.firstName, // Renamed key
-                user_last_name: pendingSignupData.formData.lastName,   // Renamed key
+                user_first_name: pendingSignupData.formData.firstName,
+                user_last_name: pendingSignupData.formData.lastName,
                 address: pendingSignupData.formData.address,
-                // Pass purchase data
                 plan_id: pendingSignupData.plan.id,
                 plan_name: pendingSignupData.plan.name,
                 billing_cycle: pendingSignupData.plan.billingCycle,
@@ -85,31 +84,22 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onReturnToHome }) => {
       if (authError) {
         if (authError.message.includes('User already registered')) {
             setError(t.accountExistsError);
-            localStorage.removeItem('pendingSignup');
             setPageState(PageState.Error);
-            setLoading(false);
-            return;
+        } else {
+            throw new Error(authError.message || 'Database error saving new user');
         }
-        throw new Error(authError.message || 'Database error saving new user');
+      } else {
+        // Step 2: Check if sign-up returned a session.
+        // If it did not, it means email verification is required.
+        // Show the success page instructing the user to check their email.
+        // If a session *was* returned, the AuthContext is already updated,
+        // and the main App component will handle the redirect to the dashboard.
+        if (!signUpData.session) {
+            setPageState(PageState.FinalSuccess);
+        }
       }
       
       localStorage.removeItem('pendingSignup');
-
-      // Step 2: Automatically log the user in.
-      const { error: loginError } = await logIn({
-          email: pendingSignupData.formData.email,
-          password: password,
-      });
-
-      if (loginError) {
-          // This is an unlikely but possible state.
-          // The user's account is created, but auto-login failed.
-          // We show them the success message with instructions to verify and log in manually.
-          setPageState(PageState.FinalSuccess);
-      }
-      // If login is successful, the AuthProvider's state will change,
-      // and the App component will automatically route to the dashboard.
-      // This component will unmount, so no further action is needed here.
 
     } catch (e: any) {
       console.error('Account setup error:', e);

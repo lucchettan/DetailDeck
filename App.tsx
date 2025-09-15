@@ -29,6 +29,7 @@ export interface SelectedPlan {
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialView, setAuthInitialView] = useState<'login' | 'signup'>('signup');
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
@@ -44,6 +45,11 @@ const AppContent: React.FC = () => {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
+  
+  const openAuthModal = (view: 'login' | 'signup' = 'signup') => {
+    setAuthInitialView(view);
+    setIsAuthModalOpen(true);
+  };
 
   const handleSignUpSuccess = () => {
     setIsAuthModalOpen(false);
@@ -57,7 +63,7 @@ const AppContent: React.FC = () => {
   
   const handleSwitchToLogin = () => {
     setIsEarlyAccessModalOpen(false);
-    setIsAuthModalOpen(true);
+    openAuthModal('login');
   };
   
   if (loading) {
@@ -78,7 +84,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
-      <Header onGetStartedClick={() => setIsAuthModalOpen(true)} />
+      <Header onGetStartedClick={() => openAuthModal('login')} />
       <main>
         <Hero 
           onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
@@ -93,7 +99,7 @@ const AppContent: React.FC = () => {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        onSignUpSuccess={handleSignUpSuccess}
+        initialView={'login'}
       />
       <EarlyAccessModal
         isOpen={isEarlyAccessModalOpen}

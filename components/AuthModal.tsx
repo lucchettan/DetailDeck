@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -7,15 +8,15 @@ import { IS_MOCK_MODE } from '../lib/env';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSignUpSuccess?: () => void;
+  initialView?: 'login';
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'login' }) => {
   const { t } = useLanguage();
-  const { signUp, logIn, resendSignUpConfirmation } = useAuth();
+  const { logIn, resendSignUpConfirmation, resetPasswordForEmail } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [isLoginView, setIsLoginView] = useState(false);
+  const [view, setView] = useState<'login' | 'forgotPassword'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,9 +24,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
   const [message, setMessage] = useState('');
   const [showResend, setShowResend] = useState(false);
 
-  const resetState = () => {
-    setIsLoginView(false);
-    setEmail('');
+  const cleanState = (clearEmail = false) => {
+    if(clearEmail) setEmail('');
     setPassword('');
     setLoading(false);
     setError('');
@@ -34,16 +34,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
   };
 
   const handleClose = () => {
-    // Add a small delay for the animation
     setTimeout(() => {
-        resetState();
+        cleanState(true);
+        setView('login');
     }, 300);
     onClose();
   }
 
   useEffect(() => {
     if (isOpen) {
-        resetState();
+      cleanState(true);
+      setView('login');
     }
   }, [isOpen]);
 
@@ -69,23 +70,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
     setShowResend(false);
 
     if (IS_MOCK_MODE) {
-        console.log("Mock Mode: Simulating auth.", { email, isLoginView });
+        console.log("Mock Mode: Simulating auth.", { email, view });
         setTimeout(() => {
-            if (isLoginView) {
+            if (view === 'login') {
                 handleClose();
             } else {
-                if (onSignUpSuccess) {
-                    onSignUpSuccess();
-                } else {
-                    handleClose();
-                }
+                setMessage(t.resetLinkSent);
             }
             setLoading(false);
         }, 1000);
         return;
     }
 
-    if (isLoginView) {
+    if (view === 'login') {
       const { error } = await logIn({ email, password });
       if (error) {
         if (error.message === 'Email not confirmed') {
@@ -97,17 +94,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
       } else {
         handleClose();
       }
-    } else {
-      const { data, error } = await signUp({ email, password });
+    } else { // forgotPassword view
+      const { error } = await resetPasswordForEmail(email);
       if (error) {
-        setError(error.message);
+          setError(error.message);
       } else {
-        if(onSignUpSuccess) {
-            onSignUpSuccess();
-        } else {
-            // Confirmation is required, so we show a message.
-            setMessage('Check your email for the confirmation link!');
-        }
+          setMessage(t.resetLinkSent);
       }
     }
     setLoading(false);
@@ -143,13 +135,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
   if (!isOpen) {
     return null;
   }
-
-  const toggleView = () => {
-    setIsLoginView(!isLoginView);
-    setError('');
-    setMessage('');
-    setShowResend(false);
-  };
+  
+  const title = view === 'login' ? t.loginTitle : t.resetPassword;
+  const subtitle = view === 'login' ? t.loginSubtitle : t.resetPasswordSubtitle;
+  const buttonText = view === 'login' ? t.login : t.sendResetLink;
 
   return (
     <div 
@@ -173,10 +162,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
         
         <div className="text-center">
           <h2 id="modal-title" className="text-2xl font-bold text-brand-dark mb-2">
-            {isLoginView ? t.loginTitle : t.getStartedTitle}
+            {title}
           </h2>
           <p className="text-brand-gray mb-6">
-            {isLoginView ? t.loginSubtitle : t.getStartedSubtitle}
+            {subtitle}
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -190,15 +179,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-               <input
-                type="password"
-                placeholder={t.passwordPlaceholder}
-                className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
-                aria-label={t.password}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              {view === 'login' && (
+                <input
+                    type="password"
+                    placeholder={t.passwordPlaceholder}
+                    className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
+                    aria-label={t.password}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
 
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
               
@@ -220,15 +211,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSignUpSuccess 
                 disabled={loading}
                 className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                {loading ? '...' : (isLoginView ? t.login : t.signup)}
+                {loading ? '...' : buttonText}
               </button>
             </div>
           </form>
 
            <div className="mt-6 text-sm">
-            <button onClick={toggleView} className="text-brand-blue hover:underline">
-              {isLoginView ? t.dontHaveAccount : t.alreadyHaveAccount} {isLoginView ? t.signup : t.login}
-            </button>
+            {view === 'login' ? (
+                <button onClick={() => { setView('forgotPassword'); cleanState(); }} className="text-brand-blue hover:underline">
+                    {t.forgotPassword}
+                </button>
+            ) : (
+                <button onClick={() => { setView('login'); cleanState(); }} className="text-brand-blue hover:underline">
+                    {t.backToLogin}
+                </button>
+            )}
           </div>
         </div>
       </div>

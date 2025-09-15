@@ -251,6 +251,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                         tag={t.bestValue} 
                         isSelected={selectedPlanId === 'solo'}
                         onClick={() => handlePlanSelect('solo')}
+                        standardPriceText={t.standardPrice}
                       />
                       {/* Lifetime Plan */}
                       <PlanCard 
@@ -262,6 +263,7 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
                         isFeatured={true}
                         isSelected={selectedPlanId === 'lifetime'}
                         onClick={() => handlePlanSelect('lifetime')}
+                        standardPriceText={t.standardPrice}
                       />
                   </div>
               </div>
@@ -312,17 +314,16 @@ const EarlyAccessModal: React.FC<EarlyAccessModalProps> = ({ isOpen, onClose, on
 };
 
 const PlanCard: React.FC<{
-    title: string, 
-    description: string, 
-    features: string[], 
-    priceInfo: { new: string, period: string, old: string }, 
-    tag: string, 
-    isSelected: boolean, 
-    onClick: ()=>void, 
-    isFeatured?: boolean
-}> = ({title, description, features, priceInfo, tag, isSelected, onClick, isFeatured}) => {
-    // FIX: Get translation object 't' from useLanguage hook to use in the component.
-    const { t } = useLanguage();
+    title: string;
+    description: string;
+    features: string[];
+    priceInfo: { new: string; period: string; old: string };
+    tag: string;
+    isSelected: boolean;
+    onClick: () => void;
+    isFeatured?: boolean;
+    standardPriceText: string;
+}> = ({ title, description, features, priceInfo, tag, isSelected, onClick, isFeatured, standardPriceText }) => {
     return (
         <button type="button" onClick={onClick} className={`relative border rounded-lg p-4 text-left w-full h-full transition-all duration-300 focus:outline-none flex flex-col ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue' : 'border-gray-200 hover:border-gray-400'} ${isFeatured ? 'bg-yellow-50' : 'bg-white'}`}>
             <div>
@@ -344,7 +345,7 @@ const PlanCard: React.FC<{
                   <p className="text-brand-gray text-sm -mt-1">{priceInfo.period}</p>
                   <p className="text-xs text-brand-gray mt-2">
                       <span className="line-through">{priceInfo.old}</span>
-                      <span className="font-semibold"> {t.standardPrice}</span>
+                      <span className="font-semibold"> {standardPriceText}</span>
                   </p>
               </div>
             </div>
