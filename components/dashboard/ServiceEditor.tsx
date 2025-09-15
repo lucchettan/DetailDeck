@@ -105,6 +105,24 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
     }
   };
 
+  const handleAddOn = () => {
+    setFormData(prev => ({ ...prev, addOns: [...prev.addOns, { id: Date.now(), name: '', price: '', duration: '' }] }));
+  };
+  
+  const handleRemoveAddOn = (id: number) => {
+    setFormData(prev => ({ ...prev, addOns: prev.addOns.filter(addOn => addOn.id !== id) }));
+  };
+  
+  const handleAddOnChange = (id: number, field: 'name' | 'price' | 'duration', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      addOns: prev.addOns.map(addOn => 
+        addOn.id === id ? { ...addOn, [field]: value } : addOn
+      )
+    }));
+  };
+
+
   const handleDelete = () => {
     if (service && window.confirm(t.deleteServiceConfirmation)) {
       onDelete(service.id);
@@ -215,6 +233,57 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
                     </div>
                 </div>
             )}
+        </div>
+
+        {/* Add-ons */}
+        <div className="border-t pt-6">
+            <h3 className="text-lg font-bold text-brand-dark mb-2">{t.addOns}</h3>
+            <p className="text-brand-gray text-sm mb-4">{t.addOnsSubtitle}</p>
+            <div className="space-y-4">
+            {formData.addOns.map((addOn, index) => (
+                <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <div className="md:col-span-2">
+                        <input
+                        type="text"
+                        placeholder={t.addOnName}
+                        value={addOn.name}
+                        onChange={(e) => handleAddOnChange(addOn.id, 'name', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MoneyIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                        type="number"
+                        placeholder={t.price}
+                        value={addOn.price}
+                        onChange={(e) => handleAddOnChange(addOn.id, 'price', e.target.value)}
+                        className="w-full p-2 pl-10 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-grow">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <HourglassIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <DurationPicker
+                                value={addOn.duration}
+                                onChange={(e) => handleAddOnChange(addOn.id, 'duration', e.target.value)}
+                                className="w-full p-2 pl-10 border border-gray-300 rounded-lg bg-white"
+                            />
+                        </div>
+                        <button type="button" onClick={() => handleRemoveAddOn(addOn.id)} className="text-gray-400 hover:text-red-500">
+                            <CloseIcon />
+                        </button>
+                    </div>
+                </div>
+            ))}
+            </div>
+            <button type="button" onClick={handleAddOn} className="mt-4 text-sm font-semibold text-brand-blue hover:underline">
+            + {t.newAddOn}
+            </button>
         </div>
         
         <div className="mt-8 flex justify-end">
