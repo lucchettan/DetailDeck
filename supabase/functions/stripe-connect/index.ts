@@ -1,5 +1,5 @@
-// Fix: Add a Deno type reference to resolve "Cannot find name 'Deno'" errors.
-/// <reference types="https://esm.sh/v135/@types/deno@1.40.0/index.d.ts" />
+// Fix: Update the Deno type reference to a stable URL to resolve "Cannot find name 'Deno'" errors.
+/// <reference types="https://unpkg.com/@types/deno/index.d.ts" />
 // supabase/functions/stripe-connect/index.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@15.8.0?target=deno";

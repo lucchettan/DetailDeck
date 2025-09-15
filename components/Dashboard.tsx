@@ -171,35 +171,31 @@ const Dashboard: React.FC = () => {
             await fetchData();
 
         } catch (error: any) {
-            const userMessage = "The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions.\n\nPlease try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
-            let errorBodyJson = null;
+            console.error("Stripe Connection Full Error:", error);
 
+            let debugMessage = `An unexpected error occurred. For debugging, please provide the following technical details to support:\n\n`;
+
+            debugMessage += `Error Message:\n${error.message}\n\n`;
+            
+            // Attempt to get the detailed error from the function's response body
             try {
-                if (error.context) {
-                    errorBodyJson = await error.context.json();
+                if (error.context && typeof error.context.json === 'function') {
+                    const functionResponse = await error.context.json();
+                    debugMessage += `Backend Function Response:\n${JSON.stringify(functionResponse, null, 2)}\n\n`;
+                } else {
+                     debugMessage += `Backend Function Response: Not available or could not be parsed.\n\n`;
                 }
-            } catch (e) {
-                console.error("Could not parse Stripe error response JSON.", e);
+            } catch (parseError) {
+                debugMessage += `Backend Function Response could not be parsed as JSON.\n\n`;
             }
 
-            // Constructing a detailed debug log for the alert modal
-            const debugLog = `
---- Technical Details ---
-Message: ${error.message}
-User ID: ${session?.user?.id}
-Function Response Body:
-${JSON.stringify(errorBodyJson || { info: 'Could not parse JSON response.' }, null, 2)}
+            // Append the full, stringified error object for maximum context
+            debugMessage += `Full Error Object:\n${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`;
 
---- Full Error Object ---
-${JSON.stringify(error, null, 2)}
-            `;
-            
-            console.error("Stripe Connection Full Error:", error);
-            
             setAlertInfo({
                 isOpen: true,
-                title: 'Stripe Connection Failed',
-                message: `${userMessage}\n\n${debugLog}` // Append the debug log to the user message
+                title: 'Stripe Connection Failed: Debug Log',
+                message: debugMessage,
             });
             
         } finally {
