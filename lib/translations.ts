@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     // Header & Auth
@@ -158,6 +157,9 @@ export const translations = {
     stripeConnected: 'Your Stripe account is connected.',
     stripeNotConnected: 'Your Stripe account is not connected.',
     manageStripeAccount: 'Manage on Stripe',
+    disconnectStripe: 'Disconnect Stripe',
+    connectedAs: 'Connected as:',
+    finalizingStripeConnection: 'Finalizing Stripe connection, one moment...',
     stripeConnectionDescription: "We use Stripe to make sure you get paid securely. Clicking 'Connect with Stripe' will redirect you to Stripe to create or connect your account.",
     getStartedGuide: 'Your guide to getting started',
     step1: 'Step 1',
@@ -476,6 +478,9 @@ export const translations = {
     stripeConnected: 'Votre compte Stripe est connecté.',
     stripeNotConnected: "Votre compte Stripe n'est pas connecté.",
     manageStripeAccount: 'Gérer sur Stripe',
+    disconnectStripe: 'Déconnecter Stripe',
+    connectedAs: 'Connecté en tant que :',
+    finalizingStripeConnection: 'Finalisation de la connexion Stripe, un instant...',
     stripeConnectionDescription: "Nous utilisons Stripe pour garantir que vous soyez payé en toute sécurité. Cliquer sur 'Connecter avec Stripe' vous redirigera vers Stripe pour créer ou connecter votre compte.",
     getStartedGuide: 'Votre guide de démarrage',
     step1: 'Étape 1',
@@ -794,6 +799,9 @@ export const translations = {
     stripeConnected: 'Tu cuenta de Stripe está conectada.',
     stripeNotConnected: 'Tu cuenta de Stripe no está conectada.',
     manageStripeAccount: 'Gestionar en Stripe',
+    disconnectStripe: 'Desconectar Stripe',
+    connectedAs: 'Conectado como:',
+    finalizingStripeConnection: 'Finalizando la conexión con Stripe, un momento...',
     stripeConnectionDescription: "Usamos Stripe para asegurar que recibas tus pagos de forma segura. Al hacer clic en 'Conectar con Stripe', serás redirigido a Stripe para crear o conectar tu cuenta.",
     getStartedGuide: 'Tu guía para empezar',
     step1: 'Paso 1',

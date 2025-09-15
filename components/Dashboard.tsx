@@ -81,57 +81,92 @@ const Dashboard: React.FC = () => {
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFinalizingStripe, setIsFinalizingStripe] = useState(false);
   
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-        if (!user) return;
-        setLoading(true);
+  const fetchData = async () => {
+    if (!user) return;
+    setLoading(true);
 
-        try {
-            const { data: shop, error: shopError } = await supabase
-                .from('shops')
-                .select('*')
-                .eq('owner_id', user.id)
-                .single();
+    try {
+        const { data: shop, error: shopError } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('owner_id', user.id)
+            .single();
 
-            if (shopError && shopError.code !== 'PGRST116') {
-                throw shopError;
-            }
-            if (shop) {
-                 setShopData(toCamelCase(shop) as Shop);
-            }
-           
-            if (shop) {
-                const { data: shopServices, error: servicesError } = await supabase
-                    .from('services')
-                    .select('*')
-                    .eq('shop_id', shop.id);
-                
-                if (servicesError) throw servicesError;
-                setServices(toCamelCase(shopServices) as Service[]);
-                
-                const { data: shopReservations, error: reservationsError } = await supabase
-                    .from('reservations')
-                    .select('*')
-                    .eq('shop_id', shop.id)
-                    .order('date', { ascending: false })
-                    .order('start_time', { ascending: true });
-
-                if (reservationsError) throw reservationsError;
-                setReservations(toCamelCase(shopReservations) as Reservation[]);
-            }
-        } catch (error: any) {
-            console.error("Error fetching dashboard data:", error);
-            alert(`Error fetching dashboard data: ${error.message}`);
-        } finally {
-            setLoading(false);
+        if (shopError && shopError.code !== 'PGRST116') {
+            throw shopError;
         }
-    };
+        if (shop) {
+             const camelCasedShop = toCamelCase(shop) as Shop;
+             setShopData(camelCasedShop);
+        
+            const { data: shopServices, error: servicesError } = await supabase
+                .from('services')
+                .select('*')
+                .eq('shop_id', shop.id);
+            
+            if (servicesError) throw servicesError;
+            setServices(toCamelCase(shopServices) as Service[]);
+            
+            const { data: shopReservations, error: reservationsError } = await supabase
+                .from('reservations')
+                .select('*')
+                .eq('shop_id', shop.id)
+                .order('date', { ascending: false })
+                .order('start_time', { ascending: true });
 
+            if (reservationsError) throw reservationsError;
+            setReservations(toCamelCase(shopReservations) as Reservation[]);
+        }
+    } catch (error: any) {
+        console.error("Error fetching dashboard data:", error);
+        alert(`Error fetching dashboard data: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+  }, [user]);
+
+  // Handle Stripe Connect callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripeCode = params.get('code');
+
+    if (stripeCode && !shopData?.stripeAccountEnabled) {
+      const finalizeConnection = async () => {
+        setIsFinalizingStripe(true);
+        // In a real app, this would call a secure backend function (e.g., Supabase Edge Function)
+        // to exchange the code for an account ID. For this project, we'll simulate it.
+        try {
+            console.log("Simulating Stripe Connect finalization with code:", stripeCode);
+            // Simulate API call delay
+            await new Promise(res => setTimeout(res, 2000));
+
+            const mockStripeAccountId = `acct_mock_${Math.random().toString(36).substring(7)}`;
+            await handleSaveShop({
+                stripeAccountId: mockStripeAccountId,
+                stripeAccountEnabled: true,
+            });
+            // Refetch data to ensure UI is updated
+            await fetchData();
+
+        } catch (error: any) {
+            alert(`Error finalizing Stripe connection: ${error.message}`);
+        } finally {
+            // Clean up URL
+            window.history.replaceState(null, '', window.location.pathname);
+            setIsFinalizingStripe(false);
+        }
+      };
+      finalizeConnection();
+    }
   }, [user]);
 
 
@@ -139,7 +174,7 @@ const Dashboard: React.FC = () => {
     shopInfo: !!shopData?.name,
     availability: !!shopData?.schedule, 
     catalog: services.length > 0,
-    stripe: !!shopData?.stripeAccountId && !!shopData?.stripeAccountEnabled,
+    stripe: !!shopData?.stripeAccountEnabled,
   };
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
@@ -148,7 +183,6 @@ const Dashboard: React.FC = () => {
         return false;
     };
     
-    // Explicitly map from frontend camelCase to database snake_case
     const servicePayload = {
       id: serviceToSave.id,
       shop_id: shopData.id,
@@ -162,7 +196,6 @@ const Dashboard: React.FC = () => {
       image_url: serviceToSave.imageUrl,
     };
     
-    // Remove id if it's undefined (for inserts)
     if (!servicePayload.id) {
         delete (servicePayload as any).id;
     }
@@ -213,7 +246,6 @@ const Dashboard: React.FC = () => {
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
      
-    // Explicitly map from camelCase to snake_case for the database
     const payload = {
       name: updatedShopData.name,
       phone: updatedShopData.phone,
@@ -231,7 +263,6 @@ const Dashboard: React.FC = () => {
       stripe_account_enabled: updatedShopData.stripeAccountEnabled,
     };
 
-    // Filter out undefined values to prevent nullifying existing data
     Object.keys(payload).forEach(key => {
         if ((payload as any)[key] === undefined) {
             delete (payload as any)[key];
@@ -272,13 +303,22 @@ const Dashboard: React.FC = () => {
      }
   };
   
+  const handleStripeDisconnect = async () => {
+    if (window.confirm("Are you sure you want to disconnect your Stripe account?")) {
+      await handleSaveShop({
+        stripeAccountId: undefined, // Using undefined to remove
+        stripeAccountEnabled: false,
+      });
+      await fetchData(); // Refresh data
+    }
+  };
+  
   const handleSaveReservation = async (reservationToSave: Omit<Reservation, 'id'> & { id?: string }) => {
     if (!shopData) {
         alert("Cannot save reservation: shop data not loaded.");
         return;
     }
     
-    // Explicitly map from camelCase to snake_case
     const payload = {
       id: reservationToSave.id,
       shop_id: shopData.id,
@@ -295,7 +335,6 @@ const Dashboard: React.FC = () => {
       service_details: reservationToSave.serviceDetails,
     };
 
-    // Remove id if it's undefined (for inserts)
     if (!payload.id) {
         delete (payload as any).id;
     }
@@ -359,10 +398,11 @@ const Dashboard: React.FC = () => {
   ];
 
   const renderContent = () => {
-    if (loading) {
+    if (loading || isFinalizingStripe) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full flex-col">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
+            {isFinalizingStripe && <p className="mt-4 font-semibold text-brand-dark">{t.finalizingStripeConnection}</p>}
         </div>
       );
     }
@@ -387,7 +427,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       case 'account':
-        return <Account shopData={shopData} />;
+        return <Account shopData={shopData} onDisconnectStripe={handleStripeDisconnect} />;
       default:
         return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
     }

@@ -7,9 +7,10 @@ import { VITE_STRIPE_CLIENT_ID } from '../../lib/env';
 
 interface AccountProps {
     shopData: Shop | null;
+    onDisconnectStripe: () => void;
 }
 
-const Account: React.FC<AccountProps> = ({ shopData }) => {
+const Account: React.FC<AccountProps> = ({ shopData, onDisconnectStripe }) => {
     const { t } = useLanguage();
     const { updateUserPassword } = useAuth();
     
@@ -59,8 +60,7 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
         window.location.href = stripeConnectUrl;
     };
 
-    // Fix: Use camelCase properties to match the 'Shop' type.
-    const isStripeConnected = shopData?.stripeAccountId && shopData?.stripeAccountEnabled;
+    const isStripeConnected = shopData?.stripeAccountEnabled;
 
     return (
         <div>
@@ -95,15 +95,23 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
                 {isStripeConnected ? (
                     <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
                         <p className="font-semibold text-green-800">{t.stripeConnected}</p>
-                        <a href="https://dashboard.stripe.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-brand-blue hover:underline mt-2 inline-block">
-                            {t.manageStripeAccount} &rarr;
-                        </a>
+                        <p className="text-sm text-green-700 mt-2">
+                           {t.connectedAs} <span className="font-mono bg-green-100 p-1 rounded text-xs">{shopData.stripeAccountId}</span>
+                        </p>
+                        <div className="mt-4">
+                            <a href={`https://dashboard.stripe.com/accounts/${shopData.stripeAccountId}`} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-blue hover:underline font-semibold">
+                                {t.manageStripeAccount} &rarr;
+                            </a>
+                            <button onClick={onDisconnectStripe} className="ml-4 text-sm text-red-600 hover:underline font-semibold">
+                                {t.disconnectStripe}
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div>
                         <p className="text-sm text-brand-gray mb-4">{t.stripeConnectionDescription}</p>
                         <button onClick={handleStripeConnect} disabled={isConnectingStripe} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-75">
-                            {isConnectingStripe ? '...' : t.connectWithStripe}
+                            {isConnectingStripe ? t.redirecting : t.connectWithStripe}
                         </button>
                     </div>
                 )}
