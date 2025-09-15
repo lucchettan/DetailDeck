@@ -171,33 +171,35 @@ const Dashboard: React.FC = () => {
             await fetchData();
 
         } catch (error: any) {
-            let userMessage = "An unknown error occurred while connecting your Stripe account. Please try again or contact support.";
+            const userMessage = "The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions.\n\nPlease try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
             let errorBodyJson = null;
 
-            if (error.context) {
-                try {
+            try {
+                if (error.context) {
                     errorBodyJson = await error.context.json();
-                    if (errorBodyJson?.error === 'User not found') {
-                        userMessage = "The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions.\n\nPlease try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
-                    }
-                } catch(e) {
-                    console.error("Could not parse Stripe error response JSON.", e);
                 }
+            } catch (e) {
+                console.error("Could not parse Stripe error response JSON.", e);
             }
+
+            // Constructing a detailed debug log for the alert modal
+            const debugLog = `
+--- Technical Details ---
+Message: ${error.message}
+User ID: ${session?.user?.id}
+Function Response Body:
+${JSON.stringify(errorBodyJson || { info: 'Could not parse JSON response.' }, null, 2)}
+
+--- Full Error Object ---
+${JSON.stringify(error, null, 2)}
+            `;
             
-            const debugInfo = {
-                '--- Frontend Info ---': '',
-                'User ID from Session': session?.user?.id,
-                '\n--- Backend Response ---': '',
-                'Message': error.message,
-                'Function Response': errorBodyJson || 'Could not parse JSON response.'
-            };
-            console.error("Stripe Connection Debug Info:", debugInfo);
+            console.error("Stripe Connection Full Error:", error);
             
             setAlertInfo({
                 isOpen: true,
                 title: 'Stripe Connection Failed',
-                message: userMessage
+                message: `${userMessage}\n\n${debugLog}` // Append the debug log to the user message
             });
             
         } finally {
