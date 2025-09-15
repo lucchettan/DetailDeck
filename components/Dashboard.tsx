@@ -46,7 +46,7 @@ export interface Shop {
     maxBookingHorizon: string;
     acceptsOnSitePayment: boolean;
     bookingFee: string;
-    stripeAccountId?: string;
+    stripeAccountId?: string | null;
     stripeAccountEnabled?: boolean;
 }
 
@@ -139,25 +139,28 @@ const Dashboard: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const stripeCode = params.get('code');
 
-    if (stripeCode && !shopData?.stripeAccountEnabled) {
+    if (stripeCode && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
-        // In a real app, this would call a secure backend function (e.g., Supabase Edge Function)
-        // to exchange the code for an account ID. For this project, we'll simulate it.
         try {
-            console.log("Simulating Stripe Connect finalization with code:", stripeCode);
-            // Simulate API call delay
-            await new Promise(res => setTimeout(res, 2000));
-
-            const mockStripeAccountId = `acct_mock_${Math.random().toString(36).substring(7)}`;
-            await handleSaveShop({
-                stripeAccountId: mockStripeAccountId,
-                stripeAccountEnabled: true,
+            const { error: functionError } = await supabase.functions.invoke('stripe-connect', {
+                body: { code: stripeCode },
             });
-            // Refetch data to ensure UI is updated
+            
+            if (functionError) {
+                // Try to get a more specific error message from the function's response body
+                const errorBody = await functionError.context?.json();
+                if (errorBody?.error) {
+                    throw new Error(errorBody.error);
+                }
+                throw functionError;
+            }
+            
+            // Refetch data to ensure UI is updated with the new stripe account id and status
             await fetchData();
 
         } catch (error: any) {
+            console.error("Error finalizing Stripe connection:", error);
             alert(`Error finalizing Stripe connection: ${error.message}`);
         } finally {
             // Clean up URL
@@ -167,7 +170,7 @@ const Dashboard: React.FC = () => {
       };
       finalizeConnection();
     }
-  }, [user]);
+  }, []);
 
 
   const setupStatus = {
@@ -306,7 +309,7 @@ const Dashboard: React.FC = () => {
   const handleStripeDisconnect = async () => {
     if (window.confirm("Are you sure you want to disconnect your Stripe account?")) {
       await handleSaveShop({
-        stripeAccountId: undefined, // Using undefined to remove
+        stripeAccountId: null,
         stripeAccountEnabled: false,
       });
       await fetchData(); // Refresh data
