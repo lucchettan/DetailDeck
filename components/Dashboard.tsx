@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -74,7 +73,7 @@ export interface Reservation {
 
 
 const Dashboard: React.FC = () => {
-  const { user, logOut, session } = useAuth();
+  const { user, logOut, session, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -132,17 +131,23 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Only fetch data once the user is confirmed.
+    if (!authLoading && user) {
+      fetchData();
+    } else if (!authLoading && !user) {
+      // If auth is done and there's no user, we can stop loading.
+      setLoading(false);
+    }
+  }, [user, authLoading, fetchData]);
 
   // Handle Stripe Connect callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const stripeCode = params.get('code');
 
-    // Use the session object as the gatekeeper for readiness. It's more reliable
-    // than the user object immediately after an OAuth redirect.
-    if (stripeCode && session && !isFinalizingStripe) {
+    // FIX: Only attempt to finalize the connection after the initial auth state is resolved (!authLoading)
+    // and we have a confirmed session. This prevents the "User not found" race condition.
+    if (stripeCode && !authLoading && session && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
         try {
@@ -151,7 +156,6 @@ const Dashboard: React.FC = () => {
             });
             
             if (functionError) {
-                // Throw the whole error object to be caught and displayed below.
                 throw functionError;
             }
             
@@ -159,7 +163,6 @@ const Dashboard: React.FC = () => {
 
         } catch (error: any) {
             console.error("Error finalizing Stripe connection:", error);
-            // Enhanced error reporting to aid debugging, as requested.
             let detailedError = `Message: ${error.message}`;
             if (error.context) {
                 try {
@@ -179,7 +182,7 @@ const Dashboard: React.FC = () => {
       };
       finalizeConnection();
     }
-  }, [session, isFinalizingStripe, fetchData]);
+  }, [session, authLoading, isFinalizingStripe, fetchData]);
 
 
   const setupStatus = {
@@ -410,7 +413,8 @@ const Dashboard: React.FC = () => {
   ];
 
   const renderContent = () => {
-    if (loading || isFinalizingStripe) {
+    // Show main spinner if either the initial auth check is running OR the subsequent data fetch is running.
+    if (authLoading || loading || isFinalizingStripe) {
       return (
         <div className="flex items-center justify-center h-full flex-col">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
