@@ -182,9 +182,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
 
     if (success && !isEditing) {
       alert(t.serviceCreatedSuccess);
-      // The parent component handles navigation back to the catalog list.
-    } else if (!success) {
-      alert('An error occurred while saving. Please try again.');
+      // The parent component handles navigation back to the catalog list and any error alerts.
     }
   };
 

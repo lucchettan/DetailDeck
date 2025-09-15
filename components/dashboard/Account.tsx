@@ -39,6 +39,7 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
         const { error } = await updateUserPassword(password);
         if (error) {
             setPasswordError(error.message);
+            alert(`Error updating password: ${error.message}`);
         } else {
             setPasswordSuccess(t.passwordUpdatedSuccess);
             setPassword('');

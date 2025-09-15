@@ -89,46 +89,46 @@ const Dashboard: React.FC = () => {
         if (!user) return;
         setLoading(true);
 
-        const { data: shop, error: shopError } = await supabase
-            .from('shops')
-            .select('*')
-            .eq('owner_id', user.id)
-            .single();
-
-        // This is not an error for a new user, just means they need to create a shop.
-        if (shopError && shopError.code !== 'PGRST116') { // PGRST116 = 0 rows
-            console.error("Error fetching shop:", shopError);
-        } else if (shop) {
-             setShopData(shop as Shop);
-        }
-       
-        if (shop) {
-            const { data: shopServices, error: servicesError } = await supabase
-                .from('services')
+        try {
+            const { data: shop, error: shopError } = await supabase
+                .from('shops')
                 .select('*')
-                .eq('shop_id', shop.id);
-            
-            if (servicesError) {
-                console.error("Error fetching services:", servicesError);
-            } else {
-                setServices(shopServices as Service[]);
+                .eq('owner_id', user.id)
+                .single();
+
+            // This is not an error for a new user, just means they need to create a shop.
+            if (shopError && shopError.code !== 'PGRST116') { // PGRST116 = 0 rows
+                throw shopError;
             }
-            
-            const { data: shopReservations, error: reservationsError } = await supabase
-                .from('reservations')
-                .select('*')
-                .eq('shop_id', shop.id)
-                .order('date', { ascending: false })
-                .order('start_time', { ascending: true });
+            if (shop) {
+                 setShopData(shop as Shop);
+            }
+           
+            if (shop) {
+                const { data: shopServices, error: servicesError } = await supabase
+                    .from('services')
+                    .select('*')
+                    .eq('shop_id', shop.id);
+                
+                if (servicesError) throw servicesError;
+                setServices(shopServices as Service[]);
+                
+                const { data: shopReservations, error: reservationsError } = await supabase
+                    .from('reservations')
+                    .select('*')
+                    .eq('shop_id', shop.id)
+                    .order('date', { ascending: false })
+                    .order('start_time', { ascending: true });
 
-            if (reservationsError) {
-                console.error("Error fetching reservations:", reservationsError);
-            } else {
+                if (reservationsError) throw reservationsError;
                 setReservations(shopReservations as Reservation[]);
             }
+        } catch (error: any) {
+            console.error("Error fetching dashboard data:", error);
+            alert(`Error fetching dashboard data: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
-        
-        setLoading(false);
     };
 
     fetchData();
@@ -143,7 +143,10 @@ const Dashboard: React.FC = () => {
   };
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
-    if (!shopData) return false;
+    if (!shopData) {
+        alert("Cannot save service: shop data is not loaded.");
+        return false;
+    };
     
     const servicePayload = {
       ...serviceToSave,
@@ -158,6 +161,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving service:", error);
+      alert(`Error saving service: ${error.message}`);
       return false;
     }
 
@@ -183,6 +187,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error deleting service:", error);
+      alert(`Error deleting service: ${error.message}`);
       return;
     }
 
@@ -204,6 +209,7 @@ const Dashboard: React.FC = () => {
         
         if (error) {
             console.error("Error updating shop info:", error);
+            alert(`Error updating shop info: ${error.message}`);
             return;
         }
         if (data) {
@@ -219,6 +225,7 @@ const Dashboard: React.FC = () => {
         
         if (error) {
             console.error("Error creating shop info:", error);
+            alert(`Error creating shop info: ${error.message}`);
             return;
         }
         if (data) {
@@ -228,7 +235,10 @@ const Dashboard: React.FC = () => {
   };
   
   const handleSaveReservation = async (reservationToSave: Omit<Reservation, 'id'> & { id?: string }) => {
-    if (!shopData) return;
+    if (!shopData) {
+        alert("Cannot save reservation: shop data not loaded.");
+        return;
+    }
     
     const payload = {
       ...reservationToSave,
@@ -243,6 +253,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving reservation:", error);
+      alert(`Error saving reservation: ${error.message}`);
       return;
     }
 
@@ -264,6 +275,7 @@ const Dashboard: React.FC = () => {
     const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
     if (error) {
       console.error("Error deleting reservation:", error);
+      alert(`Error deleting reservation: ${error.message}`);
       return;
     }
     setReservations(prev => prev.filter(r => r.id !== reservationId));
