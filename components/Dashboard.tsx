@@ -14,6 +14,7 @@ import Account from './dashboard/Account';
 import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
 import { toCamelCase } from '../lib/utils';
+import AlertModal from './AlertModal';
 
 type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics' | 'account';
 
@@ -83,6 +84,7 @@ const Dashboard: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFinalizingStripe, setIsFinalizingStripe] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
@@ -125,7 +127,11 @@ const Dashboard: React.FC = () => {
         }
     } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
-        alert(`Error fetching dashboard data: ${error.message}`);
+        setAlertInfo({ 
+            isOpen: true, 
+            title: 'Data Fetch Error', 
+            message: `Error fetching dashboard data: ${error.message}` 
+        });
     } finally {
         setLoading(false);
     }
@@ -168,20 +174,17 @@ const Dashboard: React.FC = () => {
             let userMessage = "An unknown error occurred while connecting your Stripe account. Please try again or contact support.";
             let errorBodyJson = null;
 
-            // Attempt to parse the error response from the backend function
             if (error.context) {
                 try {
                     errorBodyJson = await error.context.json();
                     if (errorBodyJson?.error === 'User not found') {
-                        // This specific error indicates an RLS policy is likely blocking the backend function.
-                        userMessage = "Stripe Connection Failed: The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions. Please try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
+                        userMessage = "The backend function was blocked by a database security rule and could not find your user profile. This can sometimes happen due to a caching issue with permissions.\n\nPlease try logging out and logging back in to refresh your session, then try connecting to Stripe again. If the problem persists, please contact support about an 'RLS policy issue'.";
                     }
                 } catch(e) {
                     console.error("Could not parse Stripe error response JSON.", e);
                 }
             }
             
-            // For developers, log the full context for easier debugging
             const debugInfo = {
                 '--- Frontend Info ---': '',
                 'User ID from Session': session?.user?.id,
@@ -191,8 +194,11 @@ const Dashboard: React.FC = () => {
             };
             console.error("Stripe Connection Debug Info:", debugInfo);
             
-            // Show the user a clean, actionable message.
-            alert(userMessage);
+            setAlertInfo({
+                isOpen: true,
+                title: 'Stripe Connection Failed',
+                message: userMessage
+            });
             
         } finally {
             window.history.replaceState(null, '', window.location.pathname);
@@ -213,11 +219,10 @@ const Dashboard: React.FC = () => {
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
     if (!shopData) {
-        alert("Cannot save service: shop data is not loaded.");
+        setAlertInfo({ isOpen: true, title: "Error", message: "Cannot save service: shop data is not loaded."});
         return false;
     };
     
-    // Manual mapping from camelCase (app) to snake_case (db)
     const servicePayload = {
       id: serviceToSave.id,
       shop_id: shopData.id,
@@ -243,7 +248,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving service:", error);
-      alert(`Error saving service: ${error.message}`);
+      setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving service: ${error.message}`});
       return false;
     }
 
@@ -270,7 +275,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error deleting service:", error);
-      alert(`Error deleting service: ${error.message}`);
+      setAlertInfo({ isOpen: true, title: "Delete Error", message: `Error deleting service: ${error.message}` });
       return;
     }
 
@@ -281,7 +286,6 @@ const Dashboard: React.FC = () => {
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
      
-    // Manual mapping from camelCase (app) to snake_case (db)
     const payload = {
       name: updatedShopData.name,
       phone: updatedShopData.phone,
@@ -299,7 +303,6 @@ const Dashboard: React.FC = () => {
       stripe_account_enabled: updatedShopData.stripeAccountEnabled,
     };
 
-    // Remove undefined keys to avoid sending them to Supabase
     Object.keys(payload).forEach(key => {
         if ((payload as any)[key] === undefined) {
             delete (payload as any)[key];
@@ -307,7 +310,6 @@ const Dashboard: React.FC = () => {
     });
 
      if (shopData) {
-        // Update existing shop
         const { data, error } = await supabase
             .from('shops')
             .update(payload)
@@ -317,14 +319,13 @@ const Dashboard: React.FC = () => {
         
         if (error) {
             console.error("Error updating shop info:", error);
-            alert(`Error updating shop info: ${error.message}`);
+            setAlertInfo({ isOpen: true, title: "Update Error", message: `Error updating shop info: ${error.message}` });
             return;
         }
         if (data) {
             setShopData(toCamelCase(data) as Shop);
         }
      } else {
-        // Create new shop
         const { data, error } = await supabase
             .from('shops')
             .insert({ ...payload, owner_id: user.id })
@@ -333,7 +334,7 @@ const Dashboard: React.FC = () => {
         
         if (error) {
             console.error("Error creating shop info:", error);
-            alert(`Error creating shop info: ${error.message}`);
+            setAlertInfo({ isOpen: true, title: "Creation Error", message: `Error creating shop info: ${error.message}` });
             return;
         }
         if (data) {
@@ -348,17 +349,16 @@ const Dashboard: React.FC = () => {
         stripeAccountId: null,
         stripeAccountEnabled: false,
       });
-      await fetchData(); // Refresh data to update UI
+      await fetchData(); 
     }
   };
   
   const handleSaveReservation = async (reservationToSave: Omit<Reservation, 'id'> & { id?: string }) => {
     if (!shopData) {
-        alert("Cannot save reservation: shop data not loaded.");
+        setAlertInfo({isOpen: true, title: "Error", message: "Cannot save reservation: shop data not loaded."});
         return;
     }
     
-    // Manual mapping from camelCase (app) to snake_case (db)
     const payload = {
       id: reservationToSave.id,
       shop_id: shopData.id,
@@ -387,7 +387,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving reservation:", error);
-      alert(`Error saving reservation: ${error.message}`);
+      setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving reservation: ${error.message}`});
       return;
     }
 
@@ -410,7 +410,7 @@ const Dashboard: React.FC = () => {
     const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
     if (error) {
       console.error("Error deleting reservation:", error);
-      alert(`Error deleting reservation: ${error.message}`);
+      setAlertInfo({isOpen: true, title: "Delete Error", message: `Error deleting reservation: ${error.message}`});
       return;
     }
     setReservations(prev => prev.filter(r => r.id !== reservationId));
@@ -474,79 +474,87 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-light md:flex">
-      <aside className="hidden md:block w-64 bg-white shadow-md flex-shrink-0">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-brand-dark">
-            <span>Resa</span><span className="text-brand-blue">One</span>
-          </h1>
-        </div>
-        <nav className="mt-6">
-          {navigationItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id as ViewType)}
-              className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${activeView === item.id ? 'bg-blue-50 text-brand-blue border-r-4 border-brand-blue' : 'text-brand-gray hover:bg-gray-100'}`}
-            >
-              {item.icon}
-              <span className="ml-4 font-semibold">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+    <>
+        <div className="min-h-screen bg-brand-light md:flex">
+        <aside className="hidden md:block w-64 bg-white shadow-md flex-shrink-0">
+            <div className="p-6">
+            <h1 className="text-2xl font-bold text-brand-dark">
+                <span>Resa</span><span className="text-brand-blue">One</span>
+            </h1>
+            </div>
+            <nav className="mt-6">
+            {navigationItems.map(item => (
+                <button
+                key={item.id}
+                onClick={() => setActiveView(item.id as ViewType)}
+                className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${activeView === item.id ? 'bg-blue-50 text-brand-blue border-r-4 border-brand-blue' : 'text-brand-gray hover:bg-gray-100'}`}
+                >
+                {item.icon}
+                <span className="ml-4 font-semibold">{item.label}</span>
+                </button>
+            ))}
+            </nav>
+        </aside>
 
-      <div className="flex-1 flex flex-col pb-20 md:pb-0">
-        <header className="bg-white shadow-sm">
-          <div className="container mx-auto px-6 py-4 flex justify-end items-center">
-            <div className="text-right mr-4">
-              <p className="font-semibold text-brand-dark">{user?.email}</p>
-              <p className="text-sm text-brand-gray">{t.shopOwner}</p>
+        <div className="flex-1 flex flex-col pb-20 md:pb-0">
+            <header className="bg-white shadow-sm">
+            <div className="container mx-auto px-6 py-4 flex justify-end items-center">
+                <div className="text-right mr-4">
+                <p className="font-semibold text-brand-dark">{user?.email}</p>
+                <p className="text-sm text-brand-gray">{t.shopOwner}</p>
+                </div>
+                <button
+                onClick={logOut}
+                className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300"
+                >
+                {t.logout}
+                </button>
             </div>
-            <button
-              onClick={logOut}
-              className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300"
-            >
-              {t.logout}
-            </button>
-          </div>
-        </header>
-        <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-          {renderContent()}
-        </main>
-        
-        {isReservationEditorOpen && shopData && (
-          <ReservationEditor
-            isOpen={isReservationEditorOpen}
-            onClose={() => {
-              setIsReservationEditorOpen(false);
-              setEditingReservation(null);
-            }}
-            onSave={handleSaveReservation}
-            onDelete={handleDeleteReservation}
-            reservationToEdit={editingReservation}
-            services={services}
-            shopSchedule={shopData.schedule}
-            shopId={shopData.id}
-          />
-        )}
-        
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
-            <div className="flex justify-around items-center">
-                {navigationItems.map(item => (
-                    <button
-                        key={item.id}
-                        onClick={() => setActiveView(item.id as ViewType)}
-                        className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${activeView === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
-                        style={{ flexBasis: '0' }}
-                    >
-                        {item.icon}
-                        <span className="text-xs font-medium text-center mt-1">{item.label}</span>
-                    </button>
-                ))}
-            </div>
-        </nav>
-      </div>
-    </div>
+            </header>
+            <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
+            {renderContent()}
+            </main>
+            
+            {isReservationEditorOpen && shopData && (
+            <ReservationEditor
+                isOpen={isReservationEditorOpen}
+                onClose={() => {
+                setIsReservationEditorOpen(false);
+                setEditingReservation(null);
+                }}
+                onSave={handleSaveReservation}
+                onDelete={handleDeleteReservation}
+                reservationToEdit={editingReservation}
+                services={services}
+                shopSchedule={shopData.schedule}
+                shopId={shopData.id}
+            />
+            )}
+            
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
+                <div className="flex justify-around items-center">
+                    {navigationItems.map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveView(item.id as ViewType)}
+                            className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${activeView === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
+                            style={{ flexBasis: '0' }}
+                        >
+                            {item.icon}
+                            <span className="text-xs font-medium text-center mt-1">{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
+        </div>
+        </div>
+        <AlertModal
+            isOpen={alertInfo.isOpen}
+            onClose={() => setAlertInfo({ isOpen: false, title: '', message: '' })}
+            title={alertInfo.title}
+            message={alertInfo.message}
+        />
+    </>
   );
 };
 
