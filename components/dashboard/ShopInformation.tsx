@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,7 +24,17 @@ const initialSchedule: Schedule = {
   sunday: { isOpen: false, timeframes: [] },
 };
 
-type ServiceArea = { id: number; city: string; country: string; range: number; };
+const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
+    return {
+        businessType: 'local',
+        minBookingNotice: '4h',
+        maxBookingHorizon: '12w',
+        acceptsOnSitePayment: false,
+        bookingFee: '20',
+        ...shopData,
+        schedule: shopData?.schedule || initialSchedule,
+    }
+}
 
 const TimePicker: React.FC<{ value: string, onChange: (value: string) => void }> = ({ value, onChange }) => {
   const timeOptions = useMemo(() => {
@@ -57,20 +66,12 @@ interface ShopInformationProps {
 
 const ShopInformation: React.FC<ShopInformationProps> = ({ shopData, onSave }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
   
-  const [formData, setFormData] = useState<Partial<Shop>>(shopData || {});
+  const [formData, setFormData] = useState<Partial<Shop>>(getInitialFormData(shopData));
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (shopData) {
-      // Ensure schedule is initialized if it's null in the DB
-      const initialData = {
-          ...shopData,
-          schedule: shopData.schedule || initialSchedule,
-      };
-      setFormData(initialData);
-    }
+    setFormData(getInitialFormData(shopData));
   }, [shopData]);
 
 
@@ -134,7 +135,7 @@ const ShopInformation: React.FC<ShopInformationProps> = ({ shopData, onSave }) =
   const handleSaveClick = async () => {
     setIsSaving(true);
     // Exclude properties that shouldn't be sent in the update payload, like id, owner_id etc.
-    const { id, ...updateData } = formData;
+    const { id, owner_id, ...updateData } = formData;
     await onSave(updateData);
     setIsSaving(false);
   };

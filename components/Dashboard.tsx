@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -33,6 +32,7 @@ export interface Service {
 
 export interface Shop {
     id: string;
+    owner_id: string;
     name: string;
     phone?: string;
     email?: string;
@@ -95,35 +95,37 @@ const Dashboard: React.FC = () => {
             .eq('owner_id', user.id)
             .single();
 
-        if (shopError || !shop) {
-            console.warn("User has no shop yet, or error fetching shop:", shopError?.message);
-            setLoading(false);
-            return;
+        // This is not an error for a new user, just means they need to create a shop.
+        if (shopError && shopError.code !== 'PGRST116') { // PGRST116 = 0 rows
+            console.error("Error fetching shop:", shopError);
+        } else if (shop) {
+             setShopData(shop as Shop);
         }
-        setShopData(shop as Shop);
+       
+        if (shop) {
+            const { data: shopServices, error: servicesError } = await supabase
+                .from('services')
+                .select('*')
+                .eq('shop_id', shop.id);
+            
+            if (servicesError) {
+                console.error("Error fetching services:", servicesError);
+            } else {
+                setServices(shopServices as Service[]);
+            }
+            
+            const { data: shopReservations, error: reservationsError } = await supabase
+                .from('reservations')
+                .select('*')
+                .eq('shop_id', shop.id)
+                .order('date', { ascending: false })
+                .order('start_time', { ascending: true });
 
-        const { data: shopServices, error: servicesError } = await supabase
-            .from('services')
-            .select('*')
-            .eq('shop_id', shop.id);
-        
-        if (servicesError) {
-            console.error("Error fetching services:", servicesError);
-        } else {
-            setServices(shopServices as Service[]);
-        }
-        
-        const { data: shopReservations, error: reservationsError } = await supabase
-            .from('reservations')
-            .select('*')
-            .eq('shop_id', shop.id)
-            .order('date', { ascending: false })
-            .order('start_time', { ascending: true });
-
-        if (reservationsError) {
-            console.error("Error fetching reservations:", reservationsError);
-        } else {
-            setReservations(shopReservations as Reservation[]);
+            if (reservationsError) {
+                console.error("Error fetching reservations:", reservationsError);
+            } else {
+                setReservations(shopReservations as Reservation[]);
+            }
         }
         
         setLoading(false);
@@ -188,23 +190,40 @@ const Dashboard: React.FC = () => {
     setActiveView('catalog');
   };
 
-  const handleSaveShop = async (updatedShopData: Shop) => {
-     if (!shopData) return;
+  const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
+     if (!user) return;
      
-     const { data, error } = await supabase
-        .from('shops')
-        .update(updatedShopData)
-        .eq('id', shopData.id)
-        .select()
-        .single();
-    
-     if (error) {
-        console.error("Error updating shop info:", error);
-        return;
-     }
-     
-     if (data) {
-        setShopData(data as Shop);
+     if (shopData) {
+        // --- UPDATE existing shop ---
+        const { data, error } = await supabase
+            .from('shops')
+            .update(updatedShopData)
+            .eq('id', shopData.id)
+            .select()
+            .single();
+        
+        if (error) {
+            console.error("Error updating shop info:", error);
+            return;
+        }
+        if (data) {
+            setShopData(data as Shop);
+        }
+     } else {
+        // --- CREATE new shop ---
+        const { data, error } = await supabase
+            .from('shops')
+            .insert({ ...updatedShopData, owner_id: user.id })
+            .select()
+            .single();
+        
+        if (error) {
+            console.error("Error creating shop info:", error);
+            return;
+        }
+        if (data) {
+            setShopData(data as Shop);
+        }
      }
   };
   
