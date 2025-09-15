@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Shop } from '../Dashboard';
+import { VITE_STRIPE_CLIENT_ID } from '../../lib/env';
 
 interface AccountProps {
     shopData: Shop | null;
@@ -46,13 +47,14 @@ const Account: React.FC<AccountProps> = ({ shopData }) => {
         setIsUpdatingPassword(false);
     };
     
-    // In a real app, this would trigger a backend flow to generate a Stripe Connect Onboarding link.
     const handleStripeConnect = () => {
         setIsConnectingStripe(true);
-        // This test client_id is from Stripe's documentation for testing purposes.
-        // It allows the OAuth flow to proceed to a Stripe test page.
-        // In a real application, you would replace this with your own platform's client_id.
-        const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_gT4G6d5H5g6g6g6g6g6g6g6g6g6g6g6g&scope=read_write`;
+        if (!VITE_STRIPE_CLIENT_ID) {
+            alert('Stripe connection is not configured correctly. Please contact support.');
+            setIsConnectingStripe(false);
+            return;
+        }
+        const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${VITE_STRIPE_CLIENT_ID}&scope=read_write`;
         window.location.href = stripeConnectUrl;
     };
 

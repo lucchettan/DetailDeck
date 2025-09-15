@@ -211,6 +211,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
        );
     }
 
+    const activeServices = shopData.services.filter(s => s.status === 'active');
+    
     const renderStep = () => {
         switch (step) {
             case 1:
@@ -218,7 +220,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                     <div>
                         <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectService}</h3>
                         <div className="space-y-4">
-                            {shopData.services.filter(s => s.status === 'active').map(service => (
+                            {activeServices.map(service => (
                                 <div key={service.id} className="border rounded-lg p-4 transition-all hover:border-brand-blue">
                                     <h4 className="font-bold">{service.name}</h4>
                                     <p className="text-sm text-brand-gray">{service.description}</p>
@@ -290,6 +292,30 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         ))}
                      </div>
                 </div>
+            </div>
+        );
+    }
+    
+    if (activeServices.length === 0 && step !== 'confirmed') {
+        return (
+            <div className="bg-brand-light min-h-screen">
+                <header className="bg-white shadow-sm p-4">
+                    <div className="container mx-auto flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                            {shopData.shopImageUrl && <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />}
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
+                            <p className="text-brand-gray">{shopData.phone}</p>
+                        </div>
+                    </div>
+                </header>
+                <main className="container mx-auto p-4 md:p-8">
+                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md text-center">
+                        <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectService}</h3>
+                        <p className="text-brand-gray">{t.noServicesAvailable}</p>
+                    </div>
+                </main>
             </div>
         );
     }

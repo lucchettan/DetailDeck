@@ -9,7 +9,7 @@ import CustomSelect from '../CustomSelect';
 interface ServiceEditorProps {
   service: Service | null;
   onBack: () => void;
-  onSave: (service: Omit<Service, 'id'> & { id?: string }) => void;
+  onSave: (service: Omit<Service, 'id'> & { id?: string }) => Promise<boolean | void>;
   onDelete: (serviceId: string) => void;
 }
 
@@ -67,10 +67,31 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
   const { t } = useLanguage();
   const isEditing = service !== null;
   const [formData, setFormData] = useState(getInitialFormData(service));
+  const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     setFormData(getInitialFormData(service));
+    setErrors({});
   }, [service]);
+  
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.name.trim()) {
+      newErrors.name = t.fieldIsRequired;
+    }
+    if (!formData.varies) {
+      if (!formData.singlePrice?.price) {
+        newErrors.singlePrice = t.priceIsRequired;
+      }
+      if (!formData.singlePrice?.duration) {
+        newErrors.singleDuration = t.durationIsRequired;
+      }
+    }
+    // A more complex validation could check if at least one varied price is set.
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -78,6 +99,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
     
     setFormData(prev => ({ ...prev, [name]: checked !== undefined ? checked : value }));
+    if (errors[name]) {
+        setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[name];
+            return newErrors;
+        });
+    }
   };
 
   const handlePricingChange = (size: 'S'|'M'|'L'|'XL', field: 'price'|'duration', value: string) => {
@@ -102,6 +130,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
 
   const handleSinglePriceChange = (field: 'price'|'duration', value: string) => {
     setFormData(prev => ({ ...prev, singlePrice: { ...prev.singlePrice, [field]: value } }));
+     if (field === 'price' && errors.singlePrice) {
+        setErrors(prev => ({...prev, singlePrice: ''}));
+    }
+     if (field === 'duration' && errors.singleDuration) {
+        setErrors(prev => ({...prev, singleDuration: ''}));
+    }
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,10 +172,21 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
     }
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-  }
+    if (!validate()) return;
+
+    setIsSaving(true);
+    const success = await onSave(formData);
+    setIsSaving(false);
+
+    if (success && !isEditing) {
+      alert(t.serviceCreatedSuccess);
+      // The parent component handles navigation back to the catalog list.
+    } else if (!success) {
+      alert('An error occurred while saving. Please try again.');
+    }
+  };
 
   return (
     <div>
@@ -153,7 +198,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow-md">
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleSave} noValidate>
             {/* Image Upload */}
             <div className="mb-8">
                 <label className="block text-sm font-bold text-brand-dark mb-2">{t.serviceImage}</label>
@@ -188,6 +233,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
               <div>
                 <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceName}</label>
                 <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-lg" required />
+                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
                 <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceStatus}</label>
@@ -237,14 +283,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 max-w-sm">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <MoneyIcon className="h-5 w-5 text-gray-400" />
+                        <div>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <MoneyIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border border-gray-300 rounded-lg" />
                             </div>
-                            <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border border-gray-300 rounded-lg" />
+                            {errors.singlePrice && <p className="text-red-500 text-xs mt-1">{errors.singlePrice}</p>}
                         </div>
-                        <div className="relative">
-                            <DurationPicker value={formData.singlePrice?.duration} onChange={(value) => handleSinglePriceChange('duration', value)} />
+                         <div>
+                            <div className="relative">
+                                <DurationPicker value={formData.singlePrice?.duration} onChange={(value) => handleSinglePriceChange('duration', value)} />
+                            </div>
+                            {errors.singleDuration && <p className="text-red-500 text-xs mt-1">{errors.singleDuration}</p>}
                         </div>
                     </div>
                 )}
@@ -301,8 +353,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
               <button type="button" onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">
                 {t.cancel}
               </button>
-              <button type="submit" className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
-                {isEditing ? t.saveChanges : t.createService}
+              <button type="submit" disabled={isSaving} className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75">
+                {isSaving ? '...' : (isEditing ? t.saveChanges : t.createService)}
               </button>
             </div>
           </form>

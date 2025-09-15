@@ -140,8 +140,8 @@ const Dashboard: React.FC = () => {
     stripe: !!shopData?.stripe_account_id && !!shopData?.stripe_account_enabled,
   };
 
-  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
-    if (!shopData) return;
+  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
+    if (!shopData) return false;
     
     const servicePayload = {
       ...serviceToSave,
@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving service:", error);
-      return;
+      return false;
     }
 
     if (data) {
@@ -170,6 +170,7 @@ const Dashboard: React.FC = () => {
     }
     
     setActiveView('catalog');
+    return true;
   };
 
   const handleDeleteService = async (serviceId: string) => {

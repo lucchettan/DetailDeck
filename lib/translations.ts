@@ -1,5 +1,4 @@
 
-
 export const translations = {
   en: {
     // Header & Auth
@@ -230,6 +229,10 @@ export const translations = {
     serviceImage: 'Service Image',
     uploadImage: 'Upload Image',
     changeImage: 'Change Image',
+    fieldIsRequired: 'This field is required.',
+    priceIsRequired: 'A price is required.',
+    durationIsRequired: 'A duration is required.',
+    serviceCreatedSuccess: 'Service created successfully!',
     // Booking Policies
     bookingPolicies: "Booking Policies",
     bookingPoliciesSubtitle: "Set rules for when and how clients can book your services.",
@@ -277,6 +280,7 @@ export const translations = {
     loadingReservations: 'Checking availability...',
     confirmingBooking: 'Confirming your booking...',
     bookingFailed: 'An unexpected error occurred during booking. Please try again.',
+    noServicesAvailable: "This shop hasn't configured any services yet. Please check back later.",
      // Reservations Management
     manageReservations: 'Manage your reservations',
     manageReservationsSubtitle: 'View, create, and edit your client appointments.',
@@ -543,6 +547,10 @@ export const translations = {
     serviceImage: 'Image de la prestation',
     uploadImage: 'Ajouter une image',
     changeImage: 'Changer l\'image',
+    fieldIsRequired: 'Ce champ est obligatoire.',
+    priceIsRequired: 'Un tarif est requis.',
+    durationIsRequired: 'Une durée est requise.',
+    serviceCreatedSuccess: 'Prestation créée avec succès !',
     // Booking Policies
     bookingPolicies: "Politiques de Réservation",
     bookingPoliciesSubtitle: "Définissez des règles pour quand et comment les clients peuvent réserver vos services.",
@@ -590,6 +598,7 @@ export const translations = {
     loadingReservations: 'Vérification des disponibilités...',
     confirmingBooking: 'Confirmation de votre réservation...',
     bookingFailed: 'Une erreur inattendue est survenue lors de la réservation. Veuillez réessayer.',
+    noServicesAvailable: "Ce shop n'a pas encore configuré de prestations. Veuillez revenir plus tard.",
     // Reservations Management
     manageReservations: 'Gérez vos réservations',
     manageReservationsSubtitle: 'Consultez, créez et modifiez les rendez-vous de vos clients.',
@@ -856,6 +865,10 @@ export const translations = {
     serviceImage: 'Imagen del servicio',
     uploadImage: 'Subir imagen',
     changeImage: 'Cambiar imagen',
+    fieldIsRequired: 'Este campo es obligatorio.',
+    priceIsRequired: 'Se requiere un precio.',
+    durationIsRequired: 'Se requiere una duración.',
+    serviceCreatedSuccess: '¡Servicio creado con éxito!',
     // Booking Policies
     bookingPolicies: "Políticas de Reserva",
     bookingPoliciesSubtitle: "Establece reglas sobre cuándo y cómo los clientes pueden reservar tus servicios.",
@@ -903,6 +916,7 @@ export const translations = {
     loadingReservations: 'Comprobando disponibilidad...',
     confirmingBooking: 'Confirmando tu reserva...',
     bookingFailed: 'Ocurrió un error inesperado durante la reserva. Por favor, inténtalo de nuevo.',
+    noServicesAvailable: 'Esta tienda aún no ha configurado ningún servicio. Por favor, vuelve más tarde.',
     // Reservations Management
     manageReservations: 'Gestiona tus reservas',
     manageReservationsSubtitle: 'Consulta, crea y edita las citas de tus clientes.',
