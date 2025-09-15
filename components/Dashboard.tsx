@@ -12,6 +12,7 @@ import Reservations from './dashboard/Reservations';
 import Analytics from './dashboard/Analytics';
 import Account from './dashboard/Account';
 import { supabase } from '../lib/supabaseClient';
+import ReservationEditor from './dashboard/ReservationEditor';
 
 type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics' | 'account';
 
@@ -48,6 +49,27 @@ export interface Shop {
     stripe_account_enabled?: boolean;
 }
 
+export interface Reservation {
+    id: string;
+    shop_id: string;
+    service_id: string;
+    date: string; // YYYY-MM-DD
+    start_time: string; // HH:MM
+    duration: number; // minutes
+    price: number;
+    client_name: string;
+    client_email: string;
+    client_phone: string;
+    status: 'upcoming' | 'completed' | 'cancelled';
+    payment_status: 'paid' | 'pending_deposit' | 'on_site';
+    service_details: {
+        name: string;
+        vehicleSize?: 'S' | 'M' | 'L' | 'XL';
+        addOns: any[];
+    };
+    created_at?: string;
+}
+
 
 const Dashboard: React.FC = () => {
   const { user, logOut } = useAuth();
@@ -56,14 +78,17 @@ const Dashboard: React.FC = () => {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [shopData, setShopData] = useState<Shop | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
         if (!user) return;
         setLoading(true);
 
-        // 1. Fetch the user's shop
         const { data: shop, error: shopError } = await supabase
             .from('shops')
             .select('*')
@@ -71,13 +96,12 @@ const Dashboard: React.FC = () => {
             .single();
 
         if (shopError || !shop) {
-            console.error("Error fetching shop or no shop found:", shopError);
+            console.warn("User has no shop yet, or error fetching shop:", shopError?.message);
             setLoading(false);
             return;
         }
         setShopData(shop as Shop);
 
-        // 2. Fetch services for that shop
         const { data: shopServices, error: servicesError } = await supabase
             .from('services')
             .select('*')
@@ -87,6 +111,19 @@ const Dashboard: React.FC = () => {
             console.error("Error fetching services:", servicesError);
         } else {
             setServices(shopServices as Service[]);
+        }
+        
+        const { data: shopReservations, error: reservationsError } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('shop_id', shop.id)
+            .order('date', { ascending: false })
+            .order('start_time', { ascending: true });
+
+        if (reservationsError) {
+            console.error("Error fetching reservations:", reservationsError);
+        } else {
+            setReservations(shopReservations as Reservation[]);
         }
         
         setLoading(false);
@@ -118,12 +155,10 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error saving service:", error);
-      // Here you might want to show an error toast to the user
       return;
     }
 
     if (data) {
-       // If it's a new service, add it to the list. Otherwise, update the existing one.
       setServices(prev => {
         const exists = prev.some(s => s.id === data.id);
         if (exists) {
@@ -144,7 +179,6 @@ const Dashboard: React.FC = () => {
 
     if (error) {
       console.error("Error deleting service:", error);
-      // Show error toast
       return;
     }
 
@@ -164,19 +198,66 @@ const Dashboard: React.FC = () => {
     
      if (error) {
         console.error("Error updating shop info:", error);
-        // show toast
         return;
      }
      
      if (data) {
         setShopData(data as Shop);
-        // Optionally show a success toast
      }
   };
+  
+  const handleSaveReservation = async (reservationToSave: Omit<Reservation, 'id'> & { id?: string }) => {
+    if (!shopData) return;
+    
+    const payload = {
+      ...reservationToSave,
+      shop_id: shopData.id,
+    };
+    
+    const { data, error } = await supabase
+      .from('reservations')
+      .upsert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving reservation:", error);
+      return;
+    }
+
+    if (data) {
+      setReservations(prev => {
+        const exists = prev.some(r => r.id === data.id);
+        if (exists) {
+          return prev.map(r => r.id === data.id ? data as Reservation : r);
+        }
+        return [...prev, data as Reservation].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      });
+    }
+    
+    setIsReservationEditorOpen(false);
+    setEditingReservation(null);
+  };
+  
+  const handleDeleteReservation = async (reservationId: string) => {
+    const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
+    if (error) {
+      console.error("Error deleting reservation:", error);
+      return;
+    }
+    setReservations(prev => prev.filter(r => r.id !== reservationId));
+    setIsReservationEditorOpen(false);
+    setEditingReservation(null);
+  }
 
   const navigateToServiceEditor = (serviceId: string | null) => {
     setEditingServiceId(serviceId);
     setActiveView('serviceEditor');
+  };
+
+  const openReservationEditor = (reservation: Reservation | null) => {
+    setEditingReservation(reservation);
+    setIsReservationEditorOpen(true);
   };
 
   const navigationItems = [
@@ -213,7 +294,7 @@ const Dashboard: React.FC = () => {
                  onDelete={handleDeleteService}
                />;
       case 'reservations':
-        return <Reservations />;
+        return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
       case 'analytics':
         return <Analytics />;
       case 'account':
@@ -225,7 +306,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-brand-light md:flex">
-      {/* Sidebar - Desktop */}
       <aside className="hidden md:block w-64 bg-white shadow-md flex-shrink-0">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-brand-dark">
@@ -246,7 +326,6 @@ const Dashboard: React.FC = () => {
         </nav>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col pb-20 md:pb-0">
         <header className="bg-white shadow-sm">
           <div className="container mx-auto px-6 py-4 flex justify-end items-center">
@@ -266,7 +345,22 @@ const Dashboard: React.FC = () => {
           {renderContent()}
         </main>
         
-        {/* Mobile Navigation - Bottom Bar */}
+        {isReservationEditorOpen && shopData && (
+          <ReservationEditor
+            isOpen={isReservationEditorOpen}
+            onClose={() => {
+              setIsReservationEditorOpen(false);
+              setEditingReservation(null);
+            }}
+            onSave={handleSaveReservation}
+            onDelete={handleDeleteReservation}
+            reservationToEdit={editingReservation}
+            services={services}
+            shopSchedule={shopData.schedule}
+            shopId={shopData.id}
+          />
+        )}
+        
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
             <div className="flex justify-around items-center">
                 {navigationItems.map(item => (

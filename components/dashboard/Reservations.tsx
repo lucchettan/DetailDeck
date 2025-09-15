@@ -1,20 +1,135 @@
 
-import React from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
 
-const Reservations: React.FC = () => {
+import React, { useMemo } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Reservation } from '../Dashboard';
+import { CalendarPlusIcon } from '../Icons';
+
+interface ReservationsProps {
+  reservations: Reservation[];
+  onAdd: () => void;
+  onEdit: (reservation: Reservation) => void;
+}
+
+const getStatusBadgeStyle = (status: Reservation['status']) => {
+  switch (status) {
+    case 'completed': return 'bg-green-100 text-green-800';
+    case 'cancelled': return 'bg-red-100 text-red-800';
+    default: return 'bg-blue-100 text-blue-800'; // upcoming
+  }
+}
+
+const getPaymentStatusBadgeStyle = (status: Reservation['payment_status']) => {
+  switch (status) {
+    case 'paid': return 'bg-green-100 text-green-800';
+    case 'pending_deposit': return 'bg-yellow-100 text-yellow-800';
+    default: return 'bg-gray-100 text-gray-800'; // on_site
+  }
+}
+
+const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; services: {name: string, id: string}[] }> = ({ reservation, onEdit }) => {
   const { t } = useLanguage();
+  const { date, start_time, client_name, service_details, status, payment_status } = reservation;
+  
+  const formattedDate = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  return (
+    <button onClick={() => onEdit(reservation)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
+        <div>
+          <p className="font-bold text-brand-dark">{client_name}</p>
+          <p className="text-sm text-brand-gray">{service_details?.name || 'Service not found'}</p>
+        </div>
+        <div className="mt-2 sm:mt-0 text-right">
+          <p className="font-semibold text-brand-dark">{start_time}</p>
+        </div>
+      </div>
+      <div className="mt-4 pt-2 border-t flex flex-wrap gap-2 text-xs">
+        <span className={`px-2 py-1 rounded-full font-semibold ${getStatusBadgeStyle(status)}`}>
+          {t[`status_${status}`]}
+        </span>
+        <span className={`px-2 py-1 rounded-full font-semibold ${getPaymentStatusBadgeStyle(payment_status)}`}>
+          {t[`payment_${payment_status}`]}
+        </span>
+      </div>
+    </button>
+  );
+};
+
+
+const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit }) => {
+  const { t } = useLanguage();
+
+  const { upcoming, past } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+    return reservations.reduce<{ upcoming: Reservation[], past: Reservation[] }>((acc, res) => {
+        const resDate = new Date(res.date + 'T00:00:00'); // Ensure date is parsed in local timezone
+        if (resDate >= today) {
+            acc.upcoming.push(res);
+        } else {
+            acc.past.push(res);
+        }
+        return acc;
+    }, { upcoming: [], past: [] });
+  }, [reservations]);
+  
+  const groupReservationsByDate = (resList: Reservation[]) => {
+      return resList.reduce<Record<string, Reservation[]>>((groups, res) => {
+          const date = res.date;
+          if (!groups[date]) {
+              groups[date] = [];
+          }
+          groups[date].push(res);
+          return groups;
+      }, {});
+  };
+  
+  const upcomingGrouped = groupReservationsByDate(upcoming.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+  const pastGrouped = groupReservationsByDate(past); // Already sorted descending by Dashboard
+
+  const renderGroup = (groupedData: Record<string, Reservation[]>) => {
+      const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      
+      return Object.entries(groupedData).map(([date, resList]) => {
+          let dateLabel = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+          if (date === today) dateLabel = "Today";
+          if (date === tomorrow) dateLabel = "Tomorrow";
+
+          return (
+            <div key={date}>
+              <h3 className="font-bold text-brand-dark mt-6 mb-2">{dateLabel}</h3>
+              <div className="space-y-3">
+                {resList.map(res => <ReservationCard key={res.id} reservation={res} onEdit={onEdit} services={[]} />)}
+              </div>
+            </div>
+          );
+      });
+  }
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.reservations}</h2>
-      <p className="text-brand-gray mb-6">Explore and manage your reservations.</p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-brand-dark">{t.reservations}</h2>
+          <p className="text-brand-gray mt-1">{t.manageReservationsSubtitle}</p>
+        </div>
+        <button onClick={onAdd} className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+            <CalendarPlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">{t.addReservation}</span>
+        </button>
+      </div>
       
-      <div className="bg-white p-8 rounded-lg shadow-md text-center">
-        <h3 className="text-xl font-semibold text-brand-dark">Coming Soon!</h3>
-        <p className="text-brand-gray mt-2">
-          This is where you'll be able to view, manage, and filter all your client bookings.
-        </p>
+      <div>
+        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.upcoming}</h3>
+        {upcoming.length > 0 ? renderGroup(upcomingGrouped) : <p className="text-brand-gray mt-4">{t.noUpcomingReservations}</p>}
+      </div>
+
+      <div className="mt-12">
+        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.past}</h3>
+        {past.length > 0 ? renderGroup(pastGrouped) : <p className="text-brand-gray mt-4">{t.noPastReservations}</p>}
       </div>
     </div>
   );
