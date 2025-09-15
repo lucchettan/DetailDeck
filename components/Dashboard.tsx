@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon } from './Icons';
@@ -9,11 +10,13 @@ import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
 import Reservations from './dashboard/Reservations';
 import Analytics from './dashboard/Analytics';
+import { supabase } from '../lib/supabaseClient';
 
 type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
 
 export interface Service {
   id: string;
+  shop_id?: string;
   name: string;
   description: string;
   status: 'active' | 'inactive';
@@ -26,52 +29,21 @@ export interface Service {
   imageUrl?: string;
 }
 
-
-const initialServices: Service[] = [
-  { 
-    id: '1', 
-    name: 'Premium Interior Cleaning', 
-    description: 'Deep clean of all interior surfaces.', 
-    status: 'active', 
-    varies: true,
-    pricing: {
-        S: { price: '150', duration: '120', enabled: true },
-        M: { price: '180', duration: '150', enabled: true },
-        L: { price: '210', duration: '180', enabled: true },
-        XL: { price: '240', duration: '210', enabled: true },
-    },
-    singlePrice: { price: '150', duration: '120' },
-    addOns: [],
-    imageUrl: '',
-  },
-  { 
-    id: '2', 
-    name: 'Exterior Wash & Wax', 
-    description: 'Hand wash, clay bar, and wax.', 
-    status: 'active', 
-    varies: false,
-    pricing: {},
-    singlePrice: { price: '120', duration: '90' },
-    addOns: [],
-    imageUrl: '',
-  },
-  { 
-    id: '3', 
-    name: 'Ceramic Coating Prep', 
-    description: 'Full paint correction for coating application.', 
-    status: 'inactive', 
-    varies: true,
-    pricing: {
-        S: { price: '500', duration: '300', enabled: true },
-        M: { price: '600', duration: '360', enabled: true },
-        L: { price: '700', duration: '420', enabled: false },
-        XL: { price: '800', duration: '480', enabled: false },
-    },
-    singlePrice: { price: '500', duration: '300' },
-    addOns: [],
-    imageUrl: '',
-  },
-];
+export interface Shop {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    shopImageUrl?: string;
+    businessType: 'local' | 'mobile';
+    address?: string;
+    serviceAreas?: any[]; // Define more strictly if needed
+    schedule: any; // Define more strictly if needed
+    minBookingNotice: string;
+    maxBookingHorizon: string;
+    acceptsOnSitePayment: boolean;
+    bookingFee: string;
+}
 
 
 const Dashboard: React.FC = () => {
@@ -79,34 +51,124 @@ const Dashboard: React.FC = () => {
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const [services, setServices] = useState<Service[]>([]);
+  const [shopData, setShopData] = useState<Shop | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // In a real app, this would be derived from actual data.
-  // For demonstration, we'll assume the user has completed these steps.
+  useEffect(() => {
+    const fetchData = async () => {
+        if (!user) return;
+        setLoading(true);
+
+        // 1. Fetch the user's shop
+        const { data: shop, error: shopError } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('owner_id', user.id)
+            .single();
+
+        if (shopError || !shop) {
+            console.error("Error fetching shop or no shop found:", shopError);
+            setLoading(false);
+            return;
+        }
+        setShopData(shop as Shop);
+
+        // 2. Fetch services for that shop
+        const { data: shopServices, error: servicesError } = await supabase
+            .from('services')
+            .select('*')
+            .eq('shop_id', shop.id);
+        
+        if (servicesError) {
+            console.error("Error fetching services:", servicesError);
+        } else {
+            setServices(shopServices as Service[]);
+        }
+        
+        setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+
   const setupStatus = {
-    shopInfo: true, // Assume completed for demo
-    availability: true, // Assume completed for demo
+    shopInfo: !!shopData?.name,
+    availability: !!shopData?.schedule, 
     catalog: services.length > 0,
   };
 
-  const handleSaveService = (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
-    if (serviceToSave.id) {
-      // Update existing service
-      setServices(services.map(s => s.id === serviceToSave.id ? { ...s, ...serviceToSave } as Service : s));
-    } else {
-      // Create new service
-      const newService: Service = {
-        ...serviceToSave,
-        id: Date.now().toString(),
-      };
-      setServices([...services, newService]);
+  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
+    if (!shopData) return;
+    
+    const servicePayload = {
+      ...serviceToSave,
+      shop_id: shopData.id,
+    };
+    
+    const { data, error } = await supabase
+      .from('services')
+      .upsert(servicePayload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving service:", error);
+      // Here you might want to show an error toast to the user
+      return;
     }
+
+    if (data) {
+       // If it's a new service, add it to the list. Otherwise, update the existing one.
+      setServices(prev => {
+        const exists = prev.some(s => s.id === data.id);
+        if (exists) {
+          return prev.map(s => s.id === data.id ? data as Service : s);
+        }
+        return [...prev, data as Service];
+      });
+    }
+    
     setActiveView('catalog');
   };
 
-  const handleDeleteService = (serviceId: string) => {
+  const handleDeleteService = async (serviceId: string) => {
+    const { error } = await supabase
+      .from('services')
+      .delete()
+      .eq('id', serviceId);
+
+    if (error) {
+      console.error("Error deleting service:", error);
+      // Show error toast
+      return;
+    }
+
     setServices(services.filter(s => s.id !== serviceId));
     setActiveView('catalog');
+  };
+
+  const handleSaveShop = async (updatedShopData: Shop) => {
+     if (!shopData) return;
+     
+     const { data, error } = await supabase
+        .from('shops')
+        .update(updatedShopData)
+        .eq('id', shopData.id)
+        .select()
+        .single();
+    
+     if (error) {
+        console.error("Error updating shop info:", error);
+        // show toast
+        return;
+     }
+     
+     if (data) {
+        setShopData(data as Shop);
+        // Optionally show a success toast
+     }
   };
 
   const navigateToServiceEditor = (serviceId: string | null) => {
@@ -123,11 +185,19 @@ const Dashboard: React.FC = () => {
   ];
 
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
+        </div>
+      );
+    }
+
     switch (activeView) {
       case 'home':
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} />;
+        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id} />;
       case 'shop':
-        return <ShopInformation />;
+        return <ShopInformation shopData={shopData} onSave={handleSaveShop} />;
       case 'catalog':
         return <Catalog services={services} onEditService={navigateToServiceEditor} />;
       case 'serviceEditor':
@@ -143,7 +213,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       default:
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} />;
+        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
     }
   };
 

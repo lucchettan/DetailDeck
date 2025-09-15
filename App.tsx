@@ -17,6 +17,7 @@ import Dashboard from './components/Dashboard';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { trackEvent } from './lib/analytics';
+import BookingPage from './components/BookingPage';
 
 // This is a central type used across payment flows.
 export type SelectedPlanId = 'solo' | 'lifetime';
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [path, setPath] = useState(window.location.pathname);
 
   useEffect(() => {
     // Track page view for analytics
@@ -45,6 +47,13 @@ const AppContent: React.FC = () => {
       setShowPaymentSuccess(true);
       window.history.replaceState(null, '', window.location.pathname);
     }
+    
+    const onLocationChange = () => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', onLocationChange);
+    return () => window.removeEventListener('popstate', onLocationChange);
+
   }, []);
   
   const openAuthModal = (view: 'login' | 'signup' = 'signup') => {
@@ -73,6 +82,13 @@ const AppContent: React.FC = () => {
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-brand-blue"></div>
       </div>
     );
+  }
+
+  const reservationMatch = path.match(/^\/reservation\/(\w+)/);
+  if (reservationMatch) {
+    const shopId = reservationMatch[1];
+    // In a real app, you might want a different layout for the booking page (e.g., no main header/footer)
+    return <BookingPage shopId={shopId} />;
   }
 
   if (user) {
