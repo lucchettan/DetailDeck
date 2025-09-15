@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon } from '../Icons';
+import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon, StripeIcon } from '../Icons';
 
 interface DashboardHomeProps {
   onNavigate: (view: string) => void;
@@ -11,6 +11,7 @@ interface DashboardHomeProps {
     shopInfo: boolean;
     availability: boolean;
     catalog: boolean;
+    stripe: boolean;
   };
   shopId?: string;
 }
@@ -48,10 +49,16 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
       icon: <TagIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: setupStatus.catalog
     },
+     { 
+      id: 'account',
+      title: t.setupStripe, 
+      icon: <StripeIcon className="w-16 h-auto" />, 
+      isComplete: setupStatus.stripe
+    },
   ];
 
   // FIX: Create a strongly-typed array of keys for accessing translations.
-  const stepLabels = ['step1', 'step2', 'step3'] as const;
+  const stepLabels = ['step1', 'step2', 'step3', 'step4'] as const;
 
   return (
     <div>
@@ -63,7 +70,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
         <h3 className="text-xl font-bold text-brand-dark mb-1">{t.getStartedGuide}</h3>
         <p className="text-brand-gray mb-6">Complete these steps to get your booking page ready.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, index) => (
             <button 
               key={step.id + index}

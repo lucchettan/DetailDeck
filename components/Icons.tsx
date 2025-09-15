@@ -154,6 +154,21 @@ export const ShareIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
     </svg>
 );
 
+export const StripeIcon: React.FC<IconProps> = ({ className = 'w-8 h-8' }) => (
+    <svg className={className} viewBox="0 0 84 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clipPath="url(#clip0_301_2)">
+            <path d="M75.83 36H63.69L67.3 22.8H59.27V36H47.13V0.960001H64.91C69.45 0.960001 73.08 2.22 75.8 4.74C78.53 7.26 80.03 10.61 80.03 14.79C80.03 18.23 79.11 21.13 77.27 23.49C75.43 25.85 72.82 27.42 69.44 28.2L75.83 36ZM60.3 16.92H66.69C68.42 16.92 69.7 16.48 70.53 15.6C71.36 14.72 71.78 13.56 71.78 12.12C71.78 10.68 71.36 9.52 70.53 8.64C69.7 7.76 68.42 7.32 66.69 7.32H60.3V16.92Z" fill="#635BFF"/>
+            <path d="M43.34 36H24.32L29.15 20.21C27.91 19.85 26.85 19.22 25.97 18.32C25.09 17.42 24.44 16.36 24.02 15.14L32.05 0.960001H44.19L36.16 15.14C37.4 15.5 38.46 16.13 39.34 17.03C40.22 17.93 40.87 18.99 41.29 20.21L43.34 36Z" fill="#635BFF"/>
+            <path d="M21.29 20.28C19.86 19.33 18.98 18.01 18.65 16.33L15.42 0.960001H3.99998L0.23999 36H12.38L15.93 14.1C16.14 12.92 16.59 12.01 17.28 11.37C17.97 10.73 18.84 10.41 19.89 10.41C21.11 10.41 22.1 10.82 22.86 11.64C23.62 12.46 24.05 13.5 24.15 14.76L21.29 20.28Z" fill="#635BFF"/>
+        </g>
+        <defs>
+            <clipPath id="clip0_301_2">
+                <rect width="84" height="36" fill="white"/>
+            </clipPath>
+        </defs>
+    </svg>
+);
+
 export const UserCircleIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />

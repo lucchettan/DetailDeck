@@ -137,6 +137,7 @@ const Dashboard: React.FC = () => {
     shopInfo: !!shopData?.name,
     availability: !!shopData?.schedule, 
     catalog: services.length > 0,
+    stripe: !!shopData?.stripe_account_id && !!shopData?.stripe_account_enabled,
   };
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }) => {
