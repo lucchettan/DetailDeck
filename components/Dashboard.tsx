@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon, UserCircleIcon } from './Icons';
@@ -86,7 +87,7 @@ const Dashboard: React.FC = () => {
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -128,18 +129,19 @@ const Dashboard: React.FC = () => {
     } finally {
         setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [fetchData]);
 
   // Handle Stripe Connect callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const stripeCode = params.get('code');
 
-    if (stripeCode && !isFinalizingStripe) {
+    // Only run if we have a stripe code, a user session, and we are not already processing.
+    if (stripeCode && user && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
         try {
@@ -170,7 +172,7 @@ const Dashboard: React.FC = () => {
       };
       finalizeConnection();
     }
-  }, []);
+  }, [user, isFinalizingStripe, fetchData]);
 
 
   const setupStatus = {
