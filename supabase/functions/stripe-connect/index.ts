@@ -1,7 +1,6 @@
-// Fix: Use the official Supabase Edge Function types from esm.sh.
-// This resolves TS errors about Deno global object not being found in some IDEs.
-// Fix: Updated the type reference to a specific, version-pinned URL to ensure stability and prevent resolution issues. This should correctly load the Deno global types.
-/// <reference types="https://esm.sh/v135/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
+// Fix: Replaced the incorrect type reference with a stable one that provides Deno global types for Supabase Edge Functions.
+// The original URL pointed to a Deno module that has been removed.
+/// <reference types="https://esm.sh/@supabase/functions-js@2/src/edge-runtime.d.ts" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@11.1.0?target=deno";

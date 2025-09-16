@@ -1,9 +1,10 @@
 
 
+
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon, StripeIcon } from '../Icons';
+import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon } from '../Icons';
 
 interface DashboardHomeProps {
   onNavigate: (view: string) => void;
@@ -49,16 +50,10 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
       icon: <TagIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: setupStatus.catalog
     },
-     { 
-      id: 'account',
-      title: t.setupStripe, 
-      icon: <StripeIcon className="w-16 h-auto" />, 
-      isComplete: setupStatus.stripe
-    },
   ];
 
   // FIX: Create a strongly-typed array of keys for accessing translations.
-  const stepLabels = ['step1', 'step2', 'step3', 'step4'] as const;
+  const stepLabels = ['step1', 'step2', 'step3'] as const;
 
   return (
     <div>

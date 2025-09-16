@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 // Fix: Import the 'Reservation' type from the Dashboard component to resolve the type error.
 import { Service, Shop, Reservation } from './Dashboard';
@@ -251,6 +252,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         { id: 'details', name: t.stepperConfirmation, icon: <CheckIcon/> }
     ];
 
+    const BackButton = () => (
+        <button onClick={handleBack} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark transition-colors">
+            <ChevronLeftIcon className="w-5 h-5" />
+            <span>{t.back}</span>
+        </button>
+    );
+
     return (
         <div className="bg-brand-light min-h-screen font-sans">
             <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
@@ -300,7 +308,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                             </button>
                         ))}
                     </div>
-                    <div className="mt-6 text-center"><button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button></div>
+                    <div className="mt-6 text-center"><BackButton /></div>
                 </div>
             )}
 
@@ -324,7 +332,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         ))}
                     </div>
                     <div className="mt-6 flex justify-center items-center gap-6">
-                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <BackButton />
                         <button onClick={handleNext} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600">{t.nextStep}</button>
                     </div>
                 </div>
@@ -347,7 +355,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         </div>
                     </div>
                     <div className="mt-6 flex justify-center items-center gap-6">
-                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <BackButton />
                         <button onClick={handleNext} disabled={!selectedTime} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">{t.nextStep}</button>
                     </div>
                 </div>
@@ -410,7 +418,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         </div>
                     </div>
                      <div className="mt-6 flex justify-center items-center gap-6">
-                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <BackButton />
                         <button onClick={handleConfirmBooking} disabled={isConfirming} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2">
                            <CreditCardIcon className="w-5 h-5"/>
                            <span>{isConfirming ? t.confirmingBooking : `${t.payAndConfirm} €${amountToPay}`}</span>

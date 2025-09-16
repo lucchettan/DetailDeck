@@ -98,7 +98,7 @@ const LanguageSwitcher: React.FC = () => {
 }
 
 
-const Header: React.FC<{ onGetStartedClick: () => void; onDemoClick: () => void; }> = ({ onGetStartedClick, onDemoClick }) => {
+const Header: React.FC<{ onLogInClick: () => void; onSignUpClick: () => void; onDemoClick: () => void; }> = ({ onLogInClick, onSignUpClick, onDemoClick }) => {
   const { t } = useLanguage();
   const { user, logOut } = useAuth();
 
@@ -135,11 +135,17 @@ const Header: React.FC<{ onGetStartedClick: () => void; onDemoClick: () => void;
                 >
                   {t.accessDemo}
                 </button>
+                <button
+                  onClick={onLogInClick}
+                  className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base"
+                >
+                  {t.login}
+                </button>
                 <button 
-                  onClick={onGetStartedClick}
+                  onClick={onSignUpClick}
                   className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
                 >
-                  {t.getStarted}
+                  {t.signUp}
                 </button>
               </>
             )}

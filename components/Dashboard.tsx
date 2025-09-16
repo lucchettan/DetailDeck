@@ -75,7 +75,7 @@ export interface Reservation {
 
 
 const Dashboard: React.FC = () => {
-  const { user, logOut, session, loading: authLoading } = useAuth();
+  const { user, logOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -83,7 +83,6 @@ const Dashboard: React.FC = () => {
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFinalizingStripe, setIsFinalizingStripe] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
@@ -144,78 +143,6 @@ const Dashboard: React.FC = () => {
       setLoading(false);
     }
   }, [user, authLoading, fetchData]);
-
-  // Handle Stripe Connect callback
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const stripeCode = params.get('code');
-
-    if (stripeCode && !authLoading && session && !isFinalizingStripe) {
-      const finalizeConnection = async () => {
-        setIsFinalizingStripe(true);
-        
-        try {
-            const { data, error } = await supabase.functions.invoke('stripe-connect', {
-                body: { code: stripeCode },
-            });
-
-            if (error) {
-                // This 'error' object is from the Supabase client if the function call itself fails (e.g., network error).
-                // The most useful part is often the original error context.
-                let rawResponse = 'No raw response available. The error may be a network issue or a CORS problem.';
-                if (error.context && typeof error.context.text === 'function') {
-                    rawResponse = await error.context.text();
-                }
-                
-                const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur Client Supabase) ---\n\n` +
-                                     `Message: ${error.message}\n\n` +
-                                     `Réponse Brute du Serveur:\n${rawResponse}`;
-
-                setAlertInfo({
-                    isOpen: true,
-                    title: 'Échec de la Connexion Stripe',
-                    message: debugMessage,
-                });
-
-            } else if (data && data.error) {
-                // This 'data' contains the JSON body returned by our function, even if it's an error response.
-                 const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur retournée par la fonction) ---\n\n` +
-                                     `Message Principal: ${data.error}\n\n` +
-                                     `Détails Techniques:\n${JSON.stringify(data.technical_details, null, 2)}`;
-                
-                setAlertInfo({
-                    isOpen: true,
-                    title: 'Échec de la Connexion Stripe',
-                    message: debugMessage,
-                });
-
-            } else {
-                // Success case
-                await fetchData();
-            }
-
-        } catch (e: any) {
-            // This is a failsafe catch block for unexpected errors.
-            const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur Inattendue) ---\n\n` +
-                                 `Une erreur non gérée est survenue dans le code frontend.\n` +
-                                 `Message: ${e.message}\n\n` +
-                                 `Stack Trace:\n${e.stack}`;
-            
-            setAlertInfo({
-                isOpen: true,
-                title: 'Échec de la Connexion Stripe',
-                message: debugMessage,
-            });
-
-        } finally {
-          window.history.replaceState(null, '', window.location.pathname);
-          setIsFinalizingStripe(false);
-        }
-      };
-      finalizeConnection();
-    }
-  }, [session, authLoading, isFinalizingStripe, fetchData]);
-
 
   const setupStatus = {
     shopInfo: !!shopData?.name,
@@ -350,16 +277,6 @@ const Dashboard: React.FC = () => {
      }
   };
   
-  const handleStripeDisconnect = async () => {
-    if (window.confirm("Are you sure you want to disconnect your Stripe account?")) {
-      await handleSaveShop({
-        stripeAccountId: null,
-        stripeAccountEnabled: false,
-      });
-      await fetchData(); 
-    }
-  };
-  
   const handleSaveReservation = async (reservationToSave: Omit<Reservation, 'id'> & { id?: string }) => {
     if (!shopData) {
         setAlertInfo({isOpen: true, title: "Error", message: "Cannot save reservation: shop data not loaded."});
@@ -445,11 +362,10 @@ const Dashboard: React.FC = () => {
   ];
 
   const renderContent = () => {
-    if (authLoading || loading || isFinalizingStripe) {
+    if (authLoading || loading) {
       return (
         <div className="flex items-center justify-center h-full flex-col">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
-            {isFinalizingStripe && <p className="mt-4 font-semibold text-brand-dark">{t.finalizingStripeConnection}</p>}
         </div>
       );
     }
@@ -474,7 +390,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       case 'account':
-        return <Account shopData={shopData} onDisconnectStripe={handleStripeDisconnect} />;
+        return <Account />;
       default:
         return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
     }

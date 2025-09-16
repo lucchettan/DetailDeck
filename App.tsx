@@ -76,6 +76,10 @@ const AppContent: React.FC = () => {
     setIsEarlyAccessModalOpen(false);
     openAuthModal('login');
   };
+
+  const handleSignUpClick = () => {
+    setIsEarlyAccessModalOpen(true);
+  };
   
   if (loading) {
     return (
@@ -102,7 +106,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
-      <Header onGetStartedClick={() => openAuthModal('login')} onDemoClick={demoLogin} />
+      <Header onLogInClick={() => openAuthModal('login')} onSignUpClick={handleSignUpClick} onDemoClick={demoLogin} />
       <main>
         <Hero 
           onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
