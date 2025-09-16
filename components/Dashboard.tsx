@@ -155,43 +155,58 @@ const Dashboard: React.FC = () => {
         setIsFinalizingStripe(true);
         
         try {
-          const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
-            body: { code: stripeCode },
-          });
+            const { data, error } = await supabase.functions.invoke('stripe-connect', {
+                body: { code: stripeCode },
+            });
 
-          // NEW, ROBUST, AND SIMPLE ERROR HANDLING
-          if (functionError || (data && data.error)) {
-            const errorPayload = functionError || data;
-            
-            let debugMessage = `--- RAW TECHNICAL LOG ---\n\nThis is the exact error returned from the backend. Please provide this to support.\n\n`;
-            debugMessage += JSON.stringify(errorPayload, null, 2);
-
-            if (functionError && functionError.context) {
-                try {
-                    const rawBody = await functionError.context.text();
-                    debugMessage += `\n\n--- Raw Response Body ---\n${rawBody}`;
-                } catch(e) {
-                    debugMessage += `\n\n--- Could not read raw response body ---`;
+            if (error) {
+                // This 'error' object is from the Supabase client if the function call itself fails (e.g., network error).
+                // The most useful part is often the original error context.
+                let rawResponse = 'No raw response available. The error may be a network issue or a CORS problem.';
+                if (error.context && typeof error.context.text === 'function') {
+                    rawResponse = await error.context.text();
                 }
+                
+                const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur Client Supabase) ---\n\n` +
+                                     `Message: ${error.message}\n\n` +
+                                     `Réponse Brute du Serveur:\n${rawResponse}`;
+
+                setAlertInfo({
+                    isOpen: true,
+                    title: 'Échec de la Connexion Stripe',
+                    message: debugMessage,
+                });
+
+            } else if (data && data.error) {
+                // This 'data' contains the JSON body returned by our function, even if it's an error response.
+                 const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur retournée par la fonction) ---\n\n` +
+                                     `Message Principal: ${data.error}\n\n` +
+                                     `Détails Techniques:\n${JSON.stringify(data.technical_details, null, 2)}`;
+                
+                setAlertInfo({
+                    isOpen: true,
+                    title: 'Échec de la Connexion Stripe',
+                    message: debugMessage,
+                });
+
+            } else {
+                // Success case
+                await fetchData();
             }
 
+        } catch (e: any) {
+            // This is a failsafe catch block for unexpected errors.
+            const debugMessage = `--- LOG TECHNIQUE BRUT (Erreur Inattendue) ---\n\n` +
+                                 `Une erreur non gérée est survenue dans le code frontend.\n` +
+                                 `Message: ${e.message}\n\n` +
+                                 `Stack Trace:\n${e.stack}`;
+            
             setAlertInfo({
                 isOpen: true,
-                title: 'Stripe Connection Failed',
+                title: 'Échec de la Connexion Stripe',
                 message: debugMessage,
             });
-            return;
-          }
-          
-          await fetchData();
 
-        } catch (error: any) {
-          const fallbackMessage = `--- UNEXPECTED FRONTEND ERROR ---\n\nThis error occurred in the browser.\n\nMessage: ${error.message}\n\nStack:\n${error.stack}`;
-          setAlertInfo({ 
-              isOpen: true, 
-              title: 'Stripe Connection Failed', 
-              message: fallbackMessage 
-          });
         } finally {
           window.history.replaceState(null, '', window.location.pathname);
           setIsFinalizingStripe(false);
