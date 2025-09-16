@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service, AddOn } from '../Dashboard';
@@ -47,17 +45,17 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
         </div>
       </div>
       
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+      <div className="mb-6">
+        <nav className="flex space-x-4" aria-label="Tabs">
             {tabs.map(tab => (
                 <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
                     className={`${
                         activeTab === tab.id
-                        ? 'border-brand-blue text-brand-blue'
-                        : 'border-transparent text-brand-gray hover:text-brand-dark hover:border-gray-300'
-                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-white text-brand-dark hover:bg-gray-100'
+                    } px-5 py-2 rounded-lg font-semibold text-sm transition-colors`}
                 >
                     {tab.label}
                 </button>

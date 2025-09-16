@@ -1,16 +1,10 @@
-
-
-
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon, EyeIcon } from '../Icons';
 
-// FIX: Removed the unused 'stripe' property from the 'setupStatus' type.
-// This property was causing a type mismatch in the parent Dashboard component
-// as it was not being provided, and it is not used within this component.
 interface DashboardHomeProps {
-  onNavigate: (view: string) => void;
+  onNavigate: (nav: { view: string; step?: number }) => void;
   setupStatus: {
     shopInfo: boolean;
     availability: boolean;
@@ -36,13 +30,15 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
   
   const steps = [
     { 
-      id: 'shop',
+      id: 'settings',
+      step: 1,
       title: t.setupShopInfo, 
       icon: <StorefrontIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: setupStatus.shopInfo 
     },
     { 
-      id: 'shop',
+      id: 'settings',
+      step: 2,
       title: t.setupAvailability, 
       icon: <ClockIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: setupStatus.availability
@@ -72,7 +68,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
           {steps.map((step, index) => (
             <button 
               key={step.id + index}
-              onClick={() => onNavigate(step.id)}
+              onClick={() => onNavigate({ view: step.id, step: step.step })}
               className={`relative bg-brand-light p-6 rounded-lg text-left border-2 transition-all duration-300 ${step.isComplete ? 'border-green-500' : 'border-gray-200 hover:shadow-lg hover:border-brand-blue'}`}
             >
               <div className="flex items-center justify-between mb-4">

@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -87,6 +83,7 @@ const Dashboard: React.FC = () => {
   const { user, logOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewType>('home');
+  const [settingsTargetStep, setSettingsTargetStep] = useState(1);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [addOns, setAddOns] = useState<AddOn[]>([]);
@@ -435,6 +432,13 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleNavigation = (nav: { view: string; step?: number }) => {
+    const newView = nav.view === 'shop' ? 'settings' : nav.view;
+    setActiveView(newView as ViewType);
+    if (newView === 'settings' && nav.step) {
+      setSettingsTargetStep(nav.step);
+    }
+  };
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
@@ -455,12 +459,9 @@ const Dashboard: React.FC = () => {
 
     switch (activeView) {
       case 'home':
-        return <DashboardHome onNavigate={(view) => {
-          const newView = view === 'shop' ? 'settings' : view;
-          setActiveView(newView as ViewType);
-        }} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
+        return <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
       case 'settings':
-        return <Settings shopData={shopData} onSave={handleSaveShop} />;
+        return <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />;
       case 'catalog':
         return <Catalog 
                   services={services} 
@@ -482,7 +483,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       default:
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick}/>;
+        return <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick}/>;
     }
   };
 
