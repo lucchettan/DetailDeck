@@ -3,7 +3,7 @@ import React from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CheckBadgeIcon, CheckCircleIcon, HourglassIcon, CheckIcon } from '../Icons';
+import { CheckBadgeIcon, HourglassIcon, ImageIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface BookingFormProps {
@@ -29,7 +29,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     onToggleAddOn,
     specialInstructions,
     onSpecialInstructionsChange,
-    totalDuration,
 }) => {
     const { t } = useLanguage();
 
@@ -39,14 +38,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
 
     const showVehicleSelection = selectedService && selectedService.varies;
-    const showAddons = selectedService && selectedService.addOns.length > 0 && (!selectedService.varies || (selectedService.varies && selectedVehicleSize));
+    const showAddons = selectedService && selectedService.addOns.length > 0;
 
     return (
         <div className="space-y-8">
             {/* Main Service Selection */}
             <div>
                 <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {services.map(service => {
                         const isSelected = selectedService?.id === service.id;
                         let priceText = '';
@@ -68,17 +67,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
                             <button 
                                 key={service.id}
                                 onClick={() => onSelectService(isSelected ? null : service)}
-                                className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-start transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                                className={`w-full text-left p-4 rounded-lg border-2 flex items-start gap-4 transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
                             >
-                                <div className="flex-1 pr-4">
+                                {service.imageUrl ? (
+                                    <img src={service.imageUrl} alt={service.name} className="w-20 h-20 object-cover rounded-md flex-shrink-0" />
+                                ) : (
+                                    <div className="w-20 h-20 bg-gray-100 flex items-center justify-center rounded-md flex-shrink-0">
+                                        <ImageIcon className="w-8 h-8 text-gray-300" />
+                                    </div>
+                                )}
+                                <div className="flex-1">
                                     <p className="font-bold text-lg text-brand-dark">{service.name}</p>
                                     <p className="text-sm text-brand-gray mt-1 mb-2 line-clamp-2">{service.description}</p>
                                     <div className="flex items-center gap-4 text-base font-semibold text-brand-dark mt-2">
                                         <span>{priceText}</span>
-                                        <span className="flex items-center gap-1"><HourglassIcon className="w-4 h-4 text-gray-500" />{durationText}</span>
+                                        <span className="flex items-center gap-1 text-gray-600 font-medium"><HourglassIcon className="w-4 h-4" />{durationText}</span>
                                     </div>
                                 </div>
-                                {isSelected && <CheckCircleIcon className="w-7 h-7 text-brand-blue flex-shrink-0 mt-1"/>}
+                                {isSelected && <div className="w-6 h-6 bg-brand-blue rounded-full flex items-center justify-center text-white flex-shrink-0"><CheckBadgeIcon className="w-6 h-6" /></div>}
                             </button>
                         )
                     })}
@@ -114,13 +120,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
                             const isSelected = selectedAddOns.has(addon.id);
                             return (
                                 <button key={addon.id} onClick={() => onToggleAddOn(addon.id)} className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-                                    <div>
+                                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                         <p className="font-bold text-brand-dark">{addon.name}</p>
-                                         <p className="text-sm text-brand-dark font-semibold mt-1">
-                                            <span className="text-brand-blue">+{getPriceDisplay(addon.price)}</span> &bull; <span className="font-normal text-brand-gray">{formatDuration(parseSafeInt(addon.duration))}</span>
-                                         </p>
+                                        <div className="flex items-center gap-3 text-sm font-semibold mt-1 sm:mt-0">
+                                            <span className="text-brand-blue">+{getPriceDisplay(addon.price)}</span>
+                                            <span className="font-normal text-brand-gray flex items-center gap-1"><HourglassIcon className="w-4 h-4"/>{formatDuration(parseSafeInt(addon.duration))}</span>
+                                        </div>
                                     </div>
-                                    {isSelected && <CheckBadgeIcon className="w-7 h-7 text-brand-blue flex-shrink-0"/>}
+                                    <div className="ml-4 flex-shrink-0">
+                                      {isSelected && <CheckBadgeIcon className="w-7 h-7 text-brand-blue"/>}
+                                    </div>
                                 </button>
                             )
                         })}
@@ -139,34 +148,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     className="w-full p-4 bg-white rounded-lg border-2 border-gray-200 focus:border-brand-blue focus:ring-0 outline-none transition"
                  />
             </div>
-            
-             {/* Service Timeline */}
-            {selectedService && (
-                <div>
-                    <h2 className="text-xl font-bold text-brand-dark mb-4">{t.serviceTimeline}</h2>
-                    <div className="p-4 bg-blue-50 rounded-lg space-y-2 text-brand-dark">
-                        <div className="flex justify-between">
-                            <span>{selectedService.name}{selectedVehicleSize ? ` (${t[`size_${selectedVehicleSize}`]})` : ''}</span>
-                            <span>{formatDuration(parseSafeInt(selectedService.varies && selectedVehicleSize ? selectedService.pricing[selectedVehicleSize]?.duration : selectedService.singlePrice?.duration))}</span>
-                        </div>
-                        {Array.from(selectedAddOns).map(id => {
-                            const addon = selectedService.addOns.find(a => a.id === id);
-                            if (!addon) return null;
-                            return (
-                                <div key={id} className="flex justify-between">
-                                    <span>{addon.name}</span>
-                                    <span>{formatDuration(parseSafeInt(addon.duration))}</span>
-                                </div>
-                            )
-                        })}
-                        <div className="flex justify-between font-bold border-t border-gray-300 pt-2 mt-2">
-                            <span>{t.totalDuration}</span>
-                            <span>{formatDuration(totalDuration)}</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
         </div>
     )
 }

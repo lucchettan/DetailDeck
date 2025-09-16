@@ -218,6 +218,29 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         setClientInfoErrors({});
         setError(null);
     };
+
+    const getConfirmationMessage = () => {
+        if (!selectedService || !selectedDate || !selectedTime) return '';
+
+        const vehicleText = selectedVehicleSize ? t.forVehicle.replace('{vehicleSize}', t[`size_${selectedVehicleSize}`]) : '';
+        
+        const addOnsList = selectedService.addOns
+            .filter(a => selectedAddOns.has(a.id))
+            .map(a => a.name)
+            .join(', ');
+            
+        const addOnsText = addOnsList ? t.withAddOns.replace('{addOnsList}', addOnsList) : '';
+
+        const formattedDate = selectedDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        return t.bookingConfirmationMessage
+            .replace('{serviceName}', selectedService.name)
+            .replace('{vehicleText}', vehicleText)
+            .replace('{addOnsText}', addOnsText)
+            .replace('{date}', formattedDate)
+            .replace('{time}', selectedTime)
+            .replace('{price}', totalPrice.toString());
+    };
     
     if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div></div>;
     if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray">{error || t.errorLoadingShop}</p></div>;
@@ -226,11 +249,19 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     const renderContent = () => {
         if (step === 'confirmed') {
+            const messageParts = getConfirmationMessage().split('**');
+
             return (
                 <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
                     <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.bookingConfirmed}</h2>
-                    <p className="text-brand-gray max-w-md mx-auto mb-6">{t.bookingConfirmationDetails}</p>
+                    <p className="text-brand-gray max-w-md mx-auto mb-6">
+                        {messageParts.map((part, index) => 
+                            index % 2 === 1 ? <strong key={index} className="text-brand-dark">{part}</strong> : part
+                        )}
+                        <br/><br/>
+                        {t.bookingConfirmationDetails}
+                    </p>
                     <button onClick={resetBooking} className="bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all">
                         {t.bookAnotherService}
                     </button>
