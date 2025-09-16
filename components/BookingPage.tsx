@@ -1,12 +1,16 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Service, Shop } from './Dashboard'; // Assuming Shop type is exported from Dashboard
+// Fix: Import the 'Reservation' type from the Dashboard component to resolve the type error.
+import { Service, Shop, Reservation } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CheckIcon, SuccessIcon, ChevronLeftIcon, CreditCardIcon, CarIcon, CalendarIcon as CalendarIconSolid } from './Icons';
+import { supabase } from '../lib/supabaseClient';
+
+// New Booking Flow Components
+import BookingStepper from './booking/BookingStepper';
+import ServiceCard from './booking/ServiceCard';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
-import { CheckIcon, SuccessIcon } from './Icons';
-import { supabase } from '../lib/supabaseClient';
 
 interface BookingPageProps {
   shopId: string;
@@ -14,19 +18,20 @@ interface BookingPageProps {
 
 interface ExistingReservation {
     start_time: string;
-    duration: number; // in minutes
+    duration: number;
 }
 
 type FullShopData = Shop & { services: Service[] };
 
-type BookingStep = 1 | 2 | 3 | 'confirmed';
+type BookingStep = 'service' | 'size' | 'addons' | 'datetime' | 'details' | 'confirmed';
 type VehicleSize = 'S' | 'M' | 'L' | 'XL';
+type PaymentOption = 'deposit' | 'full';
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
     
     // Core State
-    const [step, setStep] = useState<BookingStep>(1);
+    const [step, setStep] = useState<BookingStep>('service');
     const [shopData, setShopData] = useState<FullShopData | null>(null);
     const [reservations, setReservations] = useState<ExistingReservation[]>([]);
     
@@ -36,19 +41,17 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [error, setError] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
-    // Step 1 State
+    // Step State
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
     const [selectedAddOns, setSelectedAddOns] = useState<Set<number>>(new Set());
-    
-    // Step 2 State
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
-
-    // Step 3 State
     const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' });
+    const [paymentOption, setPaymentOption] = useState<PaymentOption>('full');
+    const [formErrors, setFormErrors] = useState<{name?: string; email?: string; phone?: string}>({});
 
-    // Fetch shop data on initial load
+    // --- Data Fetching ---
     useEffect(() => {
         const fetchShopData = async () => {
             setLoading(true);
@@ -71,31 +74,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         fetchShopData();
     }, [shopId, t.shopNotFound]);
 
-    // Fetch reservations when a date is selected
     useEffect(() => {
         if (!selectedDate || !shopData) return;
-
         const fetchReservations = async () => {
             setLoadingReservations(true);
-            const dateString = selectedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-            
+            const dateString = selectedDate.toISOString().split('T')[0];
             const { data, error: dbError } = await supabase
                 .from('reservations')
                 .select('start_time, duration')
                 .eq('shop_id', shopData.id)
                 .eq('date', dateString);
             
-            if (dbError) {
-                console.error("Error fetching reservations:", dbError);
-            } else {
-                setReservations(data as ExistingReservation[]);
-            }
+            if (dbError) console.error("Error fetching reservations:", dbError);
+            else setReservations(data as ExistingReservation[]);
             setLoadingReservations(false);
         };
         fetchReservations();
     }, [selectedDate, shopData]);
 
-
+    // --- Derived State & Calculations ---
     const { totalDuration, totalPrice } = useMemo(() => {
         if (!selectedService) return { totalDuration: 0, totalPrice: 0 };
         
@@ -122,38 +119,90 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         
         return { totalDuration: duration, totalPrice: price };
     }, [selectedService, selectedVehicleSize, selectedAddOns]);
+
+    const amountToPay = paymentOption === 'deposit' ? parseFloat(shopData?.bookingFee || '0') : totalPrice;
+
+    // --- Navigation Logic ---
+    const getNextStep = (current: BookingStep): BookingStep => {
+        if (!selectedService) return 'service';
+        switch (current) {
+            case 'service':
+                return selectedService.varies ? 'size' : (selectedService.addOns?.length > 0 ? 'addons' : 'datetime');
+            case 'size':
+                return selectedService.addOns?.length > 0 ? 'addons' : 'datetime';
+            case 'addons':
+                return 'datetime';
+            case 'datetime':
+                return 'details';
+            default:
+                return 'service';
+        }
+    };
     
+    const getPreviousStep = (current: BookingStep): BookingStep => {
+        if (!selectedService) return 'service';
+         switch (current) {
+            case 'details': return 'datetime';
+            case 'datetime':
+                if (selectedService.addOns?.length > 0) return 'addons';
+                return selectedService.varies ? 'size' : 'service';
+            case 'addons':
+                return selectedService.varies ? 'size' : 'service';
+            case 'size':
+                return 'service';
+            default: return 'service';
+        }
+    };
+
+    const handleNext = () => setStep(getNextStep(step));
+    const handleBack = () => {
+        const prevStep = getPreviousStep(step);
+        // Reset future steps' state when going back
+        if (prevStep === 'addons' || prevStep === 'size' || prevStep === 'service') {
+            setSelectedDate(null);
+            setSelectedTime(null);
+        }
+        setStep(prevStep);
+    };
+
+    // --- Event Handlers ---
     const handleSelectService = (service: Service) => {
         setSelectedService(service);
+        // Reset dependent state
         setSelectedVehicleSize(null);
         setSelectedAddOns(new Set());
         setSelectedDate(null);
         setSelectedTime(null);
-        if (!service.varies) {
-            setStep(2);
-        }
+        setStep(getNextStep('service'));
     };
-    
-    const handleSelectVehicleSize = (size: VehicleSize) => {
-        setSelectedVehicleSize(size);
-        setStep(2);
-    }
-    
+
     const toggleAddOn = (addOnId: number) => {
         setSelectedAddOns(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(addOnId)) {
-                newSet.delete(addOnId);
-            } else {
-                newSet.add(addOnId);
-            }
+            newSet.has(addOnId) ? newSet.delete(addOnId) : newSet.add(addOnId);
             return newSet;
         });
     };
-    
+
+    const validateDetailsStep = () => {
+        const errors: {name?: string; email?: string; phone?: string} = {};
+        if (!clientInfo.name.trim()) errors.name = t.fieldIsRequired;
+        if (!clientInfo.email.trim()) errors.email = t.fieldIsRequired;
+        else if (!/^\S+@\S+\.\S+$/.test(clientInfo.email)) errors.email = t.emailValidationError;
+        if (!clientInfo.phone.trim()) errors.phone = t.fieldIsRequired;
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
+
     const handleConfirmBooking = async () => {
+        if (!validateDetailsStep()) return;
         setIsConfirming(true);
         setError(null);
+
+        const paymentStatusMap: Record<PaymentOption, Reservation['paymentStatus']> = {
+            deposit: 'pending_deposit',
+            full: 'paid'
+        };
 
         const { error: insertError } = await supabase.from('reservations').insert({
             shop_id: shopId,
@@ -165,7 +214,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             client_name: clientInfo.name,
             client_email: clientInfo.email,
             client_phone: clientInfo.phone,
-            service_details: { // Storing a summary for easy display
+            payment_status: paymentStatusMap[paymentOption],
+            service_details: {
                 name: selectedService?.name,
                 vehicleSize: selectedVehicleSize,
                 addOns: selectedService?.addOns.filter(a => selectedAddOns.has(a.id))
@@ -182,107 +232,66 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     };
 
     const resetBooking = () => {
-        setStep(1);
+        setStep('service');
         setSelectedService(null);
-        setSelectedVehicleSize(null);
-        setSelectedAddOns(new Set());
-        setSelectedDate(null);
-        setSelectedTime(null);
-        setClientInfo({ name: '', email: '', phone: '' });
+        // ... reset all other state
     };
     
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center flex-col">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
-          <p className="mt-4 text-brand-dark font-semibold">{t.loadingShopData}</p>
-        </div>
-      );
-    }
-
-    if (error || !shopData) {
-       return (
-        <div className="min-h-screen flex items-center justify-center text-center p-4">
-            <div>
-                <h1 className="text-2xl font-bold text-red-600 mb-2">Oops!</h1>
-                <p className="text-brand-gray">{error || t.errorLoadingShop}</p>
-            </div>
-        </div>
-       );
-    }
+    // --- Render Logic ---
+    if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div></div>;
+    if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray">{error || t.errorLoadingShop}</p></div>;
 
     const activeServices = shopData.services.filter(s => s.status === 'active');
     
-    const renderStep = () => {
-        switch (step) {
-            case 1:
-                return (
+    const stepperSteps = [
+        { id: 'service', name: t.stepperService, icon: <CreditCardIcon/> },
+        ...(selectedService?.varies ? [{ id: 'size', name: t.stepperVehicle, icon: <CarIcon/> }] : []),
+        ...(selectedService?.addOns && selectedService.addOns.length > 0 ? [{ id: 'addons', name: t.stepperOptions, icon: <CheckIcon/> }] : []),
+        { id: 'datetime', name: t.stepperDateTime, icon: <CalendarIconSolid/> },
+        { id: 'details', name: t.stepperConfirmation, icon: <CheckIcon/> }
+    ];
+
+    return (
+        <div className="bg-brand-light min-h-screen font-sans">
+            <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
+                <div className="container mx-auto flex items-center gap-4">
+                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                        {shopData.shopImageUrl && <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />}
+                    </div>
                     <div>
-                        <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectService}</h3>
-                        <div className="space-y-4">
+                        <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
+                        <p className="text-brand-gray">{shopData.address}</p>
+                    </div>
+                </div>
+            </header>
+            
+            <main className="container mx-auto p-4 md:p-8">
+            
+             {step !== 'confirmed' && (
+                <div className="mb-8">
+                    <BookingStepper steps={stepperSteps} currentStepId={step} />
+                </div>
+             )}
+
+            {step === 'service' && (
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.bookingStep1}</h2>
+                    {activeServices.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {activeServices.map(service => (
-                                <div key={service.id} className="border rounded-lg p-4 transition-all hover:border-brand-blue">
-                                    <h4 className="font-bold">{service.name}</h4>
-                                    <p className="text-sm text-brand-gray">{service.description}</p>
-                                    <button onClick={() => handleSelectService(service)} className="mt-2 text-sm font-bold text-brand-blue">{t.selectService} &rarr;</button>
-                                </div>
+                                <ServiceCard key={service.id} service={service} onSelect={() => handleSelectService(service)} />
                             ))}
                         </div>
-                    </div>
-                );
-            case 2:
-                if (!selectedService) return null;
-                return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectDate}</h3>
-                            <Calendar schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                            {loadingReservations ? (
-                                <div className="flex items-center justify-center h-full">
-                                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
-                                </div>
-                            ) : selectedDate && <TimeSlotPicker schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} existingReservations={reservations} /> }
-                        </div>
-                    </div>
-                );
-            case 3:
-                return (
-                     <div>
-                        <h3 className="text-xl font-bold text-brand-dark mb-4">{t.yourInformation}</h3>
-                        <div className="space-y-4">
-                            <input type="text" placeholder={t.fullName} className="w-full p-2 border rounded-lg" value={clientInfo.name} onChange={e => setClientInfo({...clientInfo, name: e.target.value})} />
-                            <input type="email" placeholder={t.emailAddress} className="w-full p-2 border rounded-lg" value={clientInfo.email} onChange={e => setClientInfo({...clientInfo, email: e.target.value})} />
-                            <input type="tel" placeholder={t.phoneNumber} className="w-full p-2 border rounded-lg" value={clientInfo.phone} onChange={e => setClientInfo({...clientInfo, phone: e.target.value})} />
-                        </div>
-                         {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
-                    </div>
-                );
-            case 'confirmed':
-                return (
-                    <div className="text-center py-12">
-                        <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.bookingConfirmed}</h2>
-                        <p className="text-brand-gray max-w-md mx-auto mb-6">{t.bookingConfirmationDetails}</p>
-                        <button onClick={resetBooking} className="bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all">
-                            {t.bookAnotherService}
-                        </button>
-                    </div>
-                );
-        }
-    };
-    
-    if (selectedService && step === 1 && selectedService.varies && !selectedVehicleSize) {
-        return (
-            <div className="bg-brand-light min-h-screen">
-                <div className="container mx-auto p-4 md:p-8">
-                     <h2 className="text-2xl font-bold text-brand-dark text-center mb-2">{t.vehicleSize}</h2>
-                     <p className="text-brand-gray text-center mb-6">{selectedService.name}</p>
-                     <div className="max-w-md mx-auto space-y-3">
+                    ) : <p className="text-brand-gray bg-white p-6 rounded-lg shadow-md">{t.noServicesAvailable}</p>}
+                </div>
+            )}
+            
+            {step === 'size' && selectedService?.varies && (
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.selectVehicleSize}</h2>
+                    <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto space-y-3">
                         {Object.entries(selectedService.pricing).filter(([, details]) => details.enabled).map(([size, details]) => (
-                            <button key={size} onClick={() => handleSelectVehicleSize(size as VehicleSize)} className="w-full text-left p-4 border rounded-lg bg-white hover:border-brand-blue flex justify-between items-center">
+                            <button key={size} onClick={() => { setSelectedVehicleSize(size as VehicleSize); handleNext(); }} className="w-full text-left p-4 border rounded-lg bg-white hover:border-brand-blue flex justify-between items-center transition-all">
                                 <div>
                                     <p className="font-bold">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
                                     <p className="text-sm text-brand-gray">{details.duration} min</p>
@@ -290,104 +299,137 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                                 <p className="font-bold text-lg">€{details.price}</p>
                             </button>
                         ))}
-                     </div>
+                    </div>
+                    <div className="mt-6 text-center"><button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button></div>
                 </div>
-            </div>
-        );
-    }
-    
-    if (activeServices.length === 0 && step !== 'confirmed') {
-        return (
-            <div className="bg-brand-light min-h-screen">
-                <header className="bg-white shadow-sm p-4">
-                    <div className="container mx-auto flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                            {shopData.shopImageUrl && <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />}
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
-                            <p className="text-brand-gray">{shopData.phone}</p>
-                        </div>
-                    </div>
-                </header>
-                <main className="container mx-auto p-4 md:p-8">
-                    <div className="bg-white p-6 md:p-8 rounded-lg shadow-md text-center">
-                        <h3 className="text-xl font-bold text-brand-dark mb-4">{t.selectService}</h3>
-                        <p className="text-brand-gray">{t.noServicesAvailable}</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+            )}
 
-
-    return (
-        <div className="bg-brand-light min-h-screen">
-            <header className="bg-white shadow-sm p-4">
-                <div className="container mx-auto flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                        {shopData.shopImageUrl && <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />}
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
-                        <p className="text-brand-gray">{shopData.phone}</p>
-                    </div>
-                </div>
-            </header>
-            <main className="container mx-auto p-4 md:p-8">
-                {step !== 'confirmed' && (
-                    <div className="flex items-center justify-center space-x-2 sm:space-x-8 mb-8">
-                    {[1, 2, 3].map(s => (
-                        <div key={s} className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= s ? 'bg-brand-blue text-white' : 'bg-gray-200 text-brand-gray'}`}>
-                            {step > s ? <CheckIcon className="w-5 h-5" /> : s}
-                        </div>
-                        <span className={`ml-2 hidden sm:inline font-semibold ${step >= s ? 'text-brand-dark' : 'text-brand-gray'}`}>{t[`bookingStep${s as 1|2|3}`]}</span>
-                        </div>
-                    ))}
-                    </div>
-                )}
-                
-                <div className="bg-white p-6 md:p-8 rounded-lg shadow-md">
-                    {renderStep()}
-                </div>
-                
-                {selectedService && step !== 'confirmed' && (
-                <div className="bg-white p-4 rounded-lg shadow-md mt-8 sticky bottom-4 border">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="text-center md:text-left">
-                            <h4 className="font-bold text-brand-dark">{selectedService.name}</h4>
-                             <div className="flex items-center gap-4 text-sm text-brand-gray">
-                                {selectedVehicleSize && <p>{t[`size_${selectedVehicleSize}`]}</p>}
-                                <p>{totalDuration} min</p>
-                            </div>
-                        </div>
-                         {step === 1 && selectedService.addOns.length > 0 && (
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {selectedService.addOns.map(addOn => (
-                                    <button key={addOn.id} onClick={() => toggleAddOn(addOn.id)} className={`px-3 py-1.5 rounded-full text-sm border-2 ${selectedAddOns.has(addOn.id) ? 'bg-blue-100 border-brand-blue text-brand-blue' : 'bg-white border-gray-300'}`}>
-                                        + {addOn.name} (€{addOn.price})
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        <div className="text-center md:text-right">
-                             <p className="text-sm text-brand-gray">{t.total}</p>
-                            <p className="text-2xl font-bold text-brand-dark">€{totalPrice}</p>
-                        </div>
-                        {step === 2 && selectedTime && (
-                            <button onClick={() => setStep(3)} className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600">
-                                {t.nextStep}
+            {step === 'addons' && selectedService && selectedService.addOns.length > 0 && (
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.selectAddOns}</h2>
+                    <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto space-y-3">
+                        {selectedService.addOns.map(addOn => (
+                            <button key={addOn.id} onClick={() => toggleAddOn(addOn.id)} className={`w-full text-left p-4 border rounded-lg flex justify-between items-center transition-all ${selectedAddOns.has(addOn.id) ? 'border-brand-blue ring-2 ring-brand-blue' : 'hover:border-gray-400'}`}>
+                                <div className="flex items-center">
+                                    <div className={`w-6 h-6 rounded-md flex items-center justify-center mr-4 flex-shrink-0 ${selectedAddOns.has(addOn.id) ? 'bg-brand-blue' : 'border-2'}`}>
+                                        {selectedAddOns.has(addOn.id) && <CheckIcon className="w-4 h-4 text-white" />}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold">{addOn.name}</p>
+                                        <p className="text-sm text-brand-gray">{addOn.duration} min</p>
+                                    </div>
+                                </div>
+                                <p className="font-bold text-lg">€{addOn.price}</p>
                             </button>
-                        )}
-                         {step === 3 && (
-                             <button onClick={handleConfirmBooking} disabled={isConfirming} className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 disabled:opacity-75">
-                                {isConfirming ? t.confirmingBooking : t.confirmBooking}
-                            </button>
-                         )}
+                        ))}
+                    </div>
+                    <div className="mt-6 flex justify-center items-center gap-6">
+                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <button onClick={handleNext} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600">{t.nextStep}</button>
                     </div>
                 </div>
             )}
+
+            {step === 'datetime' && selectedService && (
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.bookingStep2}</h2>
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectDate}</h3>
+                                <Calendar schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
+                                {loadingReservations && <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div></div>}
+                                {!loadingReservations && selectedDate && <TimeSlotPicker schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} existingReservations={reservations} />}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-center items-center gap-6">
+                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <button onClick={handleNext} disabled={!selectedTime} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">{t.nextStep}</button>
+                    </div>
+                </div>
+            )}
+
+            {step === 'details' && selectedService && selectedDate && selectedTime && (
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.bookingStep3}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+                            <h3 className="text-lg font-bold text-brand-dark border-b pb-2">{t.yourInformation}</h3>
+                            <div>
+                                <label className="text-sm font-semibold">{t.fullName}</label>
+                                <input type="text" value={clientInfo.name} onChange={e => setClientInfo({...clientInfo, name: e.target.value})} className={`w-full p-2 border rounded-lg mt-1 ${formErrors.name ? 'border-red-500' : 'border-gray-300'}`} />
+                                {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                            </div>
+                             <div>
+                                <label className="text-sm font-semibold">{t.emailAddress}</label>
+                                <input type="email" value={clientInfo.email} onChange={e => setClientInfo({...clientInfo, email: e.target.value})} className={`w-full p-2 border rounded-lg mt-1 ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`} />
+                                {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                            </div>
+                             <div>
+                                <label className="text-sm font-semibold">{t.phoneNumber}</label>
+                                <input type="tel" value={clientInfo.phone} onChange={e => setClientInfo({...clientInfo, phone: e.target.value})} className={`w-full p-2 border rounded-lg mt-1 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`} />
+                                {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                             <h3 className="text-lg font-bold text-brand-dark border-b pb-2 mb-4">{t.summary}</h3>
+                             <div className="space-y-2 text-sm">
+                                 <div className="flex justify-between"><span className="text-brand-gray">{t.service}:</span><span className="font-semibold">{selectedService.name}</span></div>
+                                 {selectedVehicleSize && <div className="flex justify-between"><span className="text-brand-gray">{t.vehicleSize}:</span><span className="font-semibold">{t[`size_${selectedVehicleSize}`]}</span></div>}
+                                 {selectedAddOns.size > 0 && (
+                                     <div className="pt-2">
+                                         <p className="font-semibold text-brand-gray">{t.addOns}:</p>
+                                         <ul className="list-disc list-inside pl-2">
+                                            {[...selectedAddOns].map(id => <li key={id}>{selectedService.addOns.find(a=>a.id===id)?.name}</li>)}
+                                         </ul>
+                                     </div>
+                                 )}
+                                 <div className="flex justify-between pt-2 border-t mt-2"><span className="text-brand-gray">{t.date}:</span><span className="font-semibold">{selectedDate.toLocaleDateString()}</span></div>
+                                 <div className="flex justify-between"><span className="text-brand-gray">{t.time}:</span><span className="font-semibold">{selectedTime}</span></div>
+                             </div>
+
+                             <div className="mt-6 space-y-3">
+                                {shopData.acceptsOnSitePayment && parseFloat(shopData.bookingFee) > 0 && (
+                                    <button onClick={() => setPaymentOption('deposit')} className={`w-full text-left p-4 border rounded-lg flex justify-between items-center transition-all ${paymentOption === 'deposit' ? 'border-brand-blue ring-2 ring-brand-blue' : 'hover:border-gray-400'}`}>
+                                        <span className="font-bold">{t.payDeposit}</span>
+                                        <span className="font-bold text-lg">€{shopData.bookingFee}</span>
+                                    </button>
+                                )}
+                                <button onClick={() => setPaymentOption('full')} className={`w-full text-left p-4 border rounded-lg flex justify-between items-center transition-all ${paymentOption === 'full' ? 'border-brand-blue ring-2 ring-brand-blue' : 'hover:border-gray-400'}`}>
+                                    <span className="font-bold">{t.payFullAmount}</span>
+                                    <span className="font-bold text-lg">€{totalPrice}</span>
+                                </button>
+                             </div>
+
+                             {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+                        </div>
+                    </div>
+                     <div className="mt-6 flex justify-center items-center gap-6">
+                        <button onClick={handleBack} className="font-semibold text-brand-blue hover:underline">{t.back}</button>
+                        <button onClick={handleConfirmBooking} disabled={isConfirming} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2">
+                           <CreditCardIcon className="w-5 h-5"/>
+                           <span>{isConfirming ? t.confirmingBooking : `${t.payAndConfirm} €${amountToPay}`}</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+            
+            {step === 'confirmed' && (
+                <div className="bg-white p-6 rounded-lg shadow-md text-center py-12">
+                    <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.bookingConfirmed}</h2>
+                    <p className="text-brand-gray max-w-md mx-auto mb-6">{t.bookingConfirmationDetails}</p>
+                    <button onClick={resetBooking} className="bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all">
+                        {t.bookAnotherService}
+                    </button>
+                </div>
+            )}
+
             </main>
         </div>
     );
