@@ -1,10 +1,10 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, Reservation } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
-import BookingStepper from './booking/BookingStepper';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
 import FloatingSummary from './booking/FloatingSummary';
@@ -187,12 +187,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray">{error || t.errorLoadingShop}</p></div>;
 
     const activeServices = shopData.services?.filter(s => s.status === 'active') || [];
-    
-    const stepperSteps = [
-        { id: 'selection', name: t.stepperSelectionAndOptions },
-        { id: 'datetime', name: t.stepperDateTime },
-        { id: 'confirmed', name: t.stepperConfirmation }
-    ];
 
     const renderContent = () => {
         if (step === 'confirmed') {
@@ -277,27 +271,18 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     return (
         <div className="bg-brand-light min-h-screen font-sans">
-            <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
-                 <div className="container mx-auto">
-                    <div className="flex items-center gap-4 mb-4">
-                         <a href="#" className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark">
-                            <ChevronLeftIcon className="w-5 h-5" />
-                            <span>{t.back}</span>
-                        </a>
+             <header className="relative h-48 bg-gray-800">
+                {shopData.shopImageUrl ? (
+                    <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <ImageIcon className="w-16 h-16 text-gray-300" />
                     </div>
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center">
-                            {shopData.shopImageUrl ? 
-                                <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />
-                                : <ImageIcon className="w-8 h-8 text-gray-400" />
-                            }
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
-                            <p className="text-brand-gray">{shopData.address}</p>
-                        </div>
-                    </div>
-                     {step !== 'confirmed' && <BookingStepper steps={stepperSteps} currentStepId={step} />}
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 container mx-auto">
+                    <h1 className="text-3xl font-bold text-white shadow-lg">{shopData.name}</h1>
+                    <p className="text-white text-lg shadow-md mt-1">{shopData.address}</p>
                 </div>
             </header>
             

@@ -1,9 +1,10 @@
 
+
 import React from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CheckCircleIcon, HourglassIcon } from '../Icons';
+import { CheckBadgeIcon, CheckCircleIcon, HourglassIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface BookingFormProps {
@@ -39,7 +40,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
 
     const showVehicleSelection = selectedService && selectedService.varies;
-    const showAddons = selectedService && selectedService.addOns.length > 0;
+    const showAddons = selectedService && selectedService.addOns.length > 0 && (!selectedService.varies || (selectedService.varies && selectedVehicleSize));
 
     return (
         <div className="space-y-8">
@@ -50,14 +51,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     {services.map(service => {
                         const isSelected = selectedService?.id === service.id;
                         let priceText = '';
+                        let durationText = '';
 
                         if (service.varies) {
                              const prices = Object.values(service.pricing || {}).filter(p => p.enabled && p.price).map(p => parseInt(p.price!));
                              if (prices.length > 0) {
                                 priceText = t.fromPrice.replace('{price}', Math.min(...prices).toString());
                              }
+                             const minPriceDuration = Object.values(service.pricing || {}).find(p => p.enabled && p.price)?.duration;
+                             durationText = formatDuration(parseSafeInt(minPriceDuration));
                         } else {
                             priceText = getPriceDisplay(service.singlePrice.price);
+                            durationText = formatDuration(parseSafeInt(service.singlePrice.duration));
                         }
 
                         return (
@@ -71,7 +76,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                                     <p className="text-sm text-brand-gray mt-1 line-clamp-2">{service.description}</p>
                                     <div className="flex items-center gap-4 text-sm font-semibold text-brand-dark mt-2">
                                         <span>{priceText}</span>
-                                        <span className="flex items-center gap-1"><HourglassIcon className="w-4 h-4 text-gray-500" />{formatDuration(parseSafeInt(service.varies ? service.pricing.S?.duration : service.singlePrice.duration))}</span>
+                                        <span className="flex items-center gap-1"><HourglassIcon className="w-4 h-4 text-gray-500" />{durationText}</span>
                                     </div>
                                 </div>
                                 {isSelected && <CheckCircleIcon className="w-8 h-8 text-brand-blue flex-shrink-0"/>}
@@ -90,10 +95,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
                              <button 
                                 key={size} 
                                 onClick={() => onSelectVehicleSize(size as VehicleSize)}
-                                className={`p-4 rounded-lg border-2 text-center transition-all duration-200 ${selectedVehicleSize === size ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                                className={`p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-between h-full ${selectedVehicleSize === size ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
                             >
                                 <p className="font-bold text-brand-dark">{t[`size_${size as VehicleSize}`]}</p>
-                                <p className="text-sm text-brand-dark mt-1 font-semibold">{getPriceDisplay(details.price)}</p>
+                                <p className="text-xs text-brand-gray mt-1">{formatDuration(parseSafeInt(details.duration))}</p>
+                                <p className="text-2xl text-brand-dark mt-2 font-bold">{getPriceDisplay(details.price)}</p>
                             </button>
                         ))}
                     </div>
@@ -108,17 +114,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
                          {selectedService.addOns.map(addon => {
                             const isSelected = selectedAddOns.has(addon.id);
                             return (
-                                <div key={addon.id} className={`p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200'}`}>
-                                    <div>
+                                <button key={addon.id} onClick={() => onToggleAddOn(addon.id)} className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                                    <div className="flex-1 pr-4">
                                         <p className="font-bold text-brand-dark">{addon.name}</p>
                                          <p className="text-sm text-brand-dark mt-1">
                                             +{getPriceDisplay(addon.price)} &bull; {formatDuration(parseSafeInt(addon.duration))}
                                         </p>
                                     </div>
-                                    <button onClick={() => onToggleAddOn(addon.id)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${isSelected ? 'bg-brand-blue' : 'bg-gray-200'}`}>
-                                        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${isSelected ? 'translate-x-6' : 'translate-x-1'}`}/>
-                                    </button>
-                                </div>
+                                    {isSelected && <CheckBadgeIcon className="w-7 h-7 text-brand-blue flex-shrink-0"/>}
+                                </button>
                             )
                         })}
                     </div>
