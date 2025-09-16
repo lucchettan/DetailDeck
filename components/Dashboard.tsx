@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -152,45 +153,47 @@ const Dashboard: React.FC = () => {
     if (stripeCode && !authLoading && session && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
-        let debugInfo = '';
-
+        
         try {
           const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
             body: { code: stripeCode },
           });
 
-          // Immediately capture the raw response for debugging
-          debugInfo += `--- Backend Function Response ---\n\n`;
-          debugInfo += `Data received:\n${JSON.stringify(data, null, 2)}\n\n`;
-          debugInfo += `Error object:\n${JSON.stringify(functionError, null, 2)}`;
-
           if (functionError) {
-            throw new Error(`Function invocation failed. See full response above.`);
+            let debugInfo = `--- ERREUR DE LA FONCTION BACKEND ---\n\n`;
+            debugInfo += `Message: ${functionError.message}\n\n`;
+
+            if (functionError.context && typeof functionError.context.text === 'function') {
+                try {
+                    const errorBodyText = await functionError.context.text();
+                    const errorBodyJson = JSON.parse(errorBodyText);
+                    debugInfo += `Réponse JSON du Backend:\n${JSON.stringify(errorBodyJson, null, 2)}\n\n`;
+                } catch (e) {
+                    debugInfo += `Impossible de parser la réponse du backend. Réponse brute:\n${await functionError.context.text()}\n\n`;
+                }
+            }
+            debugInfo += `Objet d'erreur complet:\n${JSON.stringify(functionError, null, 2)}`;
+            setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: debugInfo });
+            return;
           }
 
-          // The Supabase client might return an error inside the 'data' object if the function returns a non-2xx status.
           if (data && data.error) {
-            throw new Error(`The backend function returned an error. See full response above.`);
+             let debugInfo = `--- LA FONCTION BACKEND A RETOURNÉ UNE ERREUR ---\n\n`;
+             debugInfo += `Réponse:\n${JSON.stringify(data, null, 2)}`;
+             setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: debugInfo });
+             return;
           }
           
-          // Success case
           await fetchData();
 
         } catch (error: any) {
-          console.error("Stripe Connection Full Error Object:", error);
-
-          // Append any caught exception details to the comprehensive log
-          let caughtErrorDetails = `\n\n--- Frontend Catch Block ---\n\n`;
-          caughtErrorDetails += `Message: ${error.message}\n`;
-          if(error.stack) {
-            caughtErrorDetails += `Stack: ${error.stack}`;
+          let fallbackMessage = `--- ERREUR INATTENDUE DU FRONTEND ---\n\n`;
+          fallbackMessage += `Une erreur est survenue dans le navigateur avant ou après l'appel au backend.\n\n`;
+          fallbackMessage += `Message: ${error.message}\n`;
+          if (error.stack) {
+            fallbackMessage += `Stack: ${error.stack}`;
           }
-
-          setAlertInfo({
-            isOpen: true,
-            title: 'Stripe Connection - Raw Debug Log',
-            message: debugInfo + caughtErrorDetails,
-          });
+          setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: fallbackMessage });
           
         } finally {
           window.history.replaceState(null, '', window.location.pathname);
