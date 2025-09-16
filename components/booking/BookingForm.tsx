@@ -9,6 +9,7 @@ interface BookingFormProps {
     services: Service[];
     clientVehicle: string;
     onClientVehicleChange: (value: string) => void;
+    clientVehicleError: string | null;
     selectedService: Service | null;
     onSelectService: (service: Service | null) => void;
     selectedVehicleSize: VehicleSize | null;
@@ -21,6 +22,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     services,
     clientVehicle,
     onClientVehicleChange,
+    clientVehicleError,
     selectedService,
     onSelectService,
     selectedVehicleSize,
@@ -64,7 +66,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const showAddons = selectedService && selectedService.addOns.length > 0;
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 pb-24">
              {/* Client Vehicle */}
             <div>
                 <label htmlFor="clientVehicle" className="text-xl font-bold text-brand-dark mb-4 block">{t.whatIsYourVehicle}</label>
@@ -74,8 +76,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     value={clientVehicle}
                     onChange={(e) => onClientVehicleChange(e.target.value)}
                     placeholder={t.whatIsYourVehiclePlaceholder}
-                    className="w-full p-4 bg-white rounded-lg border-2 border-gray-200 focus:border-brand-blue focus:ring-0 outline-none transition"
+                    className={`w-full p-4 bg-white rounded-lg border-2 focus:ring-0 outline-none transition ${clientVehicleError ? 'border-red-500' : 'border-gray-200 focus:border-brand-blue'}`}
+                    required
                  />
+                 {clientVehicleError && <p className="text-red-500 text-xs mt-1">{clientVehicleError}</p>}
             </div>
 
             {/* Main Service Selection */}
@@ -92,10 +96,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
                                 onClick={() => onSelectService(isSelected ? null : service)}
                                 className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue' : 'border-transparent'}`}
                             >
-                                {service.imageUrl && (
+                                {service.imageUrl ? (
                                     <div className="h-40 w-full">
                                         <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover"/>
                                     </div>
+                                ) : (
+                                    !isSelected && (
+                                        <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
+                                            <ImageIcon className="w-12 h-12 text-gray-300" />
+                                        </div>
+                                    )
                                 )}
                                 <div className="p-4 flex flex-col flex-grow">
                                     <div className="flex-grow">
