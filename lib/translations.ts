@@ -108,6 +108,8 @@ export const translations = {
     // Pricing
     pricingTitle: 'Simple Pricing. No Surprises.',
     pricingSubtitle: 'The perfect fit for your shop, whether you\'re a one-person show or a growing team. No hidden fees, ever.',
+    // FIX: Add missing 'price' translation key.
+    price: 'Price',
     choosePlan: 'Choose Plan',
     monthly: 'Monthly',
     yearly: 'Yearly',
@@ -204,6 +206,8 @@ export const translations = {
     deleteServiceConfirmation: 'Are you sure you want to delete this service? This action cannot be undone.',
     serviceCreatedSuccess: 'Service created successfully!',
     editService: 'Edit Service',
+    // FIX: Add missing 'edit' translation key.
+    edit: 'Edit',
     serviceImage: 'Service Image',
     serviceName: 'Service Name',
     serviceNamePlaceholder: 'e.g., Full Interior Detail',
@@ -254,6 +258,8 @@ export const translations = {
     noServicesAvailable: 'This shop currently has no services available for online booking.',
     selectVehicleSize: 'Select Vehicle Size',
     selectAddOns: 'Select optional add-ons',
+    // FIX: Add missing 'selectService' translation key.
+    selectService: 'Select Service',
     whatIsYourVehicle: 'What is your vehicle?',
     whatIsYourVehiclePlaceholder: 'e.g., 2021 Toyota Camry',
     chooseMainService: 'Choose your main service',
@@ -273,6 +279,8 @@ export const translations = {
     deleteReservation: 'Delete Reservation',
     createReservation: 'Create Reservation',
     deleteAddOnConfirmation: 'Are you sure you want to delete this add-on?',
+    // FIX: Add missing 'deleteAddOn' translation key.
+    deleteAddOn: 'Delete Add-on',
     editAddOn: 'Edit Add-on',
     addOnName: 'Add-on Name',
     duration: 'Duration',
@@ -429,6 +437,8 @@ export const translations = {
     // Pricing
     pricingTitle: 'Des tarifs simples. Sans surprises.',
     pricingSubtitle: 'L\'offre parfaite pour votre atelier, que vous soyez seul ou une équipe en pleine croissance. Pas de frais cachés, jamais.',
+    // FIX: Add missing 'price' translation key.
+    price: 'Prix',
     choosePlan: 'Choisir ce plan',
     monthly: 'Mensuel',
     yearly: 'Annuel',
@@ -525,6 +535,8 @@ export const translations = {
     deleteServiceConfirmation: 'Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.',
     serviceCreatedSuccess: 'Service créé avec succès !',
     editService: 'Modifier le service',
+    // FIX: Add missing 'edit' translation key.
+    edit: 'Modifier',
     serviceImage: 'Image du service',
     serviceName: 'Nom du service',
     serviceNamePlaceholder: 'Ex: Detailing intérieur complet',
@@ -575,6 +587,8 @@ export const translations = {
     noServicesAvailable: 'Cette boutique n\'a actuellement aucun service disponible à la réservation en ligne.',
     selectVehicleSize: 'Sélectionnez la taille du véhicule',
     selectAddOns: 'Sélectionnez des options',
+    // FIX: Add missing 'selectService' translation key.
+    selectService: 'Sélectionner le service',
     whatIsYourVehicle: 'Quel est votre véhicule ?',
     whatIsYourVehiclePlaceholder: 'Ex: 2021 Peugeot 208',
     chooseMainService: 'Choisissez votre service principal',
@@ -594,6 +608,8 @@ export const translations = {
     deleteReservation: 'Supprimer la réservation',
     createReservation: 'Créer la réservation',
     deleteAddOnConfirmation: 'Êtes-vous sûr de vouloir supprimer cette option ?',
+    // FIX: Add missing 'deleteAddOn' translation key.
+    deleteAddOn: 'Supprimer l\'option',
     editAddOn: 'Modifier l\'option',
     addOnName: 'Nom de l\'option',
     duration: 'Durée',
@@ -750,6 +766,8 @@ export const translations = {
     // Pricing
     pricingTitle: 'Precios Simples. Sin Sorpresas.',
     pricingSubtitle: 'El plan perfecto para tu taller, ya seas una sola persona o un equipo en crecimiento. Sin cargos ocultos, nunca.',
+    // FIX: Add missing 'price' translation key.
+    price: 'Precio',
     choosePlan: 'Elegir Plan',
     monthly: 'Mensual',
     yearly: 'Anual',
@@ -846,6 +864,8 @@ export const translations = {
     deleteServiceConfirmation: '¿Estás seguro de que quieres eliminar este servicio? Esta acción no se puede deshacer.',
     serviceCreatedSuccess: '¡Servicio creado con éxito!',
     editService: 'Editar Servicio',
+    // FIX: Add missing 'edit' translation key.
+    edit: 'Editar',
     serviceImage: 'Imagen del servicio',
     serviceName: 'Nombre del servicio',
     serviceNamePlaceholder: 'Ej: Detallado Interior Completo',
@@ -896,6 +916,8 @@ export const translations = {
     noServicesAvailable: 'Esta tienda no tiene servicios disponibles para reservar en línea actualmente.',
     selectVehicleSize: 'Selecciona el tamaño del vehículo',
     selectAddOns: 'Selecciona extras opcionales',
+    // FIX: Add missing 'selectService' translation key.
+    selectService: 'Seleccionar servicio',
     whatIsYourVehicle: '¿Cuál es tu vehículo?',
     whatIsYourVehiclePlaceholder: 'Ej: 2021 Seat León',
     chooseMainService: 'Elige tu servicio principal',
@@ -915,6 +937,8 @@ export const translations = {
     deleteReservation: 'Eliminar Reserva',
     createReservation: 'Crear Reserva',
     deleteAddOnConfirmation: '¿Estás seguro de que quieres eliminar este extra?',
+    // FIX: Add missing 'deleteAddOn' translation key.
+    deleteAddOn: 'Eliminar Extra',
     editAddOn: 'Editar Extra',
     addOnName: 'Nombre del extra',
     duration: 'Duración',

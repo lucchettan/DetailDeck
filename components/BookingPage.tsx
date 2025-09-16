@@ -179,7 +179,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             service_details: {
                 name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
-                // FIX: Get full add-on objects from shopData's addOns list.
                 addOns: shopData.addOns.filter(a => selectedAddOns.has(a.id)),
                 client_vehicle: clientVehicle,
                 special_instructions: specialInstructions,
@@ -189,9 +188,44 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         if (insertError) {
             console.error("Booking error:", insertError);
             setError(t.bookingFailed);
-        } else {
-            setStep('confirmed');
+            setIsConfirming(false);
+            return;
+        } 
+        
+        // If booking is successful, invoke the edge function to send email
+        try {
+            const formattedDate = selectedDate.toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+            
+            const { error: functionError } = await supabase.functions.invoke('send-confirmation-email', {
+                body: {
+                    shopName: shopData.name,
+                    shopAddress: shopData.address,
+                    clientName: `${clientInfo.firstName} ${clientInfo.lastName}`,
+                    clientEmail: clientInfo.email,
+                    serviceName: selectedService.name,
+                    date: formattedDate,
+                    time: selectedTime,
+                    price: totalPrice,
+                },
+            });
+
+            if (functionError) {
+                // Log the error but don't block the user's confirmation screen.
+                // The booking is already saved, this is a non-critical failure.
+                console.error('Failed to send confirmation email:', functionError);
+            }
+
+        } catch (e) {
+            // Also log this but don't block UI
+            console.error('Error invoking email function:', e);
         }
+
+        setStep('confirmed');
         setIsConfirming(false);
     };
 
