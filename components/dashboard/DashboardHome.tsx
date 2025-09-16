@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon } from '../Icons';
+import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon, EyeIcon } from '../Icons';
 
 // FIX: Removed the unused 'stripe' property from the 'setupStatus' type.
 // This property was causing a type mismatch in the parent Dashboard component
@@ -17,9 +17,10 @@ interface DashboardHomeProps {
     catalog: boolean;
   };
   shopId?: string;
+  onPreview: () => void;
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, shopId }) => {
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, shopId, onPreview }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [linkCopied, setLinkCopied] = useState(false);
@@ -105,6 +106,10 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
           <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
             {t.openLink}
           </a>
+          <button onClick={onPreview} className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
+            <EyeIcon className="w-5 h-5"/>
+            <span>{t.previewPage}</span>
+          </button>
           <button className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
             <ShareIcon className="w-5 h-5" />
             <span>{t.share}</span>

@@ -221,7 +221,7 @@ export const CalendarPlusIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', .
 export const CustomServicesIcon: React.FC<IconProps> = ({ className = 'w-8 h-8', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...rest}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L9.75 3.104zM16.5 15.75l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L16.5 15.75zM4.5 9.75l-1.12 2.242-2.242 1.12 2.242 1.12 1.12 2.242 1.12-2.242 2.242-1.12-2.242-1.12L4.5 9.75z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 3.104l1.12 2.242 2.242 1.12-2.242 1.12-1.12 2.242-1.12-2.242-2.242-1.12 2.242-1.12 1.12-2.242z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 3.104l1.12 2.242 2.242 1.12-2.242 1.12-1.12 2.242-1.12-2.242-2.242-1.12 2.242 1.12 1.12-2.242z" />
     </svg>
 );
 
@@ -280,4 +280,11 @@ export const CogIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest })
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.457 3.077l1.41-.513m14.095-5.13l-1.41-.513M5.957 5.957l1.41.513m14.095 5.13l-1.41.513M12.001 19.5v-2.25m0-13.5v2.25m0 0a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
     </svg>
+);
+
+export const EyeIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639l4.43-4.43a1.012 1.012 0 011.433 0l4.43 4.43a1.012 1.012 0 010 .639l-4.43 4.43a1.012 1.012 0 01-1.433 0l-4.43-4.43z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
 );

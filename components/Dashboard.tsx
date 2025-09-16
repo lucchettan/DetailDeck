@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,6 +16,7 @@ import ReservationEditor from './dashboard/ReservationEditor';
 import { toCamelCase } from '../lib/utils';
 import AlertModal from './AlertModal';
 import AddOnEditor from './dashboard/AddOnEditor';
+import BookingPreviewModal from './booking/BookingPreviewModal';
 
 type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
 
@@ -97,6 +99,7 @@ const Dashboard: React.FC = () => {
 
   const [isAddOnEditorOpen, setIsAddOnEditorOpen] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState<AddOn | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
 
   const fetchData = useCallback(async () => {
@@ -416,6 +419,14 @@ const Dashboard: React.FC = () => {
     setIsAddOnEditorOpen(true);
   };
 
+  const handlePreviewClick = () => {
+    if (shopData?.id) {
+        setIsPreviewModalOpen(true);
+    } else {
+        setAlertInfo({ isOpen: true, title: "Preview Unavailable", message: "Please complete your shop setup before previewing." });
+    }
+  };
+
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
@@ -439,7 +450,7 @@ const Dashboard: React.FC = () => {
         return <DashboardHome onNavigate={(view) => {
           const newView = view === 'shop' ? 'settings' : view;
           setActiveView(newView as ViewType);
-        }} setupStatus={setupStatus} shopId={shopData?.id} />;
+        }} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
       case 'settings':
         return <Settings shopData={shopData} onSave={handleSaveShop} />;
       case 'catalog':
@@ -463,7 +474,7 @@ const Dashboard: React.FC = () => {
       case 'analytics':
         return <Analytics />;
       default:
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
+        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick}/>;
     }
   };
 
@@ -563,6 +574,13 @@ const Dashboard: React.FC = () => {
             title={alertInfo.title}
             message={alertInfo.message}
         />
+        {isPreviewModalOpen && shopData?.id && (
+            <BookingPreviewModal
+                isOpen={isPreviewModalOpen}
+                onClose={() => setIsPreviewModalOpen(false)}
+                shopId={shopData.id}
+            />
+        )}
     </>
   );
 };
