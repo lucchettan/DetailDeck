@@ -330,7 +330,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                         </div>
                       </button>
                       {formData.businessType === 'mobile' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t items-end">
                             <div>
                             <label htmlFor="city" className="block text-sm font-bold text-brand-dark mb-2">{t.operatingCity}</label>
                             <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg"/>

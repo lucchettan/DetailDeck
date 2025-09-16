@@ -1,17 +1,17 @@
-// FIX: Add Deno to global scope to avoid TypeScript errors in environments where Deno types are not automatically included.
+// Déclare Deno pour éviter les erreurs TypeScript dans les environnements où les types Deno ne sont pas inclus.
 declare const Deno: any;
 
-// @ts-ignore: Deno imports are not recognized by the build environment's TypeScript compiler.
+// @ts-ignore: Les imports Deno ne sont pas reconnus par le compilateur TypeScript de l'environnement de build.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-// Standard CORS headers
+// En-têtes CORS standards
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight request
+serve(async (req: any) => {
+  // Gérer la requête CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,44 +23,44 @@ serve(async (req) => {
       clientName,
       clientEmail,
       serviceName,
-      date, // Expecting a pre-formatted date string
+      date, // Attend une date pré-formatée
       time,
       price,
     } = await req.json()
 
-    // Retrieve Resend API key from environment variables
+    // Récupérer la clé API Resend depuis les variables d'environnement
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY is not set in environment variables.')
-      return new Response(JSON.stringify({ error: 'Email service is not configured.' }), {
+      console.error('RESEND_API_KEY n\'est pas définie dans les variables d\'environnement.')
+      return new Response(JSON.stringify({ error: 'Le service d\'e-mail n\'est pas configuré.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const subject = `Your Booking Confirmation with ${shopName}`
+    const subject = `Confirmation de votre réservation chez ${shopName}`
     const textBody = `
-Hi ${clientName},
+Bonjour ${clientName},
 
-This email confirms your booking with ${shopName}.
+Cet e-mail confirme votre réservation chez ${shopName}.
 
-Here are your details:
-- Service: ${serviceName}
-- Date: ${date}
-- Time: ${time}
-- Total: €${price}
-${shopAddress ? `- Location: ${shopAddress}` : ''}
+Voici les détails :
+- Prestation : ${serviceName}
+- Date : ${date}
+- Heure : ${time}
+- Total : ${price} €
+${shopAddress ? `- Lieu : ${shopAddress}` : ''}
 
-We look forward to seeing you!
+Nous avons hâte de vous voir !
 
-- The ${shopName} Team
+- L'équipe ${shopName}
     `
     const htmlBody = `
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking Confirmation</title>
+  <title>Confirmation de réservation</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
     .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #ffffff; }
@@ -74,28 +74,27 @@ We look forward to seeing you!
 </head>
 <body>
   <div class="container">
-    <h2>Booking Confirmed!</h2>
-    <p>Hi ${clientName},</p>
-    <p>This email confirms your booking with <strong>${shopName}</strong>.</p>
-    <h3>Your Details:</h3>
+    <h2>Réservation Confirmée !</h2>
+    <p>Bonjour ${clientName},</p>
+    <p>Cet e-mail confirme votre réservation avec <strong>${shopName}</strong>.</p>
+    <h3>Vos détails :</h3>
     <ul>
-      <li><strong>Service:</strong> ${serviceName}</li>
-      <li><strong>Date:</strong> ${date}</li>
-      <li><strong>Time:</strong> ${time}</li>
-      <li><strong>Total:</strong> €${price}</li>
-      ${shopAddress ? `<li><strong>Location:</strong> ${shopAddress}</li>` : ''}
+      <li><strong>Prestation :</strong> ${serviceName}</li>
+      <li><strong>Date :</strong> ${date}</li>
+      <li><strong>Heure :</strong> ${time}</li>
+      <li><strong>Total :</strong> ${price} €</li>
+      ${shopAddress ? `<li><strong>Lieu :</strong> ${shopAddress}</li>` : ''}
     </ul>
-    <p>We look forward to seeing you!</p>
-    <p><em>- The ${shopName} Team</em></p>
+    <p>Nous avons hâte de vous recevoir !</p>
+    <p><em>- L'équipe ${shopName}</em></p>
   </div>
   <div class="footer">
-    <p>This is an automated email from ResaOne. Please do not reply.</p>
+    <p>Ceci est un e-mail automatique envoyé via ResaOne. Merci de ne pas y répondre.</p>
   </div>
 </body>
 </html>
     `
-
-    // Use Resend's test address as the sender for demonstration purposes
+    // L'adresse de l'expéditeur doit être un domaine vérifié sur Resend
     const fromAddress = 'ResaOne <onboarding@resend.dev>'
 
     const res = await fetch('https://api.resend.com/emails', {
@@ -115,8 +114,8 @@ We look forward to seeing you!
 
     if (!res.ok) {
         const errorBody = await res.json()
-        console.error('Failed to send email:', errorBody)
-        throw new Error(`Failed to send email. Status: ${res.status}`)
+        console.error('Échec de l\'envoi de l\'e-mail:', errorBody)
+        throw new Error(`Échec de l'envoi de l'e-mail. Statut : ${res.status}`)
     }
 
     const data = await res.json()
