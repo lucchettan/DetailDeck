@@ -10,7 +10,7 @@ import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
 import BookingSummary from './booking/BookingSummary';
 import StepServiceSelection from './booking/StepServiceSelection';
-import { toCamelCase } from '../lib/utils';
+import { toCamelCase, parseSafeInt } from '../lib/utils';
 
 interface BookingPageProps {
   shopId: string;
@@ -103,19 +103,19 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
         if (selectedService.varies) {
             if (selectedVehicleSize) {
-                duration = parseInt(selectedService.pricing[selectedVehicleSize]?.duration || '0');
-                price = parseInt(selectedService.pricing[selectedVehicleSize]?.price || '0');
+                duration = parseSafeInt(selectedService.pricing[selectedVehicleSize]?.duration);
+                price = parseSafeInt(selectedService.pricing[selectedVehicleSize]?.price);
             }
         } else {
-            duration = parseInt(selectedService.singlePrice?.duration || '0');
-            price = parseInt(selectedService.singlePrice?.price || '0');
+            duration = parseSafeInt(selectedService.singlePrice?.duration);
+            price = parseSafeInt(selectedService.singlePrice?.price);
         }
 
         selectedAddOns.forEach(addOnId => {
             const addOn = selectedService.addOns.find(a => a.id === addOnId);
             if (addOn) {
-                duration += parseInt(addOn.duration);
-                price += parseInt(addOn.price);
+                duration += parseSafeInt(addOn.duration);
+                price += parseSafeInt(addOn.price);
             }
         });
         

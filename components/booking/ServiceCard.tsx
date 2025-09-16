@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { Service } from '../Dashboard';
-import { ImageIcon, MoneyIcon } from '../Icons';
+import { ImageIcon, MoneyIcon, HourglassIcon } from '../Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface ServiceCardProps {
   service: Service;
@@ -36,6 +37,29 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
         return 'N/A';
     }
 
+    const getDurationDisplay = (service: Service): string => {
+        let durationMins = 0;
+        if (service.varies) {
+            const prices = service.pricing && typeof service.pricing === 'object' 
+                ? Object.values(service.pricing)
+                : [];
+            
+            const enabledOptions = prices
+                .filter(p => p && p.enabled && p.price && !isNaN(parseInt(p.price, 10)))
+                .map(p => ({ price: parseInt(p.price!, 10), duration: parseSafeInt(p.duration) }));
+
+            if (enabledOptions.length === 0) return '';
+            
+            const minPrice = Math.min(...enabledOptions.map(p => p.price));
+            const optionWithMinPrice = enabledOptions.find(p => p.price === minPrice);
+            durationMins = optionWithMinPrice?.duration || 0;
+
+        } else {
+            durationMins = parseSafeInt(service.singlePrice?.duration);
+        }
+        return formatDuration(durationMins);
+    }
+
     return (
         <div 
             onClick={onSelect}
@@ -53,12 +77,15 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
             <div className="p-6 flex flex-col flex-grow">
                 <div className="flex-grow">
                     <h3 className="text-lg font-bold text-brand-dark pr-2">{service.name}</h3>
-                    <p className="text-brand-gray mt-2 text-sm min-h-[40px]">{service.description}</p>
+                    <p className="text-brand-gray mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <MoneyIcon className="w-6 h-6 text-gray-400"/>
+                    <div className="flex flex-col">
                         <p className="text-xl font-bold text-brand-dark">{getPriceDisplay(service)}</p>
+                         <p className="text-sm text-brand-gray flex items-center gap-1 mt-1">
+                            <HourglassIcon className="w-4 h-4"/>
+                            <span>{getDurationDisplay(service)}</span>
+                        </p>
                     </div>
                     <button className="font-bold text-brand-blue text-sm">{t.selectService} &rarr;</button>
                 </div>

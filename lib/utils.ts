@@ -39,8 +39,8 @@ export const toCamelCase = (obj: any) => convertCase(camelCase, obj);
  * @returns The formatted string.
  */
 export const formatDuration = (minutes: number): string => {
-  if (isNaN(minutes) || minutes < 0) {
-    return '0min';
+  if (isNaN(minutes) || minutes <= 0) {
+    return '';
   }
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
@@ -55,4 +55,18 @@ export const formatDuration = (minutes: number): string => {
   }
   
   return formatted || '0min';
+};
+
+/**
+ * Safely parses a string or number into an integer.
+ * Returns 0 if the input is null, undefined, NaN, or an empty string.
+ * @param value - The value to parse.
+ * @returns The parsed integer or 0.
+ */
+export const parseSafeInt = (value: string | number | undefined | null): number => {
+  if (value === null || value === undefined || value === '') {
+    return 0;
+  }
+  const num = parseInt(String(value), 10);
+  return isNaN(num) ? 0 : num;
 };

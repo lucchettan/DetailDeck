@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
 import ServiceCard from './ServiceCard';
-import { CheckIcon, ChevronLeftIcon } from '../Icons';
+import { CheckIcon, ChevronLeftIcon, HourglassIcon, MoneyIcon } from '../Icons';
+import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface StepServiceSelectionProps {
     services: Service[];
@@ -102,9 +104,11 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
                             <button key={size} onClick={() => handleSizeSelected(size as VehicleSize)} className="w-full text-left p-4 border rounded-lg bg-white hover:border-brand-blue flex justify-between items-center transition-all">
                                 <div>
                                     <p className="font-bold">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
-                                    <p className="text-sm text-brand-gray">{details.duration} min</p>
+                                    <p className="text-sm text-brand-gray flex items-center gap-1 mt-1">
+                                       <HourglassIcon className="w-4 h-4"/> <span>{formatDuration(parseSafeInt(details.duration))}</span>
+                                    </p>
                                 </div>
-                                <p className="font-bold text-lg">€{details.price}</p>
+                                <p className="font-bold text-lg flex items-center gap-1"><MoneyIcon className="w-5 h-5"/>€{details.price}</p>
                             </button>
                         ))}
                     </div>
@@ -126,10 +130,12 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
                                     </div>
                                     <div>
                                         <p className="font-bold">{addOn.name}</p>
-                                        <p className="text-sm text-brand-gray">{addOn.duration} min</p>
+                                        <p className="text-sm text-brand-gray flex items-center gap-1 mt-1">
+                                            <HourglassIcon className="w-4 h-4"/> <span>{formatDuration(parseSafeInt(addOn.duration))}</span>
+                                        </p>
                                     </div>
                                 </div>
-                                <p className="font-bold text-lg">€{addOn.price}</p>
+                                <p className="font-bold text-lg flex items-center gap-1"><MoneyIcon className="w-5 h-5"/>€{addOn.price}</p>
                             </button>
                         ))}
                     </div>
