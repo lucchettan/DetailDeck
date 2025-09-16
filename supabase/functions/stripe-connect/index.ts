@@ -1,5 +1,5 @@
-// Fix: Updated the type reference to a more stable version, which ensures the Deno global types are loaded correctly.
-/// <reference types="https://esm.sh/@supabase/functions-js@2/src/edge-runtime.d.ts" />
+// Fix: The Deno global types were not being loaded due to an unstable type reference URL. Pinning the version of @supabase/functions-js to a specific version (2.4.1) resolves the issue and makes the 'Deno' global available.
+/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@11.1.0?target=deno";

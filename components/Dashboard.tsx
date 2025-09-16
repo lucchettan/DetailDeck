@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -153,42 +152,49 @@ const Dashboard: React.FC = () => {
     if (stripeCode && !authLoading && session && !isFinalizingStripe) {
       const finalizeConnection = async () => {
         setIsFinalizingStripe(true);
-        try {
-            const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
-                body: { code: stripeCode },
-            });
-            
-            // Note: Unlike other Supabase calls, invoke returns the raw response.
-            // We need to check the 'error' property within the returned 'data' object.
-            if (functionError) {
-                // This catches network errors or function crashes before it can respond.
-                throw new Error(`Function invocation failed: ${functionError.message}`);
-            }
+        let debugInfo = '';
 
-            if (data.error) {
-                // This catches errors returned by the function itself (our custom error handling).
-                // We will display the full technical details from the function.
-                const prettyPrintedError = JSON.stringify(data, null, 2);
-                throw new Error(prettyPrintedError);
-            }
-            
-            // If successful, refetch all data to update the UI.
-            await fetchData();
+        try {
+          const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
+            body: { code: stripeCode },
+          });
+
+          // Immediately capture the raw response for debugging
+          debugInfo += `--- Backend Function Response ---\n\n`;
+          debugInfo += `Data received:\n${JSON.stringify(data, null, 2)}\n\n`;
+          debugInfo += `Error object:\n${JSON.stringify(functionError, null, 2)}`;
+
+          if (functionError) {
+            throw new Error(`Function invocation failed. See full response above.`);
+          }
+
+          // The Supabase client might return an error inside the 'data' object if the function returns a non-2xx status.
+          if (data && data.error) {
+            throw new Error(`The backend function returned an error. See full response above.`);
+          }
+          
+          // Success case
+          await fetchData();
 
         } catch (error: any) {
-            console.error("Stripe Connection Full Error:", error);
+          console.error("Stripe Connection Full Error Object:", error);
 
-            // The error message now contains the full technical details from the backend.
-            setAlertInfo({
-                isOpen: true,
-                title: 'Stripe Connection Failed: Technical Log',
-                message: error.message,
-            });
-            
+          // Append any caught exception details to the comprehensive log
+          let caughtErrorDetails = `\n\n--- Frontend Catch Block ---\n\n`;
+          caughtErrorDetails += `Message: ${error.message}\n`;
+          if(error.stack) {
+            caughtErrorDetails += `Stack: ${error.stack}`;
+          }
+
+          setAlertInfo({
+            isOpen: true,
+            title: 'Stripe Connection - Raw Debug Log',
+            message: debugInfo + caughtErrorDetails,
+          });
+          
         } finally {
-            // Clean up URL and reset state
-            window.history.replaceState(null, '', window.location.pathname);
-            setIsFinalizingStripe(false);
+          window.history.replaceState(null, '', window.location.pathname);
+          setIsFinalizingStripe(false);
         }
       };
       finalizeConnection();
