@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, MoneyIcon, HourglassIcon, TrashIcon, SaveIcon } from '../Icons';
@@ -100,7 +99,7 @@ const AddOnEditor: React.FC<AddOnEditorProps> = ({ isOpen, onClose, onSave, onDe
               type="text"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-lg"
+              className="w-full p-2 border bg-white border-gray-300 rounded-lg"
               required
             />
           </div>
@@ -117,7 +116,7 @@ const AddOnEditor: React.FC<AddOnEditorProps> = ({ isOpen, onClose, onSave, onDe
                   type="number"
                   value={formData.price}
                   onChange={handleInputChange}
-                  className="w-full p-2 pl-10 border border-gray-300 rounded-lg"
+                  className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg"
                   required
                 />
               </div>

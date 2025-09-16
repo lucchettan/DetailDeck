@@ -1,11 +1,17 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-// FIX: Import AddOn type.
-import { Service, AddOn } from '../Dashboard';
+import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CheckBadgeIcon, HourglassIcon, ImageIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
 
+// Represents a unifed add-on for the booking form, can be global or specific
+type AvailableAddOn = { 
+    id: string; 
+    name: string; 
+    price: string; 
+    duration: string 
+};
 interface BookingFormProps {
     services: Service[];
     clientVehicle: string;
@@ -15,12 +21,9 @@ interface BookingFormProps {
     onSelectService: (service: Service | null) => void;
     selectedVehicleSize: VehicleSize | null;
     onSelectVehicleSize: (size: VehicleSize) => void;
-    // FIX: AddOn ID is a string.
     selectedAddOns: Set<string>;
-    // FIX: AddOn ID is a string.
     onToggleAddOn: (id: string) => void;
-    // FIX: Add prop to receive all add-ons from parent.
-    allAddOns: AddOn[];
+    availableAddOns: AvailableAddOn[];
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -34,28 +37,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
     onSelectVehicleSize,
     selectedAddOns,
     onToggleAddOn,
-    allAddOns,
+    availableAddOns,
 }) => {
     const { t } = useLanguage();
     const vehicleSizeRef = useRef<HTMLDivElement>(null);
     const addOnsRef = useRef<HTMLDivElement>(null);
 
-    // FIX: Get the full AddOn objects available for the selected service.
-    const availableAddOns = useMemo(() => {
-        if (!selectedService?.addOnIds || !allAddOns) return [];
-        return allAddOns.filter(addOn => selectedService.addOnIds.includes(addOn.id));
-    }, [selectedService, allAddOns]);
-
     useEffect(() => {
         if (selectedService) {
             if (selectedService.varies && !selectedVehicleSize) {
                 vehicleSizeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // FIX: Check if there are available add-ons.
             } else if (availableAddOns.length > 0) {
                  addOnsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-    // FIX: Add availableAddOns and selectedVehicleSize to dependency array.
     }, [selectedService, selectedVehicleSize, availableAddOns]);
 
     const getPriceDisplay = (price: string | undefined | null) => {
@@ -77,7 +72,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
 
     const showVehicleSelection = selectedService && selectedService.varies;
-    // FIX: Check if there are available add-ons.
     const showAddons = selectedService && availableAddOns.length > 0;
 
     return (
@@ -175,7 +169,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
                  <div ref={addOnsRef}>
                     <h2 className="text-xl font-bold text-brand-dark mb-4">{t.addOnServices}</h2>
                     <div className="space-y-3">
-                         {/* FIX: Iterate over availableAddOns instead of a non-existent property. */}
                          {availableAddOns.map(addon => {
                             const isSelected = selectedAddOns.has(addon.id);
                             return (

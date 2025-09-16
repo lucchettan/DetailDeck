@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: Import AddOn type.
-import { Service, Shop, AddOn } from './Dashboard';
+import { Service, Shop, AddOn, SpecificAddOn } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
@@ -20,7 +19,6 @@ interface ExistingReservation {
     duration: number;
 }
 
-// FIX: Update type to include addOns.
 type FullShopData = Shop & { services: Service[], addOns: AddOn[] };
 
 type BookingStep = 'selection' | 'datetime' | 'clientInfo' | 'confirmed';
@@ -39,6 +37,9 @@ export interface ClientInfoErrors {
     phone?: string;
 }
 
+// Represents a unifed add-on for the booking form, can be global or specific
+type AvailableAddOn = AddOn | (SpecificAddOn & { id: string });
+
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
     
@@ -54,7 +55,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [clientVehicleError, setClientVehicleError] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
-    // FIX: AddOn ID is a string, so use Set<string>.
     const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
     
     // Step 2 State
@@ -71,7 +71,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             setLoading(true);
             setError(null);
             
-            // FIX: Fetch add_ons along with shop and services.
             const { data, error: dbError } = await supabase
                 .from('shops')
                 .select('*, services(*), add_ons(*)')
@@ -93,9 +92,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
+    const availableAddOns = useMemo((): AvailableAddOn[] => {
+        if (!selectedService || !shopData) return [];
+        
+        const specific = (selectedService.specificAddOns || []).map((addOn, index) => ({
+            id: `specific_${index}`,
+            shopId: shopData.id,
+            ...addOn
+        }));
+    
+        const global = (shopData.addOns || []).filter(addOn => 
+            (selectedService.addOnIds || []).includes(addOn.id)
+        );
+    
+        return [...specific, ...global];
+    }, [selectedService, shopData]);
+
+
     const { totalDuration, totalPrice } = useMemo(() => {
-        // FIX: Add guard for shopData.
-        if (!selectedService || !shopData) return { totalDuration: 0, totalPrice: 0 };
+        if (!selectedService) return { totalDuration: 0, totalPrice: 0 };
         
         let duration = 0;
         let price = 0;
@@ -110,9 +125,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             price = parseSafeInt(selectedService.singlePrice?.price);
         }
 
+        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
         selectedAddOns.forEach(addOnId => {
-            // FIX: Get add-on details from the full addOns list in shopData.
-            const addOn = shopData.addOns.find(a => a.id === addOnId);
+            const addOn = addOnMap.get(addOnId);
             if (addOn) {
                 duration += parseSafeInt(addOn.duration);
                 price += parseSafeInt(addOn.price);
@@ -120,10 +135,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         });
         
         return { totalDuration: duration, totalPrice: price };
-    // FIX: Add shopData to dependency array.
-    }, [selectedService, selectedVehicleSize, selectedAddOns, shopData]);
+    }, [selectedService, selectedVehicleSize, selectedAddOns, availableAddOns]);
 
-    // FIX: AddOn ID is a string.
     const toggleAddOn = (addOnId: string) => {
         setSelectedAddOns(prev => {
             const newSet = new Set(prev);
@@ -163,6 +176,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
         setIsConfirming(true);
         setError(null);
+
+        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
+        const confirmedAddOns = Array.from(selectedAddOns).map(id => {
+            const addOn = addOnMap.get(id);
+            return { name: addOn?.name, price: addOn?.price, duration: addOn?.duration };
+        }).filter(a => a.name);
         
         const { error: insertError } = await supabase.from('reservations').insert({
             shop_id: shopId,
@@ -179,7 +198,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             service_details: {
                 name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
-                addOns: shopData.addOns.filter(a => selectedAddOns.has(a.id)),
+                addOns: confirmedAddOns,
                 client_vehicle: clientVehicle,
                 special_instructions: specialInstructions,
             }
@@ -192,9 +211,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             return;
         } 
         
-        // The database trigger will now handle sending the confirmation email automatically.
-        // No need to call the Edge Function from the client.
-
         setStep('confirmed');
         setIsConfirming(false);
     };
@@ -203,7 +219,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         if (step === 'selection') {
             if (!clientVehicle.trim()) {
                 setClientVehicleError(t.requiredField);
-                // Scroll to the field with an error
                 const vehicleInput = document.getElementById('clientVehicle');
                 vehicleInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
@@ -235,14 +250,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     };
 
     const getConfirmationMessage = () => {
-        if (!selectedService || !selectedDate || !selectedTime || !shopData) return '';
+        if (!selectedService || !selectedDate || !selectedTime) return '';
 
         const vehicleText = selectedVehicleSize ? t.forVehicle.replace('{vehicleSize}', t[`size_${selectedVehicleSize}`]) : '';
         
-        // FIX: Get add-on names from the full addOns list in shopData.
-        const addOnsList = shopData.addOns
-            .filter(a => selectedAddOns.has(a.id))
-            .map(a => a.name)
+        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
+        const addOnsList = Array.from(selectedAddOns)
+            .map(id => addOnMap.get(id)?.name)
+            .filter(Boolean)
             .join(', ');
             
         const addOnsText = addOnsList ? t.withAddOns.replace('{addOnsList}', addOnsList) : '';
@@ -340,8 +355,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             <div className="max-w-4xl mx-auto">
                 <BookingForm
                     services={activeServices}
-                    // FIX: Pass the full list of add-ons to the form.
-                    allAddOns={shopData.addOns || []}
+                    availableAddOns={availableAddOns}
                     clientVehicle={clientVehicle}
                     onClientVehicleChange={(value) => {
                         setClientVehicle(value);

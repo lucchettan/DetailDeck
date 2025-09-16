@@ -25,6 +25,12 @@ export interface AddOn {
   duration: string;
 }
 
+export interface SpecificAddOn {
+  name: string;
+  price: string;
+  duration: string;
+}
+
 export interface Service {
   id: string;
   shopId?: string; // Mapped from shop_id
@@ -38,6 +44,7 @@ export interface Service {
   singlePrice: { price?: string; duration?: string };
   addOnIds: string[]; // Replaces the old embedded addOns
   imageUrl?: string;
+  specificAddOns?: SpecificAddOn[];
 }
 
 export interface Shop {
@@ -129,6 +136,7 @@ const Dashboard: React.FC = () => {
             const processedServices = (toCamelCase(shopServices) as Service[]).map(service => ({
               ...service,
               addOnIds: service.addOnIds || [],
+              specificAddOns: service.specificAddOns || [],
             }));
             setServices(processedServices);
 
@@ -194,6 +202,7 @@ const Dashboard: React.FC = () => {
       single_price: serviceToSave.singlePrice,
       add_on_ids: serviceToSave.addOnIds,
       image_url: serviceToSave.imageUrl,
+      specific_add_ons: serviceToSave.specificAddOns,
     };
     
     if (!servicePayload.id) {

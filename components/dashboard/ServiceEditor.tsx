@@ -1,10 +1,8 @@
-
-
 import React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon, PlusIcon, TrashIcon, CheckIcon } from '../Icons';
-import { Service, AddOn } from '../Dashboard';
+import { Service, AddOn, SpecificAddOn } from '../Dashboard';
 import CustomSelect from '../CustomSelect';
 
 interface ServiceEditorProps {
@@ -18,7 +16,7 @@ interface ServiceEditorProps {
 const vehicleSizes = ['S', 'M', 'L', 'XL'] as const;
 
 const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id?: string } => {
-  if (service) return { ...service };
+  if (service) return { ...service, specificAddOns: service.specificAddOns || [] };
 
   return {
     name: '',
@@ -34,6 +32,7 @@ const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id
     singlePrice: { price: '120', duration: '90' },
     addOnIds: [],
     imageUrl: '',
+    specificAddOns: [],
   };
 };
 
@@ -90,7 +89,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
         newErrors.singleDuration = t.durationIsRequired;
       }
     }
-    // A more complex validation could check if at least one varied price is set.
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -160,6 +158,30 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
     });
   };
 
+  const handleAddSpecificAddOn = () => {
+    const newAddOn: SpecificAddOn = { name: '', price: '10', duration: '15' };
+    setFormData(prev => ({
+        ...prev,
+        specificAddOns: [...(prev.specificAddOns || []), newAddOn]
+    }));
+  };
+
+  const handleSpecificAddOnChange = (index: number, field: keyof SpecificAddOn, value: string) => {
+      setFormData(prev => {
+          const updatedAddOns = [...(prev.specificAddOns || [])];
+          updatedAddOns[index] = { ...updatedAddOns[index], [field]: value };
+          return { ...prev, specificAddOns: updatedAddOns };
+      });
+  };
+
+  const handleRemoveSpecificAddOn = (index: number) => {
+      setFormData(prev => ({
+          ...prev,
+          specificAddOns: (prev.specificAddOns || []).filter((_, i) => i !== index)
+      }));
+  };
+
+
   const handleDelete = () => {
     if (service && window.confirm(t.deleteServiceConfirmation)) {
       onDelete(service.id);
@@ -176,7 +198,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
 
     if (success && !isEditing) {
       alert(t.serviceCreatedSuccess);
-      // The parent component handles navigation back to the catalog list and any error alerts.
     }
   };
 
@@ -191,7 +212,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
 
         <div className="bg-white p-8 rounded-lg shadow-md">
           <form onSubmit={handleSave} noValidate>
-            {/* Image Upload */}
             <div className="mb-8">
                 <label className="block text-sm font-bold text-brand-dark mb-2">{t.serviceImage}</label>
                 
@@ -220,11 +240,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
                 )}
             </div>
 
-            {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceName}</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border border-gray-300 rounded-lg" required />
+                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
@@ -237,10 +256,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
             </div>
             <div className="mb-8">
               <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceDescription}</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+              <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border bg-white border-gray-300 rounded-lg"></textarea>
             </div>
             
-            {/* Pricing */}
             <div className="border-t pt-6 mb-8">
                 <h3 className="text-lg font-bold text-brand-dark mb-4">{t.pricingAndDuration}</h3>
                 <div className="flex items-center mb-4">
@@ -265,7 +283,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <MoneyIcon className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border border-gray-300 rounded-lg disabled:bg-gray-100" />
+                                    <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg disabled:bg-gray-100" />
                                 </div>
                                 <div className="relative">
                                     <DurationPicker value={formData.pricing[size]?.duration} onChange={(value) => handlePricingChange(size, 'duration', value)} disabled={!formData.pricing[size]?.enabled} />
@@ -280,7 +298,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <MoneyIcon className="h-5 w-5 text-gray-400" />
                                 </div>
-                                <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border border-gray-300 rounded-lg" />
+                                <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
                             </div>
                             {errors.singlePrice && <p className="text-red-500 text-xs mt-1">{errors.singlePrice}</p>}
                         </div>
@@ -294,10 +312,43 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBac
                 )}
             </div>
 
-            {/* Associated Add-ons */}
+            {/* Specific Add-ons */}
+             <div className="border-t pt-6 mb-8">
+                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.specificAddOns}</h3>
+                <p className="text-brand-gray text-sm mb-4">{t.specificAddOnsSubtitle}</p>
+                <div className="space-y-4">
+                    {(formData.specificAddOns || []).map((addOn, index) => (
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-3 bg-gray-50 rounded-lg">
+                            <div className="md:col-span-2">
+                                <input type="text" placeholder={t.addOnName} value={addOn.name} onChange={(e) => handleSpecificAddOnChange(index, 'name', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                            </div>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <MoneyIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input type="number" placeholder={t.price} value={addOn.price} onChange={(e) => handleSpecificAddOnChange(index, 'price', e.target.value)} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1">
+                                    <DurationPicker value={addOn.duration} onChange={(value) => handleSpecificAddOnChange(index, 'duration', value)} />
+                                </div>
+                                <button type="button" onClick={() => handleRemoveSpecificAddOn(index)} className="text-gray-400 hover:text-red-500">
+                                    <TrashIcon className="w-5 h-5"/>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    <button type="button" onClick={handleAddSpecificAddOn} className="text-sm font-semibold text-brand-blue hover:underline flex items-center gap-1">
+                        <PlusIcon className="w-4 h-4" /> {t.addSpecificAddOn}
+                    </button>
+                </div>
+            </div>
+
+
+            {/* Associated Global Add-ons */}
             <div className="border-t pt-6">
-                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.associatedAddOns}</h3>
-                <p className="text-brand-gray text-sm mb-4">{t.associatedAddOnsSubtitle}</p>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.globalAddOns}</h3>
+                <p className="text-brand-gray text-sm mb-4">{t.globalAddOnsSubtitle}</p>
                 <div className="space-y-3">
                     {allAddOns.length > 0 ? (
                         allAddOns.map(addOn => {
