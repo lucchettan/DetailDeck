@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -61,7 +62,7 @@ const AppContent: React.FC = () => {
     setAuthInitialView(view);
     setIsAuthModalOpen(true);
   };
-
+  
   const handleSignUpSuccess = () => {
     setIsAuthModalOpen(false);
     setIsOnboardingModalOpen(true);
@@ -75,10 +76,6 @@ const AppContent: React.FC = () => {
   const handleSwitchToLogin = () => {
     setIsEarlyAccessModalOpen(false);
     openAuthModal('login');
-  };
-
-  const handleSignUpClick = () => {
-    setIsEarlyAccessModalOpen(true);
   };
   
   if (loading) {
@@ -106,7 +103,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
-      <Header onLogInClick={() => openAuthModal('login')} onSignUpClick={handleSignUpClick} onDemoClick={demoLogin} />
+      <Header onLogInClick={() => openAuthModal('login')} onSignUpClick={() => openAuthModal('signup')} onDemoClick={demoLogin} />
       <main>
         <Hero 
           onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
@@ -122,7 +119,8 @@ const AppContent: React.FC = () => {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        initialView={'login'}
+        initialView={authInitialView}
+        onSignUpSuccess={handleSignUpSuccess}
       />
       <EarlyAccessModal
         isOpen={isEarlyAccessModalOpen}

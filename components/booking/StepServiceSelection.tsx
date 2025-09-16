@@ -1,7 +1,8 @@
 
 
-import React, { useState, useEffect } from 'react';
-import { Service } from '../Dashboard';
+import React, { useState, useEffect, useMemo } from 'react';
+// FIX: Import AddOn type.
+import { Service, AddOn } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
 import ServiceCard from './ServiceCard';
@@ -12,11 +13,15 @@ interface StepServiceSelectionProps {
     services: Service[];
     selectedService: Service | null;
     selectedVehicleSize: VehicleSize | null;
-    selectedAddOns: Set<number>;
+    // FIX: AddOn ID is a string.
+    selectedAddOns: Set<string>;
     onSelectService: (service: Service) => void;
     onSelectVehicleSize: (size: VehicleSize) => void;
-    onToggleAddOn: (id: number) => void;
+    // FIX: AddOn ID is a string.
+    onToggleAddOn: (id: string) => void;
     onComplete: () => void;
+    // FIX: Add allAddOns prop to get full details.
+    allAddOns: AddOn[];
 }
 
 type SubStep = 'list' | 'size' | 'addons';
@@ -29,7 +34,8 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
     onSelectService,
     onSelectVehicleSize,
     onToggleAddOn,
-    onComplete
+    onComplete,
+    allAddOns,
 }) => {
     const { t } = useLanguage();
     const [subStep, setSubStep] = useState<SubStep>('list');
@@ -44,7 +50,8 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
         onSelectService(service);
         if (service.varies) {
             setSubStep('size');
-        } else if (service.addOns && service.addOns.length > 0) {
+        // FIX: Check for associated add-ons using `addOnIds` property.
+        } else if (service.addOnIds && service.addOnIds.length > 0) {
             setSubStep('addons');
         } else {
             onComplete();
@@ -53,7 +60,8 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
 
     const handleSizeSelected = (size: VehicleSize) => {
         onSelectVehicleSize(size);
-        if (selectedService?.addOns && selectedService.addOns.length > 0) {
+        // FIX: Check for associated add-ons using `addOnIds` property.
+        if (selectedService?.addOnIds && selectedService.addOnIds.length > 0) {
             setSubStep('addons');
         } else {
             onComplete();
@@ -117,12 +125,20 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
             );
 
         case 'addons':
-            if (!selectedService || selectedService.addOns.length === 0) return null;
+            // FIX: Get the full AddOn objects available for the selected service.
+            const availableAddOns = useMemo(() => {
+                if (!selectedService?.addOnIds || !allAddOns) return [];
+                return allAddOns.filter(addOn => selectedService.addOnIds.includes(addOn.id));
+            }, [selectedService, allAddOns]);
+            
+            // FIX: Check if there are any available add-ons.
+            if (!selectedService || availableAddOns.length === 0) return null;
             return (
                 <div>
                     <h2 className="text-2xl font-bold text-brand-dark mb-4">{t.selectAddOns}</h2>
                     <div className="bg-white p-6 rounded-lg shadow-md space-y-3">
-                        {selectedService.addOns.map(addOn => (
+                        {/* FIX: Iterate over the available AddOn objects. */}
+                        {availableAddOns.map(addOn => (
                             <button key={addOn.id} onClick={() => onToggleAddOn(addOn.id)} className={`w-full text-left p-4 border rounded-lg flex justify-between items-center transition-all ${selectedAddOns.has(addOn.id) ? 'border-brand-blue ring-2 ring-brand-blue' : 'hover:border-gray-400'}`}>
                                 <div className="flex items-center">
                                     <div className={`w-6 h-6 rounded-md flex items-center justify-center mr-4 flex-shrink-0 ${selectedAddOns.has(addOn.id) ? 'bg-brand-blue' : 'border-2'}`}>

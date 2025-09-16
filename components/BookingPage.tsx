@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Service, Shop } from './Dashboard';
+// FIX: Import AddOn type.
+import { Service, Shop, AddOn } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
@@ -19,7 +20,8 @@ interface ExistingReservation {
     duration: number;
 }
 
-type FullShopData = Shop & { services: Service[] };
+// FIX: Update type to include addOns.
+type FullShopData = Shop & { services: Service[], addOns: AddOn[] };
 
 type BookingStep = 'selection' | 'datetime' | 'clientInfo' | 'confirmed';
 export type VehicleSize = 'S' | 'M' | 'L' | 'XL';
@@ -52,7 +54,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [clientVehicleError, setClientVehicleError] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
-    const [selectedAddOns, setSelectedAddOns] = useState<Set<number>>(new Set());
+    // FIX: AddOn ID is a string, so use Set<string>.
+    const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
     
     // Step 2 State
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -68,9 +71,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             setLoading(true);
             setError(null);
             
+            // FIX: Fetch add_ons along with shop and services.
             const { data, error: dbError } = await supabase
                 .from('shops')
-                .select('*, services(*)')
+                .select('*, services(*), add_ons(*)')
                 .eq('id', shopId)
                 .single();
 
@@ -90,7 +94,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     }, [step]);
 
     const { totalDuration, totalPrice } = useMemo(() => {
-        if (!selectedService) return { totalDuration: 0, totalPrice: 0 };
+        // FIX: Add guard for shopData.
+        if (!selectedService || !shopData) return { totalDuration: 0, totalPrice: 0 };
         
         let duration = 0;
         let price = 0;
@@ -106,7 +111,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         }
 
         selectedAddOns.forEach(addOnId => {
-            const addOn = selectedService.addOns.find(a => a.id === addOnId);
+            // FIX: Get add-on details from the full addOns list in shopData.
+            const addOn = shopData.addOns.find(a => a.id === addOnId);
             if (addOn) {
                 duration += parseSafeInt(addOn.duration);
                 price += parseSafeInt(addOn.price);
@@ -114,9 +120,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         });
         
         return { totalDuration: duration, totalPrice: price };
-    }, [selectedService, selectedVehicleSize, selectedAddOns]);
+    // FIX: Add shopData to dependency array.
+    }, [selectedService, selectedVehicleSize, selectedAddOns, shopData]);
 
-    const toggleAddOn = (addOnId: number) => {
+    // FIX: AddOn ID is a string.
+    const toggleAddOn = (addOnId: string) => {
         setSelectedAddOns(prev => {
             const newSet = new Set(prev);
             newSet.has(addOnId) ? newSet.delete(addOnId) : newSet.add(addOnId);
@@ -151,7 +159,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     }
 
     const handleConfirmBooking = async () => {
-        if (!selectedService || !selectedDate || !selectedTime || !validateClientInfo()) return;
+        if (!selectedService || !selectedDate || !selectedTime || !validateClientInfo() || !shopData) return;
 
         setIsConfirming(true);
         setError(null);
@@ -171,7 +179,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             service_details: {
                 name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
-                addOns: selectedService.addOns.filter(a => selectedAddOns.has(a.id)),
+                // FIX: Get full add-on objects from shopData's addOns list.
+                addOns: shopData.addOns.filter(a => selectedAddOns.has(a.id)),
                 client_vehicle: clientVehicle,
                 special_instructions: specialInstructions,
             }
@@ -222,11 +231,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     };
 
     const getConfirmationMessage = () => {
-        if (!selectedService || !selectedDate || !selectedTime) return '';
+        if (!selectedService || !selectedDate || !selectedTime || !shopData) return '';
 
         const vehicleText = selectedVehicleSize ? t.forVehicle.replace('{vehicleSize}', t[`size_${selectedVehicleSize}`]) : '';
         
-        const addOnsList = selectedService.addOns
+        // FIX: Get add-on names from the full addOns list in shopData.
+        const addOnsList = shopData.addOns
             .filter(a => selectedAddOns.has(a.id))
             .map(a => a.name)
             .join(', ');
@@ -326,6 +336,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             <div className="max-w-4xl mx-auto">
                 <BookingForm
                     services={activeServices}
+                    // FIX: Pass the full list of add-ons to the form.
+                    allAddOns={shopData.addOns || []}
                     clientVehicle={clientVehicle}
                     onClientVehicleChange={(value) => {
                         setClientVehicle(value);

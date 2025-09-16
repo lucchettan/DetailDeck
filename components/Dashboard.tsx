@@ -14,8 +14,17 @@ import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
 import { toCamelCase } from '../lib/utils';
 import AlertModal from './AlertModal';
+import AddOnEditor from './dashboard/AddOnEditor';
 
 type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
+
+export interface AddOn {
+  id: string;
+  shopId: string;
+  name: string;
+  price: string;
+  duration: string;
+}
 
 export interface Service {
   id: string;
@@ -28,7 +37,7 @@ export interface Service {
     [key: string]: { price?: string; duration?: string; enabled?: boolean; };
   };
   singlePrice: { price?: string; duration?: string };
-  addOns: { id: number; name: string; price: string; duration: string }[];
+  addOnIds: string[]; // Replaces the old embedded addOns
   imageUrl?: string;
 }
 
@@ -77,6 +86,7 @@ const Dashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('home');
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [addOns, setAddOns] = useState<AddOn[]>([]);
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +94,10 @@ const Dashboard: React.FC = () => {
   
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+
+  const [isAddOnEditorOpen, setIsAddOnEditorOpen] = useState(false);
+  const [editingAddOn, setEditingAddOn] = useState<AddOn | null>(null);
+
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -110,6 +124,14 @@ const Dashboard: React.FC = () => {
             
             if (servicesError) throw servicesError;
             setServices(toCamelCase(shopServices) as Service[]);
+
+            const { data: shopAddOns, error: addOnsError } = await supabase
+                .from('add_ons')
+                .select('*')
+                .eq('shop_id', shop.id);
+
+            if (addOnsError) throw addOnsError;
+            setAddOns(toCamelCase(shopAddOns) as AddOn[]);
             
             const { data: shopReservations, error: reservationsError } = await supabase
                 .from('reservations')
@@ -162,7 +184,7 @@ const Dashboard: React.FC = () => {
       varies: serviceToSave.varies,
       pricing: serviceToSave.pricing,
       single_price: serviceToSave.singlePrice,
-      add_ons: serviceToSave.addOns,
+      add_on_ids: serviceToSave.addOnIds,
       image_url: serviceToSave.imageUrl,
     };
     
@@ -211,6 +233,49 @@ const Dashboard: React.FC = () => {
 
     setServices(services.filter(s => s.id !== serviceId));
     setActiveView('catalog');
+  };
+
+  const handleSaveAddOn = async (addOnToSave: Omit<AddOn, 'id' | 'shopId'> & { id?: string }) => {
+    if (!shopData) return;
+    const payload = {
+      id: addOnToSave.id,
+      shop_id: shopData.id,
+      name: addOnToSave.name,
+      price: addOnToSave.price,
+      duration: addOnToSave.duration,
+    };
+
+    if (!payload.id) {
+        delete (payload as any).id;
+    }
+    
+    const { data, error } = await supabase.from('add_ons').upsert(payload).select().single();
+    
+    if (error) {
+        console.error("Error saving add-on:", error);
+        setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving add-on: ${error.message}`});
+        return;
+    }
+    
+    if(data) {
+      const savedAddOn = toCamelCase(data) as AddOn;
+      setAddOns(prev => {
+        const exists = prev.some(a => a.id === savedAddOn.id);
+        return exists ? prev.map(a => a.id === savedAddOn.id ? savedAddOn : a) : [...prev, savedAddOn];
+      });
+    }
+    setIsAddOnEditorOpen(false);
+  };
+
+  const handleDeleteAddOn = async (addOnId: string) => {
+    const { error } = await supabase.from('add_ons').delete().eq('id', addOnId);
+    if (error) {
+        console.error("Error deleting add-on:", error);
+        setAlertInfo({isOpen: true, title: "Delete Error", message: `Error deleting add-on: ${error.message}`});
+        return;
+    }
+    setAddOns(prev => prev.filter(a => a.id !== addOnId));
+    setIsAddOnEditorOpen(false);
   };
 
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
@@ -346,6 +411,12 @@ const Dashboard: React.FC = () => {
     setIsReservationEditorOpen(true);
   };
 
+  const openAddOnEditor = (addOn: AddOn | null) => {
+    setEditingAddOn(addOn);
+    setIsAddOnEditorOpen(true);
+  };
+
+
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
@@ -372,11 +443,17 @@ const Dashboard: React.FC = () => {
       case 'settings':
         return <Settings shopData={shopData} onSave={handleSaveShop} />;
       case 'catalog':
-        return <Catalog services={services} onEditService={navigateToServiceEditor} />;
+        return <Catalog 
+                  services={services} 
+                  addOns={addOns} 
+                  onEditService={navigateToServiceEditor}
+                  onEditAddOn={(id) => openAddOnEditor(id ? addOns.find(a => a.id === id) || null : null)} 
+                />;
       case 'serviceEditor':
         const service = editingServiceId ? services.find(s => s.id === editingServiceId) : null;
         return <ServiceEditor 
                  service={service} 
+                 allAddOns={addOns}
                  onBack={() => setActiveView('catalog')} 
                  onSave={handleSaveService}
                  onDelete={handleDeleteService}
@@ -448,6 +525,19 @@ const Dashboard: React.FC = () => {
                 minBookingNotice={shopData.minBookingNotice}
                 maxBookingHorizon={shopData.maxBookingHorizon}
             />
+            )}
+
+            {isAddOnEditorOpen && (
+              <AddOnEditor
+                isOpen={isAddOnEditorOpen}
+                onClose={() => {
+                  setIsAddOnEditorOpen(false);
+                  setEditingAddOn(null);
+                }}
+                onSave={handleSaveAddOn}
+                onDelete={handleDeleteAddOn}
+                addOnToEdit={editingAddOn}
+              />
             )}
             
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">

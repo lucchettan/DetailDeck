@@ -1,32 +1,35 @@
 
+
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { IS_MOCK_MODE } from '../lib/env';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialView?: 'login';
+  initialView?: 'login' | 'signup';
+  onSignUpSuccess: () => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'login' }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'login', onSignUpSuccess }) => {
   const { t } = useLanguage();
-  const { logIn, resendSignUpConfirmation, resetPasswordForEmail } = useAuth();
+  const { signUp, logIn, resendSignUpConfirmation, resetPasswordForEmail } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [view, setView] = useState<'login' | 'forgotPassword'>('login');
+  const [view, setView] = useState<'login' | 'signup' | 'forgotPassword'>(initialView);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showResend, setShowResend] = useState(false);
 
   const cleanState = (clearEmail = false) => {
-    if(clearEmail) setEmail('');
+    if (clearEmail) setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setLoading(false);
     setError('');
     setMessage('');
@@ -35,18 +38,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
 
   const handleClose = () => {
     setTimeout(() => {
-        cleanState(true);
-        setView('login');
+      cleanState(true);
+      setView(initialView);
     }, 300);
     onClose();
-  }
+  };
 
   useEffect(() => {
     if (isOpen) {
       cleanState(true);
-      setView('login');
+      setView(initialView);
     }
-  }, [isOpen]);
+  }, [isOpen, initialView]);
 
   const handleResend = async () => {
     setLoading(true);
@@ -69,97 +72,92 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
     setMessage('');
     setShowResend(false);
 
-    if (IS_MOCK_MODE) {
-        console.log("Mock Mode: Simulating auth.", { email, view });
-        setTimeout(() => {
-            if (view === 'login') {
-                handleClose();
-            } else {
-                setMessage(t.resetLinkSent);
-            }
-            setLoading(false);
-        }, 1000);
+    if (view === 'signup') {
+      if (password.length < 6) {
+        setError(t.passwordTooShort);
+        setLoading(false);
         return;
-    }
-
-    if (view === 'login') {
-      const { error } = await logIn({ email, password });
-      if (error) {
-        if (error.message === 'Email not confirmed') {
+      }
+      if (password !== confirmPassword) {
+        setError(t.passwordMismatch);
+        setLoading(false);
+        return;
+      }
+      const { data, error: signUpError } = await signUp({ email, password });
+      if (signUpError) {
+        setError(signUpError.message.includes('User already registered') ? t.emailExistsError : signUpError.message);
+      } else if (data.user) {
+        // If user is returned but session is null, it means confirmation is required.
+        // For our simplified flow, we assume auto-confirmation is on or we proceed to onboarding anyway.
+        onSignUpSuccess();
+      }
+    } else if (view === 'login') {
+      const { error: loginError } = await logIn({ email, password });
+      if (loginError) {
+        if (loginError.message === 'Email not confirmed') {
           setError(t.unconfirmedEmailError);
           setShowResend(true);
         } else {
-          setError(error.message);
+          setError(loginError.message);
         }
       } else {
         handleClose();
       }
     } else { // forgotPassword view
-      const { error } = await resetPasswordForEmail(email);
-      if (error) {
-          setError(error.message);
+      const { error: resetError } = await resetPasswordForEmail(email);
+      if (resetError) {
+        setError(resetError.message);
       } else {
-          setMessage(t.resetLinkSent);
+        setMessage(t.resetLinkSent);
       }
     }
     setLoading(false);
   };
 
-
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClose();
-      }
+      if (event.key === 'Escape') handleClose();
     };
-
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        handleClose();
-      }
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) handleClose();
     };
-
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       document.addEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'hidden';
     }
-
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
-  if (!isOpen) {
-    return null;
-  }
-  
-  const title = view === 'login' ? t.loginTitle : t.resetPassword;
-  const subtitle = view === 'login' ? t.loginSubtitle : t.resetPasswordSubtitle;
-  const buttonText = view === 'login' ? t.login : t.sendResetLink;
+  if (!isOpen) return null;
+
+  const title = view === 'login' ? t.loginTitle : view === 'signup' ? t.signUpTitle : t.resetPassword;
+  const subtitle = view === 'login' ? t.loginSubtitle : view === 'signup' ? t.signUpSubtitle : t.resetPasswordSubtitle;
+  const buttonText = view === 'login' ? t.login : view === 'signup' ? t.signUp : t.sendResetLink;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 transition-opacity duration-300"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
     >
-      <div 
+      <div
         ref={modalRef}
         className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
         style={{ animationFillMode: 'forwards' }}
       >
-        <button 
-          onClick={handleClose} 
+        <button
+          onClick={handleClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label={t.closeModal}
         >
           <CloseIcon className="w-6 h-6" />
         </button>
-        
         <div className="text-center">
           <h2 id="modal-title" className="text-2xl font-bold text-brand-dark mb-2">
             {title}
@@ -167,7 +165,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
           <p className="text-brand-gray mb-6">
             {subtitle}
           </p>
-
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <input
@@ -179,20 +176,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {view === 'login' && (
+              {(view === 'login' || view === 'signup') && (
                 <input
-                    type="password"
-                    placeholder={t.passwordPlaceholder}
-                    className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
-                    aria-label={t.password}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  placeholder={t.passwordPlaceholder}
+                  className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
+                  aria-label={t.password}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               )}
-
+              {view === 'signup' && (
+                 <input
+                  type="password"
+                  placeholder={t.confirmPassword}
+                  className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
+                  aria-label={t.confirmPassword}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              )}
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              
               {showResend && (
                 <button
                   type="button"
@@ -203,10 +209,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
                   {t.resendConfirmation}
                 </button>
               )}
-
               {message && <p className="text-green-600 text-sm text-center">{message}</p>}
-
-              <button 
+              <button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-75 disabled:cursor-not-allowed"
@@ -215,34 +219,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
               </button>
             </div>
           </form>
-
-           <div className="mt-6 text-sm">
-            {view === 'login' ? (
+          <div className="mt-6 text-sm">
+            {view === 'login' && (
+              <>
                 <button onClick={() => { setView('forgotPassword'); cleanState(); }} className="text-brand-blue hover:underline">
-                    {t.forgotPassword}
+                  {t.forgotPassword}
                 </button>
-            ) : (
-                <button onClick={() => { setView('login'); cleanState(); }} className="text-brand-blue hover:underline">
-                    {t.backToLogin}
-                </button>
+                <p className="mt-2 text-brand-gray">{t.dontHaveAccount} <button onClick={() => { setView('signup'); cleanState(); }} className="font-semibold text-brand-blue hover:underline">{t.signUp}</button></p>
+              </>
+            )}
+             {view === 'signup' && (
+                <p className="text-brand-gray">{t.alreadyHaveAccount} <button onClick={() => { setView('login'); cleanState(); }} className="font-semibold text-brand-blue hover:underline">{t.login}</button></p>
+            )}
+            {view === 'forgotPassword' && (
+              <button onClick={() => { setView('login'); cleanState(); }} className="text-brand-blue hover:underline">
+                {t.backToLogin}
+              </button>
             )}
           </div>
         </div>
       </div>
       <style>{`
         @keyframes fade-in-scale {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
+          from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; }
         }
-        .animate-fade-in-scale {
-          animation: fade-in-scale 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-        }
+        .animate-fade-in-scale { animation: fade-in-scale 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
       `}</style>
     </div>
   );

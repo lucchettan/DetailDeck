@@ -1,13 +1,15 @@
 
+
 import React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon, PlusIcon, TrashIcon } from '../Icons';
-import { Service } from '../Dashboard';
+import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon, PlusIcon, TrashIcon, CheckIcon } from '../Icons';
+import { Service, AddOn } from '../Dashboard';
 import CustomSelect from '../CustomSelect';
 
 interface ServiceEditorProps {
   service: Service | null;
+  allAddOns: AddOn[];
   onBack: () => void;
   onSave: (service: Omit<Service, 'id'> & { id?: string }) => Promise<boolean | void>;
   onDelete: (serviceId: string) => void;
@@ -30,7 +32,7 @@ const getInitialFormData = (service: Service | null): Omit<Service, 'id'> & { id
       XL: { price: '', duration: '', enabled: false },
     },
     singlePrice: { price: '120', duration: '90' },
-    addOns: [],
+    addOnIds: [],
     imageUrl: '',
   };
 };
@@ -63,7 +65,7 @@ const DurationPicker: React.FC<{value?: string, onChange: (value: string) => voi
     );
 }
 
-const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, onDelete }) => {
+const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, allAddOns, onBack, onSave, onDelete }) => {
   const { t } = useLanguage();
   const isEditing = service !== null;
   const [formData, setFormData] = useState(getInitialFormData(service));
@@ -147,24 +149,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
       reader.readAsDataURL(e.target.files[0]);
     }
   };
-
-  const handleAddOn = () => {
-    setFormData(prev => ({ ...prev, addOns: [...prev.addOns, { id: Date.now(), name: '', price: '', duration: '' }] }));
-  };
   
-  const handleRemoveAddOn = (id: number) => {
-    setFormData(prev => ({ ...prev, addOns: prev.addOns.filter(addOn => addOn.id !== id) }));
+  const handleAddOnToggle = (addOnId: string) => {
+    setFormData(prev => {
+      const currentAddOnIds = prev.addOnIds || [];
+      const newAddOnIds = currentAddOnIds.includes(addOnId)
+        ? currentAddOnIds.filter(id => id !== addOnId)
+        : [...currentAddOnIds, addOnId];
+      return { ...prev, addOnIds: newAddOnIds };
+    });
   };
-  
-  const handleAddOnChange = (id: number, field: 'name' | 'price' | 'duration', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      addOns: prev.addOns.map(addOn => 
-        addOn.id === id ? { ...addOn, [field]: value } : addOn
-      )
-    }));
-  };
-
 
   const handleDelete = () => {
     if (service && window.confirm(t.deleteServiceConfirmation)) {
@@ -300,51 +294,38 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, onBack, onSave, 
                 )}
             </div>
 
-            {/* Add-ons */}
+            {/* Associated Add-ons */}
             <div className="border-t pt-6">
-                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.addOns}</h3>
-                <p className="text-brand-gray text-sm mb-4">{t.addOnsSubtitle}</p>
-                <div className="space-y-4">
-                {formData.addOns.map((addOn) => (
-                    <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        <div className="md:col-span-2">
-                            <input
-                            type="text"
-                            placeholder={t.addOnName}
-                            value={addOn.name}
-                            onChange={(e) => handleAddOnChange(addOn.id, 'name', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
-                            />
-                        </div>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MoneyIcon className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                            type="number"
-                            placeholder={t.price}
-                            value={addOn.price}
-                            onChange={(e) => handleAddOnChange(addOn.id, 'price', e.target.value)}
-                            className="w-full p-2 pl-10 border border-gray-300 rounded-lg"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="relative flex-grow">
-                                 <DurationPicker
-                                    value={addOn.duration}
-                                    onChange={(value) => handleAddOnChange(addOn.id, 'duration', value)}
-                                />
-                            </div>
-                            <button type="button" onClick={() => handleRemoveAddOn(addOn.id)} className="text-gray-400 hover:text-red-500">
-                                <CloseIcon />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.associatedAddOns}</h3>
+                <p className="text-brand-gray text-sm mb-4">{t.associatedAddOnsSubtitle}</p>
+                <div className="space-y-3">
+                    {allAddOns.length > 0 ? (
+                        allAddOns.map(addOn => {
+                            const isSelected = formData.addOnIds?.includes(addOn.id);
+                            return (
+                                <button
+                                    type="button"
+                                    key={addOn.id}
+                                    onClick={() => handleAddOnToggle(addOn.id)}
+                                    className={`w-full text-left p-4 border rounded-lg flex justify-between items-center transition-all ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue' : 'hover:border-gray-400'}`}
+                                >
+                                    <div className="flex items-center">
+                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center mr-4 flex-shrink-0 ${isSelected ? 'bg-brand-blue' : 'border-2'}`}>
+                                            {isSelected && <CheckIcon className="w-4 h-4 text-white" />}
+                                        </div>
+                                        <p className="font-bold">{addOn.name}</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm">
+                                        <span className="font-semibold">€{addOn.price}</span>
+                                        <span className="text-gray-500">{addOn.duration}min</span>
+                                    </div>
+                                </button>
+                            );
+                        })
+                    ) : (
+                        <p className="text-brand-gray text-sm">You haven't created any add-ons yet. Go to the "Add-ons" tab in your catalog to create some.</p>
+                    )}
                 </div>
-                <button type="button" onClick={handleAddOn} className="mt-4 text-sm font-semibold text-brand-blue hover:underline">
-                + {t.newAddOn}
-                </button>
             </div>
             
             <div className="mt-8 pt-8 border-t flex justify-end">
