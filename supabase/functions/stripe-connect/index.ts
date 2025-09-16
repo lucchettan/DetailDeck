@@ -12,12 +12,14 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  let stage = "start";
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     // --- STEP 0: ENVIRONMENT VARIABLE VALIDATION ---
+    stage = "validate-env";
     // This is the most critical step. We verify all secrets exist before doing anything.
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     const supabaseUrl = Deno.env.get("NEXT_PUBLIC_SUPABASE_URL");
@@ -34,6 +36,7 @@ serve(async (req) => {
     }
 
     // Initialize clients now that we know the keys exist
+    stage = "init-clients";
     const stripe = Stripe(stripeSecretKey, {
       apiVersion: "2022-11-15",
       httpClient: Stripe.createFetchHttpClient(),
@@ -45,13 +48,16 @@ serve(async (req) => {
     
     // --- END STEP 0 ---
 
+    stage = "read-body";
     const { code } = await req.json();
     if (!code) throw new Error("Le code d'autorisation est manquant dans la requête.");
 
+    stage = "get-user";
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError) throw userError;
     if (!user) throw new Error("Utilisateur non trouvé à partir du token. L'authentification a échoué.");
 
+    stage = "stripe-token";
     const response = await stripe.oauth.token({
       grant_type: "authorization_code",
       code,
@@ -65,6 +71,7 @@ serve(async (req) => {
 
     const stripeAccountId = response.stripe_user_id;
 
+    stage = "update-shop";
     const { error: updateError } = await supabaseClient
       .from("shops")
       .update({
@@ -77,6 +84,7 @@ serve(async (req) => {
       throw new Error(`Échec de la mise à jour du shop: ${updateError.message}`);
     }
 
+    stage = "success";
     return new Response(JSON.stringify({ success: true, stripeAccountId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -84,10 +92,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("--- ERREUR CRITIQUE DANS LA FONCTION STRIPE CONNECT ---");
+    console.error("FAILED AT STAGE:", stage);
     console.error(error);
     
     return new Response(JSON.stringify({
         error: "Une erreur est survenue côté serveur.",
+        stage,
         technical_details: {
             message: error.message,
             stack: error.stack, // Include stack trace for full context
