@@ -3,6 +3,7 @@ import React from 'react';
 import { Service } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, MoneyIcon, HourglassIcon } from '../Icons';
+import { formatDuration } from '../../lib/utils';
 
 interface BookingSummaryProps {
     service: Service;
@@ -24,18 +25,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     totalDuration
 }) => {
     const { t } = useLanguage();
-
-    const formattedDuration = () => {
-        const hours = Math.floor(totalDuration / 60);
-        const minutes = totalDuration % 60;
-        let label = '';
-        if (hours > 0) label += `${hours}h`;
-        if (minutes > 0) {
-            if (hours > 0) label += ' ';
-            label += `${minutes}min`;
-        }
-        return label || '0min';
-    };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md w-full">
@@ -92,7 +81,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
             <div className="mt-4 pt-4 border-t-2 border-dashed">
                  <div className="flex justify-between items-center text-sm mb-2">
                     <span className="text-brand-gray flex items-center gap-2"><HourglassIcon className="w-5 h-5"/> {t.estimatedDuration}</span>
-                    <span className="font-semibold text-brand-dark">{formattedDuration()}</span>
+                    <span className="font-semibold text-brand-dark">{formatDuration(totalDuration)}</span>
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-brand-gray font-bold text-lg flex items-center gap-2"><MoneyIcon className="w-5 h-5"/> {t.total}</span>

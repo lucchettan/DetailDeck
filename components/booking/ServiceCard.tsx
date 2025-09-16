@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Service } from '../Dashboard';
 import { ImageIcon, MoneyIcon } from '../Icons';
@@ -17,9 +18,11 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
             const enabledPrices = Object.values(service.pricing)
                 .filter(p => p.enabled && p.price)
                 .map(p => parseInt(p.price!, 10));
+                
             if (enabledPrices.length === 0) return 'N/A';
+            
             const minPrice = Math.min(...enabledPrices);
-            return `À partir de €${minPrice}`;
+            return t.fromPrice.replace('{price}', minPrice.toString());
         }
         return service.singlePrice?.price ? `€${service.singlePrice.price}` : 'N/A';
     }
