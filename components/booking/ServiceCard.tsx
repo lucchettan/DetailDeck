@@ -15,8 +15,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
 
     const getPriceDisplay = (service: Service): string => {
         if (service.varies) {
-            const enabledPrices = Object.values(service.pricing)
-                .filter(p => p.enabled && p.price)
+            const prices = service.pricing && typeof service.pricing === 'object' 
+                ? Object.values(service.pricing)
+                : [];
+
+            const enabledPrices = prices
+                .filter(p => p && p.enabled && p.price && !isNaN(parseInt(p.price, 10)))
                 .map(p => parseInt(p.price!, 10));
                 
             if (enabledPrices.length === 0) return 'N/A';
@@ -24,7 +28,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
             const minPrice = Math.min(...enabledPrices);
             return t.fromPrice.replace('{price}', minPrice.toString());
         }
-        return service.singlePrice?.price ? `€${service.singlePrice.price}` : 'N/A';
+        
+        if (service.singlePrice && service.singlePrice.price && !isNaN(parseInt(service.singlePrice.price, 10))) {
+            return `€${service.singlePrice.price}`;
+        }
+        
+        return 'N/A';
     }
 
     return (

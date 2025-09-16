@@ -3,13 +3,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, Reservation } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
-import { SuccessIcon } from './Icons';
+import { SuccessIcon, ImageIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
 import BookingStepper from './booking/BookingStepper';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
 import BookingSummary from './booking/BookingSummary';
 import StepServiceSelection from './booking/StepServiceSelection';
+import { toCamelCase } from '../lib/utils';
 
 interface BookingPageProps {
   shopId: string;
@@ -62,14 +63,18 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
             if (dbError || !data) {
                 console.error("Error fetching shop data:", dbError);
-                setError(t.shopNotFound);
+                if (dbError?.code === 'PGRST116') {
+                    setError(t.shopNotFound);
+                } else {
+                    setError(t.errorLoadingShop);
+                }
             } else {
-                setShopData(data as FullShopData);
+                setShopData(toCamelCase(data) as FullShopData);
             }
             setLoading(false);
         };
         fetchShopData();
-    }, [shopId, t.shopNotFound]);
+    }, [shopId, t.shopNotFound, t.errorLoadingShop]);
 
     useEffect(() => {
         if (!selectedDate || !shopData) return;
@@ -211,7 +216,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div></div>;
     if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray">{error || t.errorLoadingShop}</p></div>;
 
-    const activeServices = shopData.services.filter(s => s.status === 'active');
+    const activeServices = shopData.services?.filter(s => s.status === 'active') || [];
     
     const stepperSteps = [
         { id: 'selection', name: t.stepperSelectionAndOptions },
@@ -297,8 +302,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         <div className="bg-brand-light min-h-screen font-sans">
             <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
                 <div className="container mx-auto flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                        {shopData.shopImageUrl && <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />}
+                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center">
+                        {shopData.shopImageUrl ? 
+                            <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" />
+                             : <ImageIcon className="w-8 h-8 text-gray-400" />
+                        }
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-brand-dark">{shopData.name}</h1>
