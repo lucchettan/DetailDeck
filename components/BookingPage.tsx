@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon } from './Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
@@ -350,10 +350,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         <ImageIcon className="w-16 h-16 text-gray-300" />
                     </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 container mx-auto">
-                    <h1 className="text-3xl font-bold text-white shadow-lg">{shopData.name}</h1>
-                    <p className="text-white text-lg shadow-md mt-1">{shopData.address}</p>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-transparent" />
+                <div className="absolute top-0 left-0 right-0 p-6 container mx-auto text-white">
+                    <div className="flex items-center gap-3">
+                        <StorefrontIcon className="w-8 h-8 flex-shrink-0" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.7))' }} />
+                        <h1 className="text-3xl font-bold" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{shopData.name}</h1>
+                    </div>
+                    <div className="mt-2 space-y-1 pl-1" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>
+                        {shopData.address && (
+                            <p className="flex items-center gap-2 text-sm">
+                                <MapPinIcon className="w-4 h-4 flex-shrink-0" />
+                                <span>{shopData.address}</span>
+                            </p>
+                        )}
+                        {shopData.phone && (
+                            <p className="flex items-center gap-2 text-sm">
+                                <PhoneIcon className="w-4 h-4 flex-shrink-0" />
+                                <span>{shopData.phone}</span>
+                            </p>
+                        )}
+                    </div>
                 </div>
             </header>
             
