@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
