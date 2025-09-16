@@ -155,50 +155,38 @@ const Dashboard: React.FC = () => {
         setIsFinalizingStripe(true);
         try {
             const { data, error: functionError } = await supabase.functions.invoke('stripe-connect', {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                },
                 body: { code: stripeCode },
             });
             
+            // Note: Unlike other Supabase calls, invoke returns the raw response.
+            // We need to check the 'error' property within the returned 'data' object.
             if (functionError) {
-                throw functionError;
+                // This catches network errors or function crashes before it can respond.
+                throw new Error(`Function invocation failed: ${functionError.message}`);
             }
-            if (data?.error) {
-                throw new Error(data.error);
+
+            if (data.error) {
+                // This catches errors returned by the function itself (our custom error handling).
+                // We will display the full technical details from the function.
+                const prettyPrintedError = JSON.stringify(data, null, 2);
+                throw new Error(prettyPrintedError);
             }
             
+            // If successful, refetch all data to update the UI.
             await fetchData();
 
         } catch (error: any) {
             console.error("Stripe Connection Full Error:", error);
 
-            let debugMessage = `An unexpected error occurred. For debugging, please provide the following technical details to support:\n\n`;
-
-            debugMessage += `Error Message:\n${error.message}\n\n`;
-            
-            // Attempt to get the detailed error from the function's response body
-            try {
-                if (error.context && typeof error.context.json === 'function') {
-                    const functionResponse = await error.context.json();
-                    debugMessage += `Backend Function Response:\n${JSON.stringify(functionResponse, null, 2)}\n\n`;
-                } else {
-                     debugMessage += `Backend Function Response: Not available or could not be parsed.\n\n`;
-                }
-            } catch (parseError) {
-                debugMessage += `Backend Function Response could not be parsed as JSON.\n\n`;
-            }
-
-            // Append the full, stringified error object for maximum context
-            debugMessage += `Full Error Object:\n${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`;
-
+            // The error message now contains the full technical details from the backend.
             setAlertInfo({
                 isOpen: true,
-                title: 'Stripe Connection Failed: Debug Log',
-                message: debugMessage,
+                title: 'Stripe Connection Failed: Technical Log',
+                message: error.message,
             });
             
         } finally {
+            // Clean up URL and reset state
             window.history.replaceState(null, '', window.location.pathname);
             setIsFinalizingStripe(false);
         }
