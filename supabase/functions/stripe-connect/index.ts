@@ -1,5 +1,5 @@
-// Fix: Switched from esm.sh to unpkg.com for a more stable URL to the type definitions, resolving the "Cannot find type definition file" error and subsequent 'Deno is not defined' errors.
-/// <reference types="https://unpkg.com/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
+// Fix: The unpkg.com URL for type definitions appears to be unreliable. Switching to the esm.sh CDN, which is commonly used for Deno modules and should resolve the missing 'Deno' global type issues.
+/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@11.1.0?target=deno";

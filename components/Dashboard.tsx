@@ -159,42 +159,39 @@ const Dashboard: React.FC = () => {
             body: { code: stripeCode },
           });
 
-          if (functionError) {
-            let debugInfo = `--- ERREUR DE LA FONCTION BACKEND ---\n\n`;
-            debugInfo += `Message: ${functionError.message}\n\n`;
+          // NEW, ROBUST, AND SIMPLE ERROR HANDLING
+          if (functionError || (data && data.error)) {
+            const errorPayload = functionError || data;
+            
+            let debugMessage = `--- RAW TECHNICAL LOG ---\n\nThis is the exact error returned from the backend. Please provide this to support.\n\n`;
+            debugMessage += JSON.stringify(errorPayload, null, 2);
 
-            if (functionError.context && typeof functionError.context.text === 'function') {
+            if (functionError && functionError.context) {
                 try {
-                    const errorBodyText = await functionError.context.text();
-                    const errorBodyJson = JSON.parse(errorBodyText);
-                    debugInfo += `Réponse JSON du Backend:\n${JSON.stringify(errorBodyJson, null, 2)}\n\n`;
-                } catch (e) {
-                    debugInfo += `Impossible de parser la réponse du backend. Réponse brute:\n${await functionError.context.text()}\n\n`;
+                    const rawBody = await functionError.context.text();
+                    debugMessage += `\n\n--- Raw Response Body ---\n${rawBody}`;
+                } catch(e) {
+                    debugMessage += `\n\n--- Could not read raw response body ---`;
                 }
             }
-            debugInfo += `Objet d'erreur complet:\n${JSON.stringify(functionError, null, 2)}`;
-            setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: debugInfo });
-            return;
-          }
 
-          if (data && data.error) {
-             let debugInfo = `--- LA FONCTION BACKEND A RETOURNÉ UNE ERREUR ---\n\n`;
-             debugInfo += `Réponse:\n${JSON.stringify(data, null, 2)}`;
-             setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: debugInfo });
-             return;
+            setAlertInfo({
+                isOpen: true,
+                title: 'Stripe Connection Failed',
+                message: debugMessage,
+            });
+            return;
           }
           
           await fetchData();
 
         } catch (error: any) {
-          let fallbackMessage = `--- ERREUR INATTENDUE DU FRONTEND ---\n\n`;
-          fallbackMessage += `Une erreur est survenue dans le navigateur avant ou après l'appel au backend.\n\n`;
-          fallbackMessage += `Message: ${error.message}\n`;
-          if (error.stack) {
-            fallbackMessage += `Stack: ${error.stack}`;
-          }
-          setAlertInfo({ isOpen: true, title: 'Échec de connexion Stripe (Log Brut)', message: fallbackMessage });
-          
+          const fallbackMessage = `--- UNEXPECTED FRONTEND ERROR ---\n\nThis error occurred in the browser.\n\nMessage: ${error.message}\n\nStack:\n${error.stack}`;
+          setAlertInfo({ 
+              isOpen: true, 
+              title: 'Stripe Connection Failed', 
+              message: fallbackMessage 
+          });
         } finally {
           window.history.replaceState(null, '', window.location.pathname);
           setIsFinalizingStripe(false);
