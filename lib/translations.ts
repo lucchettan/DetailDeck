@@ -1,4 +1,5 @@
 
+
 export const translations = {
   en: {
     // Header & Auth
@@ -278,6 +279,8 @@ export const translations = {
     stepperConfirmation: "Confirmation",
     selectVehicleSize: "Choose vehicle size",
     selectAddOns: "Select add-ons",
+    yourBooking: "Your Booking",
+    estimatedDuration: "Estimated Duration",
     summary: "Summary",
     service: "Service",
     date: "Date",
@@ -601,6 +604,8 @@ export const translations = {
     stepperConfirmation: "Confirmation",
     selectVehicleSize: "Choisissez la taille du véhicule",
     selectAddOns: "Sélectionnez des options",
+    yourBooking: "Votre Réservation",
+    estimatedDuration: "Durée Estimée",
     summary: "Résumé",
     service: "Prestation",
     date: "Date",
@@ -924,6 +929,8 @@ export const translations = {
     stepperConfirmation: "Confirmación",
     selectVehicleSize: "Elige el tamaño del vehículo",
     selectAddOns: "Selecciona extras",
+    yourBooking: "Tu Reserva",
+    estimatedDuration: "Duración Estimada",
     summary: "Resumen",
     service: "Servicio",
     date: "Fecha",

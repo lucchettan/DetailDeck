@@ -1,11 +1,10 @@
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { CheckIcon } from '../Icons';
 
 interface Step {
   id: string;
   name: string;
-  icon: ReactNode;
 }
 
 interface BookingStepperProps {
