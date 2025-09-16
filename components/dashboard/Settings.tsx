@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { CloseIcon, ImageIcon, PlusIcon, SaveIcon } from '../Icons';
+import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, CheckIcon, CheckCircleIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
 import { Shop } from '../Dashboard';
-
-type TabType = 'details' | 'availability' | 'policies' | 'account';
 
 type TimeFrame = { from: string; to: string };
 type Schedule = {
@@ -68,13 +66,14 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
   const { t } = useLanguage();
   const { updateUserPassword } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('details');
+  const [activeStep, setActiveStep] = useState<number>(1);
   
-  // State from ShopInformation
   const [formData, setFormData] = useState<Partial<Shop>>(getInitialFormData(shopData));
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [city, setCity] = useState('');
+  const [radius, setRadius] = useState('20');
 
-  // State from Account
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -83,7 +82,16 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
 
   useEffect(() => {
     setFormData(getInitialFormData(shopData));
+    setCity(shopData?.serviceAreas?.[0]?.city || '');
+    setRadius(String(shopData?.serviceAreas?.[0]?.radius || '20'));
   }, [shopData]);
+
+  const steps = useMemo(() => [
+    { id: 1, label: t.tabShopDetails, isComplete: (data: Partial<Shop>) => !!data.name },
+    { id: 2, label: t.tabAvailability, isComplete: (data: Partial<Shop>) => !!data.schedule },
+    { id: 3, label: t.tabPolicies, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
+    { id: 4, label: t.tabAccount, isComplete: () => true },
+  ], [t]);
 
 
   const handleInputChange = (field: keyof Shop, value: any) => {
@@ -143,8 +151,20 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
   const handleSaveClick = async () => {
     setIsSaving(true);
     const { id, ownerId, ...updateData } = formData;
+    
+    if (updateData.businessType === 'mobile') {
+        updateData.serviceAreas = city ? [{ city, radius: parseInt(radius, 10) }] : [];
+        updateData.address = undefined;
+    } else {
+        updateData.serviceAreas = [];
+    }
+
     await onSave(updateData);
     setIsSaving(false);
+
+    if (activeStep < 3) {
+      setActiveStep(activeStep + 1);
+    }
   };
     
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -173,6 +193,12 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
     setIsUpdatingPassword(false);
   };
 
+  const radiusOptions = [
+    { value: '5', label: '5 km' }, { value: '10', label: '10 km' },
+    { value: '15', label: '15 km' }, { value: '20', label: '20 km' },
+    { value: '30', label: '30 km' }, { value: '50', label: '50 km' },
+    { value: '100', label: '100 km' },
+  ];
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
@@ -192,39 +218,45 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
   
   const bookingFeeOptions = Array.from({ length: 11 }, (_, i) => ({ value: (i * 5).toString(), label: `${i * 5}€` }));
 
-  const tabs = [
-    { id: 'details', label: t.tabShopDetails },
-    { id: 'availability', label: t.tabAvailability },
-    { id: 'policies', label: t.tabPolicies },
-    { id: 'account', label: t.tabAccount },
-  ];
-
   return (
     <div>
       <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.settings}</h2>
       <p className="text-brand-gray mb-6">{t.settingsSubtitle}</p>
       
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`${
-                        activeTab === tab.id
-                        ? 'border-brand-blue text-brand-blue'
-                        : 'border-transparent text-brand-gray hover:text-brand-dark hover:border-gray-300'
-                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+      {/* Stepper */}
+      <div className="flex items-center w-full mb-8">
+        {steps.map((step, index) => {
+            const isCompleted = step.isComplete(formData);
+            const isCurrent = activeStep === step.id;
+            const canNavigate = isCompleted || activeStep > step.id;
+            return (
+            <React.Fragment key={step.id}>
+                <div 
+                onClick={() => setActiveStep(step.id)} 
+                className="flex items-center gap-3 cursor-pointer"
                 >
-                    {tab.label}
-                </button>
-            ))}
-        </nav>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
+                        isCurrent ? 'bg-brand-blue text-white ring-4 ring-blue-200' :
+                        isCompleted ? 'bg-green-500 text-white' :
+                        'bg-gray-200 text-brand-gray'
+                    }`}>
+                        {isCompleted && !isCurrent ? <CheckIcon className="w-5 h-5"/> : step.id}
+                    </div>
+                    <div>
+                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>{step.label}</p>
+                    </div>
+                </div>
+                {index < steps.length - 1 && (
+                    <div className={`flex-1 h-1 mx-4 transition-colors ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
+                )}
+            </React.Fragment>
+            )
+        })}
       </div>
 
       {/* Tab Content */}
       <div className="bg-white p-8 rounded-lg shadow-md">
-        {activeTab === 'details' && (
+        {activeStep === 1 && (
           <div>
             <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">Business Details</h3>
             <div className="mt-6 mb-8">
@@ -283,10 +315,27 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
                 <input type="text" id="address" value={formData.address || ''} onChange={(e) => handleInputChange('address', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 rounded-lg"/>
               </div>
             )}
+             {formData.businessType === 'mobile' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                  <label htmlFor="city" className="block text-sm font-bold text-brand-dark mb-2">{t.operatingCity}</label>
+                  <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 rounded-lg"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-brand-dark">{t.serviceRadius}</label>
+                  <p className="text-xs text-brand-gray mb-2">{t.serviceRadiusSubtitle}</p>
+                  <CustomSelect
+                      value={radius}
+                      onChange={setRadius}
+                      options={radiusOptions}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
         
-        {activeTab === 'availability' && (
+        {activeStep === 2 && (
           <div>
             <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.businessHours}</h3>
             <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
@@ -327,7 +376,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
           </div>
         )}
         
-        {activeTab === 'policies' && (
+        {activeStep === 3 && (
           <div>
             <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.bookingPolicies}</h3>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
@@ -379,7 +428,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
           </div>
         )}
 
-        {activeTab === 'account' && (
+        {activeStep === 4 && (
             <div>
                 <h3 className="text-xl font-bold text-brand-dark mb-1 border-b pb-4">{t.passwordManagement}</h3>
                 <p className="text-brand-gray text-sm mt-4 mb-6">{t.passwordManagementSubtitle}</p>
@@ -404,11 +453,28 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
         )}
       </div>
       
-      {activeTab !== 'account' && (
-        <div className="mt-8 flex justify-end">
-            <button onClick={handleSaveClick} disabled={isSaving} className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75">
-                <SaveIcon className="w-5 h-5" />
-                {isSaving ? 'Saving...' : t.saveChanges}
+      {activeStep < 4 && (
+        <div className="mt-8 flex justify-between items-center">
+            <div>
+                {activeStep > 1 && (
+                    <button type="button" onClick={() => setActiveStep(activeStep - 1)} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                        {t.previousStep}
+                    </button>
+                )}
+            </div>
+            <button 
+                onClick={handleSaveClick} 
+                disabled={isSaving} 
+                className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75 min-w-[220px]"
+            >
+                {isSaving ? (
+                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                ) : (
+                    <>
+                        <SaveIcon className="w-5 h-5" />
+                        <span>{activeStep < 3 ? t.saveAndContinue : t.saveChanges}</span>
+                    </>
+                )}
             </button>
         </div>
       )}
