@@ -192,38 +192,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             return;
         } 
         
-        // If booking is successful, invoke the edge function to send email
-        try {
-            const formattedDate = selectedDate.toLocaleDateString(undefined, {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
-            
-            const { error: functionError } = await supabase.functions.invoke('send-confirmation-email', {
-                body: {
-                    shopName: shopData.name,
-                    shopAddress: shopData.address,
-                    clientName: `${clientInfo.firstName} ${clientInfo.lastName}`,
-                    clientEmail: clientInfo.email,
-                    serviceName: selectedService.name,
-                    date: formattedDate,
-                    time: selectedTime,
-                    price: totalPrice,
-                },
-            });
-
-            if (functionError) {
-                // Log the error but don't block the user's confirmation screen.
-                // The booking is already saved, this is a non-critical failure.
-                console.error('Failed to send confirmation email:', functionError);
-            }
-
-        } catch (e) {
-            // Also log this but don't block UI
-            console.error('Error invoking email function:', e);
-        }
+        // The database trigger will now handle sending the confirmation email automatically.
+        // No need to call the Edge Function from the client.
 
         setStep('confirmed');
         setIsConfirming(false);

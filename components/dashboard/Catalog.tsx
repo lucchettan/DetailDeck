@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service, AddOn } from '../Dashboard';
-import { PlusIcon, ImageIcon, MoneyIcon, HourglassIcon, InformationCircleIcon } from '../Icons';
+import { PlusIcon, ImageIcon, MoneyIcon, HourglassIcon, InformationCircleIcon, TagIcon } from '../Icons';
 import { formatDuration } from '../../lib/utils';
 
 interface CatalogProps {
@@ -29,10 +29,10 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
       return service.singlePrice?.price ? `€${service.singlePrice.price}` : 'N/A';
   }
 
-  const tabs = [
-      { id: 'services', label: t.tabServices },
-      { id: 'addons', label: t.tabAddOns },
-  ];
+  const tabs = useMemo(() => [
+    { id: 'services', label: t.tabServices, icon: <TagIcon /> },
+    { id: 'addons', label: t.tabAddOns, icon: <PlusIcon /> },
+  ], [t]);
 
   return (
     <div>
@@ -45,22 +45,31 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
         </div>
       </div>
       
-      <div className="mb-6">
-        <nav className="flex space-x-4" aria-label="Tabs">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`${
-                        activeTab === tab.id
-                        ? 'bg-brand-blue text-white'
-                        : 'bg-white text-brand-dark hover:bg-gray-100'
-                    } px-5 py-2 rounded-lg font-semibold text-sm transition-colors`}
+      {/* Stepper-like Tabs */}
+      <div className="flex items-center w-full mb-8 max-w-md">
+        {tabs.map((tab, index) => {
+            const isCurrent = activeTab === tab.id;
+            return (
+            <React.Fragment key={tab.id}>
+                <div 
+                  onClick={() => setActiveTab(tab.id as TabType)} 
+                  className="flex items-center gap-3 cursor-pointer"
                 >
-                    {tab.label}
-                </button>
-            ))}
-        </nav>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${ isCurrent ? 'bg-blue-100' : 'bg-gray-200' }`}>
+                        {React.cloneElement(tab.icon, { 
+                            className: `w-6 h-6 ${isCurrent ? 'text-brand-blue' : 'text-gray-500'}` 
+                        })}
+                    </div>
+                    <div>
+                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>{tab.label}</p>
+                    </div>
+                </div>
+                {index < tabs.length - 1 && (
+                    <div className={`flex-1 h-1 mx-4 transition-colors ${activeTab === 'addons' ? 'bg-brand-blue' : 'bg-gray-200'}`} />
+                )}
+            </React.Fragment>
+            )
+        })}
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-md">
