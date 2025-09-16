@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { getBookingBoundaries } from '../../lib/utils';
 
@@ -7,6 +6,7 @@ const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0
 const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
 const timeToMinutes = (time: string) => {
+    if (!time || !time.includes(':')) return 0;
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 };
@@ -16,7 +16,7 @@ const getAvailableSlotsForDay = (date: Date, schedule: any, serviceDuration: num
     const dayOfWeek = dayNames[date.getDay()];
     const daySchedule = schedule[dayOfWeek];
 
-    if (!daySchedule || !daySchedule.isOpen) {
+    if (!daySchedule || !daySchedule.isOpen || serviceDuration <= 0) {
         return [];
     }
 

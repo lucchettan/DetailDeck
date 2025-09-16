@@ -1,5 +1,4 @@
 
-
 // This file contains a utility function for converting object keys from snake_case to camelCase.
 // This is crucial for translating data from the backend (PostgreSQL/Supabase) to the frontend (TypeScript/JS).
 
@@ -41,7 +40,7 @@ export const toCamelCase = (obj: any) => convertCase(camelCase, obj);
  */
 export const formatDuration = (minutes: number): string => {
   if (isNaN(minutes) || minutes <= 0) {
-    return '';
+    return '0min';
   }
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
@@ -78,6 +77,7 @@ export const parseSafeInt = (value: string | number | undefined | null): number 
  * @returns The duration in milliseconds.
  */
 const parseDuration = (durationStr: string): number => {
+    if (!durationStr || typeof durationStr !== 'string') return 0;
     const value = parseInt(durationStr.slice(0, -1), 10);
     const unit = durationStr.slice(-1);
     if (isNaN(value)) return 0;
@@ -102,11 +102,12 @@ export const getBookingBoundaries = (minNoticeStr: string, maxHorizonStr: string
     
     const minNoticeMs = parseDuration(minNoticeStr);
     const minDate = new Date(now.getTime() + minNoticeMs);
-    minDate.setHours(0, 0, 0, 0); // Start from the beginning of the day
+    // Set minDate to the beginning of the day to allow booking for the whole day if it's eligible
+    minDate.setHours(0, 0, 0, 0); 
 
     const maxHorizonMs = parseDuration(maxHorizonStr);
     const maxDate = new Date(now.getTime() + maxHorizonMs);
-    maxDate.setHours(23, 59, 59, 999); // End of the day
+    maxDate.setHours(23, 59, 59, 999); // Set maxDate to the end of the day
 
     return { minDate, maxDate };
 };

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, Reservation } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,7 +22,7 @@ interface ExistingReservation {
 
 type FullShopData = Shop & { services: Service[] };
 
-type BookingStep = 'selection' | 'datetime' | 'details' | 'confirmed';
+type BookingStep = 'selection' | 'datetime' | 'confirmed';
 export type VehicleSize = 'S' | 'M' | 'L' | 'XL';
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
@@ -44,9 +43,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [specialInstructions, setSpecialInstructions] = useState('');
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' });
-    const [formErrors, setFormErrors] = useState<{name?: string; email?: string; phone?: string}>({});
-
+    
     useEffect(() => {
         const fetchShopData = async () => {
             setLoading(true);
@@ -123,43 +120,56 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     };
     
      const handleSelectService = (service: Service | null) => {
-        setSelectedService(service);
-        setSelectedVehicleSize(null);
-        setSelectedAddOns(new Set());
+        if (service?.id === selectedService?.id) {
+            setSelectedService(null);
+            setSelectedVehicleSize(null);
+            setSelectedAddOns(new Set());
+        } else {
+            setSelectedService(service);
+            setSelectedVehicleSize(null);
+            setSelectedAddOns(new Set());
+        }
     };
 
     const handleConfirmBooking = async () => {
+        if (!selectedService || !selectedDate || !selectedTime) return;
+
         setIsConfirming(true);
         setError(null);
 
-        const { data, error: insertError } = await supabase.from('reservations').insert({
+        // In a real app, you would collect client info here.
+        // For now, we use placeholders.
+        const clientName = "John Doe"; 
+        const clientEmail = "john.doe@example.com";
+        const clientPhone = "555-1234";
+
+        const { error: insertError } = await supabase.from('reservations').insert({
             shop_id: shopId,
-            service_id: selectedService?.id,
-            date: selectedDate?.toISOString().split('T')[0],
+            service_id: selectedService.id,
+            date: selectedDate.toISOString().split('T')[0],
             start_time: selectedTime,
             duration: totalDuration,
             price: totalPrice,
-            client_name: 'Manual Booking', // Placeholder
-            client_email: 'manual@booking.com', // Placeholder
-            client_phone: 'N/A', // Placeholder
+            client_name: clientName,
+            client_email: clientEmail,
+            client_phone: clientPhone,
             payment_status: 'on_site',
             status: 'upcoming',
             service_details: {
-                name: selectedService?.name,
+                name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
-                addOns: selectedService?.addOns.filter(a => selectedAddOns.has(a.id)),
+                addOns: selectedService.addOns.filter(a => selectedAddOns.has(a.id)),
                 special_instructions: specialInstructions,
             }
-        }).select().single();
+        });
         
         if (insertError) {
-             console.error("Booking error:", insertError);
+            console.error("Booking error:", insertError);
             setError(t.bookingFailed);
-            setIsConfirming(false);
         } else {
             setStep('confirmed');
-            setIsConfirming(false);
         }
+        setIsConfirming(false);
     };
 
     const resetBooking = () => {
@@ -170,8 +180,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         setSpecialInstructions('');
         setSelectedDate(null);
         setSelectedTime(null);
-        setClientInfo({ name: '', email: '', phone: '' });
-        setFormErrors({});
         setError(null);
     };
     
@@ -230,13 +238,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         </div>
                     </div>
                      <FloatingSummary
-                        selectedService={selectedService}
-                        selectedVehicleSize={selectedVehicleSize}
-                        selectedAddOns={selectedAddOns}
                         totalDuration={totalDuration}
                         totalPrice={totalPrice}
                         onButtonClick={handleConfirmBooking}
-                        buttonText={t.confirmBooking}
+                        buttonText={isConfirming ? t.confirmingBooking : t.confirmBooking}
                         buttonDisabled={!selectedTime || isConfirming}
                     />
                 </div>
@@ -244,7 +249,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         }
 
         return (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto pb-24">
                 <BookingForm
                     services={activeServices}
                     selectedService={selectedService}
@@ -255,17 +260,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                     onToggleAddOn={toggleAddOn}
                     specialInstructions={specialInstructions}
                     onSpecialInstructionsChange={setSpecialInstructions}
+                    totalDuration={totalDuration}
                 />
                 {selectedService && (
                     <FloatingSummary
-                        selectedService={selectedService}
-                        selectedVehicleSize={selectedVehicleSize}
-                        selectedAddOns={selectedAddOns}
                         totalDuration={totalDuration}
                         totalPrice={totalPrice}
                         onButtonClick={() => setStep('datetime')}
                         buttonText={t.continueToDateTime}
-                        buttonDisabled={selectedService.varies && !selectedVehicleSize}
+                        buttonDisabled={(selectedService.varies && !selectedVehicleSize) || isConfirming}
                     />
                 )}
             </div>
@@ -276,6 +279,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         <div className="bg-brand-light min-h-screen font-sans">
             <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
                  <div className="container mx-auto">
+                    <div className="flex items-center gap-4 mb-4">
+                         <a href="#" className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark">
+                            <ChevronLeftIcon className="w-5 h-5" />
+                            <span>{t.back}</span>
+                        </a>
+                    </div>
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center">
                             {shopData.shopImageUrl ? 
