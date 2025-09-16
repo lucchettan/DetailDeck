@@ -293,6 +293,7 @@ export const translations = {
     serviceTimeline: 'Service Timeline',
     totalDuration: 'Total Duration',
     continueToDateTime: 'Continue to Date & Time',
+    continueToYourInfo: 'Continue to Your Info',
      // Reservations Management
     manageReservations: 'Manage your reservations',
     manageReservationsSubtitle: 'View, create, and edit your client appointments.',
@@ -631,6 +632,7 @@ export const translations = {
     serviceTimeline: 'Déroulement du service',
     totalDuration: 'Durée totale',
     continueToDateTime: 'Continuer vers la Date et l\'Heure',
+    continueToYourInfo: 'Continuer vers mes informations',
     // Reservations Management
     manageReservations: 'Gérez vos réservations',
     manageReservationsSubtitle: 'Consultez, créez et modifiez les rendez-vous de vos clients.',
@@ -969,6 +971,7 @@ export const translations = {
     serviceTimeline: 'Cronología del Servicio',
     totalDuration: 'Duración Total',
     continueToDateTime: 'Continuar a Fecha y Hora',
+    continueToYourInfo: 'Continuar a mis datos',
     // Reservations Management
     manageReservations: 'Gestiona tus reservas',
     manageReservationsSubtitle: 'Consulta, crea y edita las citas de tus clientes.',

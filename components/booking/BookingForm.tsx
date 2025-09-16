@@ -1,10 +1,9 @@
 
-
 import React from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CheckBadgeIcon, CheckCircleIcon, HourglassIcon } from '../Icons';
+import { CheckBadgeIcon, CheckCircleIcon, HourglassIcon, CheckIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface BookingFormProps {
@@ -72,14 +71,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
                                 className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-start transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
                             >
                                 <div className="flex-1 pr-4">
-                                    <p className="font-bold text-brand-dark">{service.name}</p>
-                                    <p className="text-sm text-brand-gray mt-1 line-clamp-2">{service.description}</p>
-                                    <div className="flex items-center gap-4 text-sm font-semibold text-brand-dark mt-2">
+                                    <p className="font-bold text-lg text-brand-dark">{service.name}</p>
+                                    <p className="text-sm text-brand-gray mt-1 mb-2 line-clamp-2">{service.description}</p>
+                                    <div className="flex items-center gap-4 text-base font-semibold text-brand-dark mt-2">
                                         <span>{priceText}</span>
                                         <span className="flex items-center gap-1"><HourglassIcon className="w-4 h-4 text-gray-500" />{durationText}</span>
                                     </div>
                                 </div>
-                                {isSelected && <CheckCircleIcon className="w-8 h-8 text-brand-blue flex-shrink-0"/>}
+                                {isSelected && <CheckCircleIcon className="w-7 h-7 text-brand-blue flex-shrink-0 mt-1"/>}
                             </button>
                         )
                     })}
@@ -115,11 +114,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
                             const isSelected = selectedAddOns.has(addon.id);
                             return (
                                 <button key={addon.id} onClick={() => onToggleAddOn(addon.id)} className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-                                    <div className="flex-1 pr-4">
+                                    <div>
                                         <p className="font-bold text-brand-dark">{addon.name}</p>
-                                         <p className="text-sm text-brand-dark mt-1">
-                                            +{getPriceDisplay(addon.price)} &bull; {formatDuration(parseSafeInt(addon.duration))}
-                                        </p>
+                                         <p className="text-sm text-brand-dark font-semibold mt-1">
+                                            <span className="text-brand-blue">+{getPriceDisplay(addon.price)}</span> &bull; <span className="font-normal text-brand-gray">{formatDuration(parseSafeInt(addon.duration))}</span>
+                                         </p>
                                     </div>
                                     {isSelected && <CheckBadgeIcon className="w-7 h-7 text-brand-blue flex-shrink-0"/>}
                                 </button>

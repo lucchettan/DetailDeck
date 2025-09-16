@@ -1,7 +1,6 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Service, Shop, Reservation } from './Dashboard';
+import { Service, Shop } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
@@ -10,6 +9,7 @@ import TimeSlotPicker from './booking/TimeSlotPicker';
 import FloatingSummary from './booking/FloatingSummary';
 import { toCamelCase, parseSafeInt } from '../lib/utils';
 import BookingForm from './booking/BookingForm';
+import StepClientInfo from './booking/StepClientInfo';
 
 interface BookingPageProps {
   shopId: string;
@@ -22,8 +22,21 @@ interface ExistingReservation {
 
 type FullShopData = Shop & { services: Service[] };
 
-type BookingStep = 'selection' | 'datetime' | 'confirmed';
+type BookingStep = 'selection' | 'datetime' | 'clientInfo' | 'confirmed';
 export type VehicleSize = 'S' | 'M' | 'L' | 'XL';
+
+export interface ClientInfo {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+}
+export interface ClientInfoErrors {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+}
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
@@ -43,6 +56,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [specialInstructions, setSpecialInstructions] = useState('');
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const [clientInfo, setClientInfo] = useState<ClientInfo>({ firstName: '', lastName: '', email: '', phone: '' });
+    const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
     
     useEffect(() => {
         const fetchShopData = async () => {
@@ -131,18 +146,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         }
     };
 
+    const validateClientInfo = () => {
+        const errors: ClientInfoErrors = {};
+        if (!clientInfo.firstName.trim()) errors.firstName = t.requiredField;
+        if (!clientInfo.lastName.trim()) errors.lastName = t.requiredField;
+        if (!clientInfo.email.trim()) {
+            errors.email = t.requiredField;
+        } else if (!/^\S+@\S+\.\S+$/.test(clientInfo.email)) {
+            errors.email = t.emailValidationError;
+        }
+        if (!clientInfo.phone.trim()) errors.phone = t.requiredField;
+        setClientInfoErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
+
     const handleConfirmBooking = async () => {
-        if (!selectedService || !selectedDate || !selectedTime) return;
+        if (!selectedService || !selectedDate || !selectedTime || !validateClientInfo()) return;
 
         setIsConfirming(true);
         setError(null);
-
-        // In a real app, you would collect client info here.
-        // For now, we use placeholders.
-        const clientName = "John Doe"; 
-        const clientEmail = "john.doe@example.com";
-        const clientPhone = "555-1234";
-
+        
         const { error: insertError } = await supabase.from('reservations').insert({
             shop_id: shopId,
             service_id: selectedService.id,
@@ -150,9 +173,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             start_time: selectedTime,
             duration: totalDuration,
             price: totalPrice,
-            client_name: clientName,
-            client_email: clientEmail,
-            client_phone: clientPhone,
+            client_name: `${clientInfo.firstName} ${clientInfo.lastName}`,
+            client_email: clientInfo.email,
+            client_phone: clientInfo.phone,
             payment_status: 'on_site',
             status: 'upcoming',
             service_details: {
@@ -172,6 +195,17 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         setIsConfirming(false);
     };
 
+    const handleNextStep = () => {
+        if (step === 'selection') setStep('datetime');
+        if (step === 'datetime') setStep('clientInfo');
+        if (step === 'clientInfo') handleConfirmBooking();
+    }
+
+    const handlePrevStep = () => {
+        if (step === 'datetime') setStep('selection');
+        if (step === 'clientInfo') setStep('datetime');
+    }
+
     const resetBooking = () => {
         setStep('selection');
         setSelectedService(null);
@@ -180,6 +214,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         setSpecialInstructions('');
         setSelectedDate(null);
         setSelectedTime(null);
+        setClientInfo({ firstName: '', lastName: '', email: '', phone: '' });
+        setClientInfoErrors({});
         setError(null);
     };
     
@@ -205,7 +241,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         if (step === 'datetime') {
              return (
                 <div className="max-w-4xl mx-auto">
-                    <button onClick={() => setStep('selection')} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
+                    <button onClick={handlePrevStep} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
                         <ChevronLeftIcon className="w-5 h-5" />
                         <span>{t.back}</span>
                     </button>
@@ -231,14 +267,23 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                             </div>
                         </div>
                     </div>
-                     <FloatingSummary
-                        totalDuration={totalDuration}
-                        totalPrice={totalPrice}
-                        onButtonClick={handleConfirmBooking}
-                        buttonText={isConfirming ? t.confirmingBooking : t.confirmBooking}
-                        buttonDisabled={!selectedTime || isConfirming}
-                    />
                 </div>
+            )
+        }
+        
+        if (step === 'clientInfo') {
+            return (
+                 <div className="max-w-2xl mx-auto">
+                    <button onClick={handlePrevStep} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
+                        <ChevronLeftIcon className="w-5 h-5" />
+                        <span>{t.back}</span>
+                    </button>
+                    <StepClientInfo 
+                        clientInfo={clientInfo} 
+                        setClientInfo={setClientInfo}
+                        errors={clientInfoErrors}
+                    />
+                 </div>
             )
         }
 
@@ -256,18 +301,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                     onSpecialInstructionsChange={setSpecialInstructions}
                     totalDuration={totalDuration}
                 />
-                {selectedService && (
-                    <FloatingSummary
-                        totalDuration={totalDuration}
-                        totalPrice={totalPrice}
-                        onButtonClick={() => setStep('datetime')}
-                        buttonText={t.continueToDateTime}
-                        buttonDisabled={(selectedService.varies && !selectedVehicleSize) || isConfirming}
-                    />
-                )}
             </div>
         )
     }
+
+    const buttonDisabled = () => {
+        if (step === 'selection' && (!selectedService || (selectedService.varies && !selectedVehicleSize))) return true;
+        if (step === 'datetime' && !selectedTime) return true;
+        if (step === 'clientInfo' && isConfirming) return true;
+        return false;
+    }
+
+    const getButtonText = () => {
+        switch(step) {
+            case 'selection': return t.continueToDateTime;
+            case 'datetime': return t.continueToYourInfo;
+            case 'clientInfo': return t.confirmBooking;
+            default: return '';
+        }
+    };
 
     return (
         <div className="bg-brand-light min-h-screen font-sans">
@@ -289,6 +341,17 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             <main className="container mx-auto p-4 md:p-8">
                 {renderContent()}
             </main>
+
+            {step !== 'confirmed' && selectedService && (
+                <FloatingSummary
+                    totalDuration={totalDuration}
+                    totalPrice={totalPrice}
+                    onButtonClick={handleNextStep}
+                    buttonText={getButtonText()}
+                    buttonDisabled={buttonDisabled()}
+                    isConfirming={isConfirming}
+                />
+            )}
         </div>
     );
 };

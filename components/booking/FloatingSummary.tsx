@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatDuration } from '../../lib/utils';
@@ -10,6 +9,7 @@ interface FloatingSummaryProps {
     onButtonClick: () => void;
     buttonText: string;
     buttonDisabled: boolean;
+    isConfirming?: boolean;
 }
 
 const FloatingSummary: React.FC<FloatingSummaryProps> = ({
@@ -17,7 +17,8 @@ const FloatingSummary: React.FC<FloatingSummaryProps> = ({
     totalPrice,
     onButtonClick,
     buttonText,
-    buttonDisabled
+    buttonDisabled,
+    isConfirming
 }) => {
     const { t } = useLanguage();
 
@@ -32,9 +33,13 @@ const FloatingSummary: React.FC<FloatingSummaryProps> = ({
                     <button 
                         onClick={onButtonClick} 
                         disabled={buttonDisabled}
-                        className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                        className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center min-w-[200px]"
                     >
-                        {buttonText}
+                        {isConfirming ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                        ) : (
+                           buttonText
+                        )}
                     </button>
                 </div>
             </div>
