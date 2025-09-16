@@ -48,8 +48,6 @@ export interface Shop {
     maxBookingHorizon: string;
     acceptsOnSitePayment: boolean;
     bookingFee: string;
-    stripeAccountId?: string | null;
-    stripeAccountEnabled?: boolean;
 }
 
 export interface Reservation {
@@ -148,7 +146,6 @@ const Dashboard: React.FC = () => {
     shopInfo: !!shopData?.name,
     availability: !!shopData?.schedule, 
     catalog: services.length > 0,
-    stripe: !!shopData?.stripeAccountEnabled,
   };
 
   const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
@@ -233,8 +230,6 @@ const Dashboard: React.FC = () => {
       max_booking_horizon: updatedShopData.maxBookingHorizon,
       accepts_on_site_payment: updatedShopData.acceptsOnSitePayment,
       booking_fee: updatedShopData.bookingFee,
-      stripe_account_id: updatedShopData.stripeAccountId,
-      stripe_account_enabled: updatedShopData.stripeAccountEnabled,
     };
 
     Object.keys(payload).forEach(key => {

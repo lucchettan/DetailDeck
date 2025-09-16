@@ -6,13 +6,15 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon } from '../Icons';
 
+// FIX: Removed the unused 'stripe' property from the 'setupStatus' type.
+// This property was causing a type mismatch in the parent Dashboard component
+// as it was not being provided, and it is not used within this component.
 interface DashboardHomeProps {
   onNavigate: (view: string) => void;
   setupStatus: {
     shopInfo: boolean;
     availability: boolean;
     catalog: boolean;
-    stripe: boolean;
   };
   shopId?: string;
 }
