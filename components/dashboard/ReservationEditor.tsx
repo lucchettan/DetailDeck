@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon, SaveIcon, TrashIcon } from '../Icons';
+import { CloseIcon, SaveIcon, TrashIcon, PencilIcon } from '../Icons';
 import { Reservation, Service } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../booking/Calendar';
@@ -21,7 +21,6 @@ interface ReservationEditorProps {
     maxBookingHorizon: string;
 }
 
-// Fix: Use camelCase properties to match the 'Reservation' type.
 const getInitialFormData = (reservation: Reservation | null): Partial<Reservation> => {
     if (reservation) return { ...reservation };
 
@@ -48,14 +47,12 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
 
     const [formData, setFormData] = useState<Partial<Reservation>>(getInitialFormData(reservationToEdit));
     const [selectedService, setSelectedService] = useState<Service | null>(null);
-    const [existingReservations, setExistingReservations] = useState<any[]>([]);
-    const [loadingReservations, setLoadingReservations] = useState(false);
-    
+    const [isEditingDateTime, setIsEditingDateTime] = useState(!isEditing); // Start in edit mode for new reservations
+
     useEffect(() => {
         setFormData(getInitialFormData(reservationToEdit));
-        // Fix: Use 'serviceId' property.
+        setIsEditingDateTime(!reservationToEdit);
         if (reservationToEdit?.serviceId) {
-            // Fix: Use 'serviceId' property.
             setSelectedService(services.find(s => s.id === reservationToEdit.serviceId) || null);
         } else {
             setSelectedService(null);
@@ -64,39 +61,8 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     
     const totalDuration = useMemo(() => {
         if (!selectedService) return 0;
-        // Simplified duration calculation for manual booking.
-        // A more complex version could handle variants and add-ons.
         return parseInt(selectedService.singlePrice?.duration || '0');
     }, [selectedService]);
-
-    useEffect(() => {
-        if (!formData.date) return;
-        
-        const fetchReservations = async () => {
-            setLoadingReservations(true);
-            const { data, error } = await supabase
-                .from('reservations')
-                .select('start_time, duration')
-                .eq('shop_id', shopId)
-                .eq('date', formData.date);
-
-            if (error) {
-                console.error("Error fetching reservations for editor:", error);
-                setExistingReservations([]);
-            } else {
-                // Exclude the current reservation if we are editing it
-                // Fix: Use 'startTime' property on 'reservationToEdit'.
-                const filteredData = isEditing 
-                    ? data.filter(r => r.start_time !== reservationToEdit?.startTime)
-                    : data;
-                setExistingReservations(filteredData);
-            }
-            setLoadingReservations(false);
-        };
-        fetchReservations();
-
-    }, [formData.date, shopId, isEditing, reservationToEdit]);
-
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -112,7 +78,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
             serviceDetails: { name: service?.name || '', addOns: [] },
             price: parseInt(service?.singlePrice.price || '0'),
             duration: parseInt(service?.singlePrice.duration || '0'),
-            startTime: '', // Reset time when service changes
+            startTime: '', 
         }));
     };
     
@@ -120,7 +86,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
         setFormData(prev => ({
             ...prev,
             date: date.toISOString().split('T')[0],
-            startTime: '' // Reset time when date changes
+            startTime: ''
         }));
     }
 
@@ -136,6 +102,10 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     }
 
     if (!isOpen) return null;
+    
+    const formattedDateForDisplay = formData.date 
+        ? new Date(formData.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        : 'No date selected';
 
     return (
         <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4">
@@ -148,10 +118,8 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                 </header>
                 
                 <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6">
-                    {/* Client Info */}
                     <div>
                         <h3 className="font-bold text-brand-dark mb-2">{t.clientInformation}</h3>
-                        {/* Fix: Use camelCase for form field names and values. */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <input name="clientName" value={formData.clientName} onChange={handleInputChange} placeholder={t.clientName} className="p-2 border rounded-lg" required/>
                             <input name="clientEmail" type="email" value={formData.clientEmail} onChange={handleInputChange} placeholder={t.clientEmail} className="p-2 border rounded-lg" />
@@ -159,12 +127,10 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         </div>
                     </div>
                     
-                    {/* Reservation Details */}
                     <div>
                         <h3 className="font-bold text-brand-dark mb-2">{t.reservationDetails}</h3>
                         <div className="mb-4">
                              <label className="block text-sm font-medium mb-1">{t.selectService}</label>
-                             {/* Fix: Use 'serviceId' property. */}
                              <select value={formData.serviceId} onChange={(e) => handleServiceChange(e.target.value)} className="w-full p-2 border rounded-lg bg-white" required>
                                 <option value="" disabled>-- Select a service --</option>
                                 {services.filter(s => s.status === 'active').map(s => (
@@ -173,40 +139,51 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                              </select>
                         </div>
                         {selectedService && (
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
-                                    {/* FIX: Pass missing 'shopId' prop to the Calendar component. */}
-                                    <Calendar
-                                        shopId={shopId}
-                                        schedule={shopSchedule}
-                                        serviceDuration={totalDuration}
-                                        selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
-                                        onSelectDate={handleDateSelect}
-                                        minBookingNotice={minBookingNotice}
-                                        maxBookingHorizon={maxBookingHorizon}
-                                    />
-                                </div>
-                                <div>
-                                     <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
-                                     {loadingReservations ? <p>Loading...</p> : (
-                                        // FIX: Pass shopId and remove existingReservations from TimeSlotPicker call to align with its refactoring.
-                                        <TimeSlotPicker 
-                                            shopId={shopId}
-                                            schedule={shopSchedule}
-                                            serviceDuration={totalDuration}
-                                            selectedDate={new Date(formData.date + 'T00:00:00')}
-                                            // Fix: Use 'startTime' property.
-                                            selectedTime={formData.startTime || null}
-                                            onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
-                                        />
-                                     )}
-                                </div>
-                             </div>
+                            <>
+                                {isEditingDateTime ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
+                                            <Calendar
+                                                shopId={shopId}
+                                                schedule={shopSchedule}
+                                                serviceDuration={totalDuration}
+                                                selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
+                                                onSelectDate={handleDateSelect}
+                                                minBookingNotice={minBookingNotice}
+                                                maxBookingHorizon={maxBookingHorizon}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
+                                            <TimeSlotPicker 
+                                                shopId={shopId}
+                                                schedule={shopSchedule}
+                                                serviceDuration={totalDuration}
+                                                selectedDate={new Date(formData.date + 'T00:00:00')}
+                                                selectedTime={formData.startTime || null}
+                                                onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="font-semibold text-brand-dark">{formattedDateForDisplay}</p>
+                                                <p className="text-2xl font-bold text-brand-blue mt-1">{formData.startTime}</p>
+                                            </div>
+                                            <button type="button" onClick={() => setIsEditingDateTime(true)} className="flex items-center gap-2 bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                                                <PencilIcon />
+                                                <span>{t.edit}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                     
-                    {/* Statuses */}
                     <div>
                         <h3 className="font-bold text-brand-dark mb-2">Status</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,7 +197,6 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t.paymentStatus}</label>
-                                {/* Fix: Use 'paymentStatus' property. */}
                                 <select name="paymentStatus" value={formData.paymentStatus} onChange={handleInputChange} className="w-full p-2 border rounded-lg bg-white">
                                     <option value="paid">{t.payment_paid}</option>
                                     <option value="pending_deposit">{t.payment_pending_deposit}</option>
@@ -229,7 +205,6 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                             </div>
                         </div>
                     </div>
-
                 </form>
 
                 <footer className="flex justify-between items-center p-4 border-t mt-auto">

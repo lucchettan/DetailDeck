@@ -323,6 +323,7 @@ export const translations = {
     deleteReservationConfirmation: 'Are you sure you want to delete this reservation? This action cannot be undone.',
     noUpcomingReservations: 'No upcoming reservations.',
     noPastReservations: 'No past reservations.',
+    edit: 'Edit',
     // Email Confirmation
     emailSubject: 'Your booking with {shopName} is confirmed!',
     emailGreeting: 'Hello {clientName},',
@@ -606,7 +607,7 @@ export const translations = {
     confirmYourBooking: 'Confirmez votre réservation',
     confirmBooking: 'Confirmer ma réservation',
     bookingConfirmed: 'Réservation Confirmée !',
-    bookingConfirmationDetails: 'Merci ! Votre réservation est confirmée. Vous recevrez un e-mail de confirmation sous peu.',
+    bookingConfirmationDetails: 'Vous allez recevoir un e-mail de confirmation avec tous les détails.',
     bookingConfirmationMessage: "Merci d'avoir réservé **{serviceName}** {vehicleText} {addOnsText} le **{date} à {time}** pour un montant de **{price}€**. Nous avons hâte de vous recevoir !",
     withAddOns: "avec les options suivantes : {addOnsList}",
     forVehicle: "pour un véhicule **{vehicleSize}**",
@@ -667,6 +668,7 @@ export const translations = {
     deleteReservationConfirmation: 'Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.',
     noUpcomingReservations: 'Aucune réservation à venir.',
     noPastReservations: 'Aucune réservation passée.',
+    edit: 'Modifier',
     // Email Confirmation
     emailSubject: 'Votre réservation chez {shopName} est confirmée !',
     emailGreeting: 'Bonjour {clientName},',
@@ -1011,6 +1013,7 @@ export const translations = {
     deleteReservationConfirmation: '¿Estás seguro de que quieres eliminar esta reserva? Esta acción no se puede deshacer.',
     noUpcomingReservations: 'No hay próximas reservas.',
     noPastReservations: 'No hay reservas pasadas.',
+    edit: 'Editar',
     // Email Confirmation
     emailSubject: '¡Tu reserva en {shopName} está confirmada!',
     emailGreeting: 'Hola {clientName},',

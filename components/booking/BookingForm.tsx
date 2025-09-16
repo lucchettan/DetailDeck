@@ -92,13 +92,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
                                 onClick={() => onSelectService(isSelected ? null : service)}
                                 className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue' : 'border-transparent'}`}
                             >
-                                {service.imageUrl ? (
+                                {service.imageUrl && (
                                     <div className="h-40 w-full">
                                         <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover"/>
-                                    </div>
-                                ) : (
-                                    <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
-                                        <ImageIcon className="w-12 h-12 text-gray-300" />
                                     </div>
                                 )}
                                 <div className="p-4 flex flex-col flex-grow">
