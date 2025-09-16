@@ -1,35 +1,46 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CheckBadgeIcon, HourglassIcon, ImageIcon, MoneyIcon } from '../Icons';
+import { CheckBadgeIcon, HourglassIcon, ImageIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
 
 interface BookingFormProps {
     services: Service[];
+    clientVehicle: string;
+    onClientVehicleChange: (value: string) => void;
     selectedService: Service | null;
     onSelectService: (service: Service | null) => void;
     selectedVehicleSize: VehicleSize | null;
     onSelectVehicleSize: (size: VehicleSize) => void;
     selectedAddOns: Set<number>;
     onToggleAddOn: (id: number) => void;
-    specialInstructions: string;
-    onSpecialInstructionsChange: (value: string) => void;
-    totalDuration: number;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
     services,
+    clientVehicle,
+    onClientVehicleChange,
     selectedService,
     onSelectService,
     selectedVehicleSize,
     onSelectVehicleSize,
     selectedAddOns,
     onToggleAddOn,
-    specialInstructions,
-    onSpecialInstructionsChange,
 }) => {
     const { t } = useLanguage();
+    const vehicleSizeRef = useRef<HTMLDivElement>(null);
+    const addOnsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (selectedService) {
+            if (selectedService.varies && !selectedVehicleSize) {
+                vehicleSizeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (selectedService.addOns && selectedService.addOns.length > 0) {
+                 addOnsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [selectedService]);
 
     const getPriceDisplay = (price: string | undefined | null) => {
         if (!price || isNaN(parseInt(price))) return 'N/A';
@@ -54,6 +65,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
     return (
         <div className="space-y-8">
+             {/* Client Vehicle */}
+            <div>
+                <label htmlFor="clientVehicle" className="text-xl font-bold text-brand-dark mb-4 block">{t.whatIsYourVehicle}</label>
+                 <input 
+                    id="clientVehicle"
+                    type="text"
+                    value={clientVehicle}
+                    onChange={(e) => onClientVehicleChange(e.target.value)}
+                    placeholder={t.whatIsYourVehiclePlaceholder}
+                    className="w-full p-4 bg-white rounded-lg border-2 border-gray-200 focus:border-brand-blue focus:ring-0 outline-none transition"
+                 />
+            </div>
+
             {/* Main Service Selection */}
             <div>
                 <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>
@@ -107,7 +131,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             
             {/* Vehicle Size Selection */}
             {showVehicleSelection && (
-                <div>
+                <div ref={vehicleSizeRef}>
                     <h2 className="text-xl font-bold text-brand-dark mb-4">{t.selectVehicleSize}</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {Object.entries(selectedService.pricing).filter(([, details]) => details.enabled).map(([size, details]) => (
@@ -127,7 +151,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
             {/* Add-On Services */}
             {showAddons && (
-                 <div>
+                 <div ref={addOnsRef}>
                     <h2 className="text-xl font-bold text-brand-dark mb-4">{t.addOnServices}</h2>
                     <div className="space-y-3">
                          {selectedService.addOns.map(addon => {
@@ -150,18 +174,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     </div>
                 </div>
             )}
-           
-            {/* Special Instructions */}
-            <div>
-                 <h2 className="text-xl font-bold text-brand-dark mb-4">{t.specialInstructions}</h2>
-                 <textarea 
-                    value={specialInstructions}
-                    onChange={(e) => onSpecialInstructionsChange(e.target.value)}
-                    rows={4}
-                    placeholder={t.specialInstructionsPlaceholder}
-                    className="w-full p-4 bg-white rounded-lg border-2 border-gray-200 focus:border-brand-blue focus:ring-0 outline-none transition"
-                 />
-            </div>
         </div>
     )
 }

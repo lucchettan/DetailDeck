@@ -42,21 +42,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     
     const [step, setStep] = useState<BookingStep>('selection');
     const [shopData, setShopData] = useState<FullShopData | null>(null);
-    const [reservations, setReservations] = useState<ExistingReservation[]>([]);
     
     const [loading, setLoading] = useState(true);
-    const [loadingReservations, setLoadingReservations] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
+    // Step 1 State
+    const [clientVehicle, setClientVehicle] = useState('');
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
     const [selectedAddOns, setSelectedAddOns] = useState<Set<number>>(new Set());
-    const [specialInstructions, setSpecialInstructions] = useState('');
+    
+    // Step 2 State
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    
+    // Step 3 State
     const [clientInfo, setClientInfo] = useState<ClientInfo>({ firstName: '', lastName: '', email: '', phone: '' });
     const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
+    const [specialInstructions, setSpecialInstructions] = useState('');
     
     useEffect(() => {
         const fetchShopData = async () => {
@@ -79,24 +83,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         };
         fetchShopData();
     }, [shopId, t.shopNotFound, t.errorLoadingShop]);
-
-    useEffect(() => {
-        if (!selectedDate || !shopData) return;
-        const fetchReservations = async () => {
-            setLoadingReservations(true);
-            const dateString = selectedDate.toISOString().split('T')[0];
-            const { data, error: dbError } = await supabase
-                .from('reservations')
-                .select('start_time, duration')
-                .eq('shop_id', shopData.id)
-                .eq('date', dateString);
-            
-            if (dbError) console.error("Error fetching reservations:", dbError);
-            else setReservations(data as ExistingReservation[]);
-            setLoadingReservations(false);
-        };
-        fetchReservations();
-    }, [selectedDate, shopData]);
 
     const { totalDuration, totalPrice } = useMemo(() => {
         if (!selectedService) return { totalDuration: 0, totalPrice: 0 };
@@ -181,6 +167,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                 name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
                 addOns: selectedService.addOns.filter(a => selectedAddOns.has(a.id)),
+                client_vehicle: clientVehicle,
                 special_instructions: specialInstructions,
             }
         });
@@ -207,6 +194,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     const resetBooking = () => {
         setStep('selection');
+        setClientVehicle('');
         setSelectedService(null);
         setSelectedVehicleSize(null);
         setSelectedAddOns(new Set());
@@ -280,6 +268,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                             <div>
                                 <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectDate}</h3>
                                 <Calendar 
+                                    shopId={shopId}
                                     schedule={shopData.schedule} 
                                     serviceDuration={totalDuration} 
                                     selectedDate={selectedDate} 
@@ -290,8 +279,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                                {loadingReservations ? <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div></div>
-                                : selectedDate ? <TimeSlotPicker schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} existingReservations={reservations} />
+                                { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
                                 : <p className="text-sm text-brand-gray">{t.selectDate}</p>
                                 }
                             </div>
@@ -312,6 +300,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         clientInfo={clientInfo} 
                         setClientInfo={setClientInfo}
                         errors={clientInfoErrors}
+                        specialInstructions={specialInstructions}
+                        onSpecialInstructionsChange={setSpecialInstructions}
                     />
                  </div>
             )
@@ -321,15 +311,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             <div className="max-w-4xl mx-auto pb-24">
                 <BookingForm
                     services={activeServices}
+                    clientVehicle={clientVehicle}
+                    onClientVehicleChange={setClientVehicle}
                     selectedService={selectedService}
                     onSelectService={handleSelectService}
                     selectedVehicleSize={selectedVehicleSize}
                     onSelectVehicleSize={setSelectedVehicleSize}
                     selectedAddOns={selectedAddOns}
                     onToggleAddOn={toggleAddOn}
-                    specialInstructions={specialInstructions}
-                    onSpecialInstructionsChange={setSpecialInstructions}
-                    totalDuration={totalDuration}
                 />
             </div>
         )

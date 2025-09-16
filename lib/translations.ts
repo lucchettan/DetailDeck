@@ -296,6 +296,8 @@ export const translations = {
     totalDuration: 'Total Duration',
     continueToDateTime: 'Continue to Date & Time',
     continueToYourInfo: 'Continue to Your Info',
+    whatIsYourVehicle: "What is your vehicle?",
+    whatIsYourVehiclePlaceholder: "e.g., Tesla Model 3, BMW X5...",
      // Reservations Management
     manageReservations: 'Manage your reservations',
     manageReservationsSubtitle: 'View, create, and edit your client appointments.',
@@ -638,6 +640,8 @@ export const translations = {
     totalDuration: 'Durée totale',
     continueToDateTime: 'Continuer vers la Date et l\'Heure',
     continueToYourInfo: 'Continuer vers mes informations',
+    whatIsYourVehicle: "Quel est votre véhicule ?",
+    whatIsYourVehiclePlaceholder: "Ex: Tesla Model 3, BMW X5...",
     // Reservations Management
     manageReservations: 'Gérez vos réservations',
     manageReservationsSubtitle: 'Consultez, créez et modifiez les rendez-vous de vos clients.',
@@ -980,6 +984,8 @@ export const translations = {
     totalDuration: 'Duración Total',
     continueToDateTime: 'Continuar a Fecha y Hora',
     continueToYourInfo: 'Continuar a mis datos',
+    whatIsYourVehicle: "¿Cuál es tu vehículo?",
+    whatIsYourVehiclePlaceholder: "Ej: Tesla Model 3, BMW X5...",
     // Reservations Management
     manageReservations: 'Gestiona tus reservas',
     manageReservationsSubtitle: 'Consulta, crea y edita las citas de tus clientes.',

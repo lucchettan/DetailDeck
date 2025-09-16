@@ -176,8 +176,9 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
-                                    {/* FIX: Pass missing 'minBookingNotice' and 'maxBookingHorizon' props to the Calendar component. */}
+                                    {/* FIX: Pass missing 'shopId' prop to the Calendar component. */}
                                     <Calendar
+                                        shopId={shopId}
                                         schedule={shopSchedule}
                                         serviceDuration={totalDuration}
                                         selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
@@ -189,14 +190,15 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                 <div>
                                      <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
                                      {loadingReservations ? <p>Loading...</p> : (
+                                        // FIX: Pass shopId and remove existingReservations from TimeSlotPicker call to align with its refactoring.
                                         <TimeSlotPicker 
+                                            shopId={shopId}
                                             schedule={shopSchedule}
                                             serviceDuration={totalDuration}
                                             selectedDate={new Date(formData.date + 'T00:00:00')}
                                             // Fix: Use 'startTime' property.
                                             selectedTime={formData.startTime || null}
                                             onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
-                                            existingReservations={existingReservations}
                                         />
                                      )}
                                 </div>

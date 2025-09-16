@@ -6,9 +6,11 @@ interface StepClientInfoProps {
     clientInfo: ClientInfo;
     setClientInfo: React.Dispatch<React.SetStateAction<ClientInfo>>;
     errors: ClientInfoErrors;
+    specialInstructions: string;
+    onSpecialInstructionsChange: (value: string) => void;
 }
 
-const StepClientInfo: React.FC<StepClientInfoProps> = ({ clientInfo, setClientInfo, errors }) => {
+const StepClientInfo: React.FC<StepClientInfoProps> = ({ clientInfo, setClientInfo, errors, specialInstructions, onSpecialInstructionsChange }) => {
     const { t } = useLanguage();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +43,17 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({ clientInfo, setClientIn
                     <label htmlFor="phone" className="block text-sm font-medium text-brand-dark mb-1">{t.phoneNumber}</label>
                     <input type="tel" name="phone" id="phone" value={clientInfo.phone} onChange={handleChange} placeholder={t.phoneNumberPlaceholder} className={`w-full p-2 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`} required />
                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                </div>
+                <div>
+                     <label htmlFor="specialInstructions" className="block text-sm font-medium text-brand-dark mb-1">{t.specialInstructions}</label>
+                     <textarea 
+                        id="specialInstructions"
+                        value={specialInstructions}
+                        onChange={(e) => onSpecialInstructionsChange(e.target.value)}
+                        rows={3}
+                        placeholder={t.specialInstructionsPlaceholder}
+                        className="w-full p-2 bg-white rounded-lg border border-gray-300 focus:border-brand-blue focus:ring-0 outline-none transition"
+                     />
                 </div>
             </div>
         </div>

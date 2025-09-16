@@ -1,9 +1,12 @@
 
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabaseClient';
 
+// FIX: Added a guard to prevent crash if time is not a valid string.
 const timeToMinutes = (time: string) => {
+    if (!time || !time.includes(':')) return 0;
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 };
@@ -13,24 +16,54 @@ interface ExistingReservation {
     duration: number; // in minutes
 }
 
+// FIX: Updated props to accept shopId and fetch its own data, removing the dependency on a passed-in reservations list.
 interface TimeSlotPickerProps {
+    shopId: string;
     schedule: any;
     serviceDuration: number;
     selectedDate: Date;
     selectedTime: string | null;
     onSelectTime: (time: string) => void;
-    existingReservations: ExistingReservation[];
 }
 
-const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ schedule, serviceDuration, selectedDate, selectedTime, onSelectTime, existingReservations }) => {
+const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime }) => {
     const { t } = useLanguage();
+    const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchReservationsForDay = async () => {
+            if (!selectedDate || serviceDuration <= 0) {
+                setExistingReservations([]);
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true);
+            const dateString = selectedDate.toISOString().split('T')[0];
+            const { data, error } = await supabase
+                .from('reservations')
+                .select('start_time, duration')
+                .eq('shop_id', shopId)
+                .eq('date', dateString);
+            
+            if (error) {
+                console.error("Error fetching reservations for day:", error);
+                setExistingReservations([]);
+            } else {
+                setExistingReservations(data as ExistingReservation[]);
+            }
+            setIsLoading(false);
+        };
+        fetchReservationsForDay();
+    }, [selectedDate, shopId, serviceDuration]);
+
 
     const availableSlots = useMemo(() => {
         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const dayOfWeek = dayNames[selectedDate.getDay()];
         const daySchedule = schedule[dayOfWeek];
 
-        if (!daySchedule || !daySchedule.isOpen) {
+        if (!daySchedule || !daySchedule.isOpen || serviceDuration <= 0) {
             return [];
         }
 
@@ -67,6 +100,10 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ schedule, serviceDurati
         });
 
     }, [selectedDate, schedule, serviceDuration, existingReservations]);
+
+    if (isLoading) {
+        return <div className="text-center p-4 bg-gray-50 rounded-lg">{t.loadingReservations}</div>;
+    }
 
     if (availableSlots.length === 0) {
         return <div className="text-center p-4 bg-gray-50 rounded-lg">{t.noSlotsAvailable}</div>;
