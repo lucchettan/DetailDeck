@@ -288,3 +288,41 @@ export const EyeIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest })
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
+
+export const EnvelopeIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+);
+
+export const KeyIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.967-.531 1.563-.432 2.596.426 5.217 2.24 7.029 5.912z" />
+    </svg>
+);
+
+export const BuildingOffice2Icon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m-3-1l-3-1m-3 1l-3 1m3-1V7.5M6.75 21v-2.25m0 0v-2.25m0 2.25h3m-3-2.25h3" />
+    </svg>
+);
+
+export const TruckIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V14.25m-17.25 4.5v-1.875a3.375 3.375 0 013.375-3.375h1.5a1.125 1.125 0 011.125 1.125v-1.5a3.375 3.375 0 013.375-3.375H16.5a3.375 3.375 0 013.375 3.375v1.875m-17.25 4.5a3.375 3.375 0 003.375 3.375h1.5a1.125 1.125 0 001.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H5.25" />
+  </svg>
+);
+
+export const GavelIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+        <g strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13.25 3.813l5.938 5.937a2.25 2.25 0 010 3.182l-3.182 3.182a2.25 2.25 0 01-3.182 0l-5.938-5.937a.75.75 0 010-1.06l1.06-1.06a.75.75 0 011.06 0l1.061 1.06 3.182-3.182a.75.75 0 00-1.06-1.06l-1.06 1.06-2.122-2.121a.75.75 0 011.06 0l2.122 2.121 1.06-1.06a.75.75 0 011.06 0zM5.25 21a.75.75 0 001.5 0v-4.504a2.25 2.25 0 011.168-1.956l1.24-.62a2.25 2.25 0 00-1.168-4.302l-.62-.31a2.25 2.25 0 01-1.168-1.956V3a.75.75 0 00-1.5 0v3.246a2.25 2.25 0 01-1.168 1.956l-1.24.62a2.25 2.25 0 001.168 4.302l.62.31a2.25 2.25 0 011.168 1.956V21z" />
+        </g>
+    </svg>
+);
+
+export const InformationCircleIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+    </svg>
+);

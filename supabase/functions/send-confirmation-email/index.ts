@@ -1,6 +1,7 @@
 // FIX: Add Deno to global scope to avoid TypeScript errors in environments where Deno types are not automatically included.
 declare const Deno: any;
 
+// @ts-ignore: Deno imports are not recognized by the build environment's TypeScript compiler.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 // Standard CORS headers

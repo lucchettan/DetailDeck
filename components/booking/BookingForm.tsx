@@ -109,7 +109,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                             <button 
                                 key={service.id}
                                 onClick={() => onSelectService(isSelected ? null : service)}
-                                className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue' : 'border-transparent'}`}
+                                className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue/50' : 'border-transparent hover:border-brand-blue/50'}`}
                             >
                                 {service.imageUrl ? (
                                     <div className="h-40 w-full">
@@ -159,7 +159,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                              <button 
                                 key={size} 
                                 onClick={() => onSelectVehicleSize(size as VehicleSize)}
-                                className={`p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-between h-full ${selectedVehicleSize === size ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                                className={`p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-between h-full ${selectedVehicleSize === size ? 'bg-blue-50 border-brand-blue ring-2 ring-brand-blue/50' : 'bg-white border-gray-200 hover:border-brand-blue'}`}
                             >
                                 <p className="font-bold text-brand-dark">{t[`size_${size as VehicleSize}`]}</p>
                                 <p className="text-xs text-brand-gray mt-1">{formatDuration(parseSafeInt(details.duration))}</p>
@@ -179,7 +179,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                          {availableAddOns.map(addon => {
                             const isSelected = selectedAddOns.has(addon.id);
                             return (
-                                <button key={addon.id} onClick={() => onToggleAddOn(addon.id)} className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                                <button key={addon.id} onClick={() => onToggleAddOn(addon.id)} className={`w-full text-left p-4 rounded-lg border-2 flex justify-between items-center transition-all duration-200 ${isSelected ? 'bg-blue-50 border-brand-blue ring-2 ring-brand-blue/50' : 'bg-white border-gray-200 hover:border-brand-blue'}`}>
                                     <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                         <p className="font-bold text-brand-dark">{addon.name}</p>
                                         <div className="flex items-center gap-3 text-sm font-semibold mt-1 sm:mt-0">

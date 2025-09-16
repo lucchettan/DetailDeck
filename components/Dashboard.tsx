@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -126,7 +127,14 @@ const Dashboard: React.FC = () => {
                 .eq('shop_id', shop.id);
             
             if (servicesError) throw servicesError;
-            setServices(toCamelCase(shopServices) as Service[]);
+
+            // FIX: Process services to ensure `addOnIds` is always an array, preventing crashes from `null` values in old data.
+            const processedServices = (toCamelCase(shopServices) as Service[]).map(service => ({
+              ...service,
+              addOnIds: service.addOnIds || [],
+            }));
+            setServices(processedServices);
+
 
             const { data: shopAddOns, error: addOnsError } = await supabase
                 .from('add_ons')

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, CheckIcon, CheckCircleIcon } from '../Icons';
+import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, CheckIcon, StorefrontIcon, ClockIcon, GavelIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
 import { Shop } from '../Dashboard';
 
@@ -87,10 +87,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
   }, [shopData]);
 
   const steps = useMemo(() => [
-    { id: 1, label: t.tabShopDetails, isComplete: (data: Partial<Shop>) => !!data.name },
-    { id: 2, label: t.tabAvailability, isComplete: (data: Partial<Shop>) => !!data.schedule },
-    { id: 3, label: t.tabPolicies, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
-    { id: 4, label: t.tabAccount, isComplete: () => true },
+    { id: 1, label: t.tabShopDetails, icon: <StorefrontIcon />, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
+    { id: 2, label: t.tabAvailability, icon: <ClockIcon />, isComplete: (data: Partial<Shop>) => !!data.schedule },
+    { id: 3, label: t.tabPolicies, icon: <GavelIcon />, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
+    { id: 4, label: t.tabAccount, icon: <UserCircleIcon />, isComplete: () => true },
   ], [t]);
 
 
@@ -228,26 +228,30 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
         {steps.map((step, index) => {
             const isCompleted = step.isComplete(formData);
             const isCurrent = activeStep === step.id;
-            const canNavigate = isCompleted || activeStep > step.id;
             return (
             <React.Fragment key={step.id}>
                 <div 
                 onClick={() => setActiveStep(step.id)} 
                 className="flex items-center gap-3 cursor-pointer"
                 >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
-                        isCurrent ? 'bg-brand-blue text-white ring-4 ring-blue-200' :
-                        isCompleted ? 'bg-green-500 text-white' :
-                        'bg-gray-200 text-brand-gray'
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
+                        isCurrent ? 'bg-blue-100' :
+                        isCompleted ? 'bg-green-100' :
+                        'bg-gray-200'
                     }`}>
-                        {isCompleted && !isCurrent ? <CheckIcon className="w-5 h-5"/> : step.id}
+                       {isCompleted && !isCurrent ? 
+                        <CheckIcon className="w-6 h-6 text-green-500" /> : 
+                        React.cloneElement(step.icon, { 
+                            className: `w-6 h-6 ${isCurrent ? 'text-brand-blue' : 'text-gray-500'}` 
+                        })
+                       }
                     </div>
                     <div>
                         <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>{step.label}</p>
                     </div>
                 </div>
                 {index < steps.length - 1 && (
-                    <div className={`flex-1 h-1 mx-4 transition-colors ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
+                    <div className={`flex-1 h-1 mx-4 transition-colors ${isCompleted || isCurrent ? 'bg-brand-blue' : 'bg-gray-200'}`} />
                 )}
             </React.Fragment>
             )
@@ -258,7 +262,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
       <div className="bg-white p-8 rounded-lg shadow-md">
         {activeStep === 1 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">Business Details</h3>
+            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><StorefrontIcon className="w-6 h-6 text-brand-blue" /> Business Details</h3>
             <div className="mt-6 mb-8">
               <label className="block text-sm font-bold text-brand-dark mb-2">{t.shopImage}</label>
               {formData.shopImageUrl ? (
@@ -289,37 +293,37 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                   <label htmlFor="email" className="block text-sm font-bold text-brand-dark mb-2">{t.emailAddress}</label>
-                  <input type="email" id="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  <input type="email" id="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
               </div>
               <div>
                   <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-2">{t.phoneNumber}</label>
-                  <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
               </div>
             </div>
             <div className="mb-6">
               <label className="block text-sm font-bold text-brand-dark mb-2">{t.businessType}</label>
-              <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer flex-1">
-                  <input type="radio" name="businessType" value="local" checked={formData.businessType === 'local'} onChange={() => handleInputChange('businessType', 'local')} className="h-4 w-4 text-brand-blue"/>
-                  <span className="ml-3 font-medium text-brand-dark">{t.localBusiness}</span>
-                </label>
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer flex-1">
-                  <input type="radio" name="businessType" value="mobile" checked={formData.businessType === 'mobile'} onChange={() => handleInputChange('businessType', 'mobile')} className="h-4 w-4 text-brand-blue"/>
-                  <span className="ml-3 font-medium text-brand-dark">{t.mobileBusiness}</span>
-                </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button type="button" onClick={() => handleInputChange('businessType', 'local')} className={`p-6 border-2 rounded-lg text-center transition-all ${formData.businessType === 'local' ? 'border-brand-blue bg-blue-50' : 'bg-white hover:border-gray-300'}`}>
+                      <BuildingOffice2Icon className="w-12 h-12 mx-auto mb-3 text-brand-blue" />
+                      <p className="font-bold text-brand-dark">{t.localBusiness}</p>
+                  </button>
+                  <button type="button" onClick={() => handleInputChange('businessType', 'mobile')} className={`p-6 border-2 rounded-lg text-center transition-all ${formData.businessType === 'mobile' ? 'border-brand-blue bg-blue-50' : 'bg-white hover:border-gray-300'}`}>
+                      <TruckIcon className="w-12 h-12 mx-auto mb-3 text-brand-blue" />
+                      <p className="font-bold text-brand-dark">{t.mobileBusiness}</p>
+                  </button>
               </div>
             </div>
             {formData.businessType === 'local' && (
               <div>
                 <label htmlFor="address" className="block text-sm font-bold text-brand-dark mb-2">{t.address}</label>
-                <input type="text" id="address" value={formData.address || ''} onChange={(e) => handleInputChange('address', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 rounded-lg"/>
+                <input type="text" id="address" value={formData.address || ''} onChange={(e) => handleInputChange('address', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg"/>
               </div>
             )}
              {formData.businessType === 'mobile' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label htmlFor="city" className="block text-sm font-bold text-brand-dark mb-2">{t.operatingCity}</label>
-                  <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 rounded-lg"/>
+                  <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg"/>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-brand-dark">{t.serviceRadius}</label>
@@ -337,7 +341,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
         
         {activeStep === 2 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.businessHours}</h3>
+            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><ClockIcon className="w-6 h-6 text-brand-blue" /> {t.businessHours}</h3>
             <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
             <div className="space-y-6">
               {daysOfWeek.map(day => (
@@ -378,7 +382,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
         
         {activeStep === 3 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4">{t.bookingPolicies}</h3>
+            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><GavelIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
@@ -430,16 +434,16 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave }) => {
 
         {activeStep === 4 && (
             <div>
-                <h3 className="text-xl font-bold text-brand-dark mb-1 border-b pb-4">{t.passwordManagement}</h3>
+                <h3 className="text-xl font-bold text-brand-dark mb-1 border-b pb-4 flex items-center gap-3"><KeyIcon className="w-6 h-6 text-brand-blue" /> {t.passwordManagement}</h3>
                 <p className="text-brand-gray text-sm mt-4 mb-6">{t.passwordManagementSubtitle}</p>
                 <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-brand-dark mb-1">{t.newPassword}</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" required />
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-brand-dark mb-1">{t.confirmNewPassword}</label>
-                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" required />
+                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
                     </div>
                     {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
                     {passwordSuccess && <p className="text-green-600 text-sm">{passwordSuccess}</p>}
