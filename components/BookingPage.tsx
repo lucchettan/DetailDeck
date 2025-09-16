@@ -178,17 +178,18 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             setError(t.bookingFailed);
             setIsConfirming(false);
         } else {
-             try {
-                await supabase.functions.invoke('send-confirmation-email', {
-                    body: {
-                        reservation: reservationData,
-                        shop: shopData,
-                        locale: 'fr'
-                    },
-                });
-             } catch (emailError) {
-                 console.error("Failed to send confirmation email:", emailError);
-             }
+            // Temporarily disable email confirmation to fix build issues
+            //  try {
+            //     await supabase.functions.invoke('send-confirmation-email', {
+            //         body: {
+            //             reservation: reservationData,
+            //             shop: shopData,
+            //             locale: 'fr'
+            //         },
+            //     });
+            //  } catch (emailError) {
+            //      console.error("Failed to send confirmation email:", emailError);
+            //  }
             setStep('confirmed');
             setIsConfirming(false);
         }
