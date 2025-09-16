@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -433,6 +434,7 @@ const Dashboard: React.FC = () => {
             {renderContent()}
             </main>
             
+            {/* FIX: Pass missing 'minBookingNotice' and 'maxBookingHorizon' props to ReservationEditor. */}
             {isReservationEditorOpen && shopData && (
             <ReservationEditor
                 isOpen={isReservationEditorOpen}
@@ -446,6 +448,8 @@ const Dashboard: React.FC = () => {
                 services={services}
                 shopSchedule={shopData.schedule}
                 shopId={shopData.id}
+                minBookingNotice={shopData.minBookingNotice}
+                maxBookingHorizon={shopData.maxBookingHorizon}
             />
             )}
             

@@ -1,10 +1,9 @@
 
+
 import React, { useState, useMemo } from 'react';
+import { getBookingBoundaries } from '../../lib/utils';
 
-// Helper to get the number of days in a month
 const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-
-// Helper to get the first day of the month (0=Sun, 1=Mon, ...)
 const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
 const timeToMinutes = (time: string) => {
@@ -30,7 +29,7 @@ const getAvailableSlotsForDay = (date: Date, schedule: any, serviceDuration: num
             const hours = Math.floor(currentTime / 60).toString().padStart(2, '0');
             const minutes = (currentTime % 60).toString().padStart(2, '0');
             availableSlots.push(`${hours}:${minutes}`);
-            currentTime += 15; // check every 15 mins
+            currentTime += 15;
         }
     });
 
@@ -43,10 +42,17 @@ interface CalendarProps {
     serviceDuration: number;
     selectedDate: Date | null;
     onSelectDate: (date: Date) => void;
+    minBookingNotice: string;
+    maxBookingHorizon: string;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ schedule, serviceDuration, selectedDate, onSelectDate }) => {
+const Calendar: React.FC<CalendarProps> = ({ schedule, serviceDuration, selectedDate, onSelectDate, minBookingNotice, maxBookingHorizon }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    const { minDate, maxDate } = useMemo(
+        () => getBookingBoundaries(minBookingNotice, maxBookingHorizon),
+        [minBookingNotice, maxBookingHorizon]
+    );
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -54,19 +60,25 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, serviceDuration, selected
     const monthName = currentDate.toLocaleString('default', { month: 'long' });
     const numDays = daysInMonth(year, month);
     let firstDay = firstDayOfMonth(year, month);
-    firstDay = firstDay === 0 ? 6 : firstDay - 1; // Adjust to make Monday the first day (0=Mon)
+    firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
     const disabledDays = useMemo(() => {
         const disabled = new Set<number>();
         for (let day = 1; day <= numDays; day++) {
             const date = new Date(year, month, day);
+            date.setHours(0,0,0,0);
+            
+            if (date < minDate || date > maxDate) {
+                 disabled.add(day);
+                 continue;
+            }
+
             if (getAvailableSlotsForDay(date, schedule, serviceDuration).length === 0) {
                 disabled.add(day);
             }
         }
         return disabled;
-    }, [year, month, numDays, schedule, serviceDuration]);
-
+    }, [year, month, numDays, schedule, serviceDuration, minDate, maxDate]);
 
     const handlePrevMonth = () => {
         setCurrentDate(new Date(year, month - 1, 1));

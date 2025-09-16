@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, SaveIcon, TrashIcon } from '../Icons';
@@ -16,6 +17,8 @@ interface ReservationEditorProps {
     services: Service[];
     shopSchedule: any;
     shopId: string;
+    minBookingNotice: string;
+    maxBookingHorizon: string;
 }
 
 // Fix: Use camelCase properties to match the 'Reservation' type.
@@ -38,7 +41,7 @@ const getInitialFormData = (reservation: Reservation | null): Partial<Reservatio
 };
 
 const ReservationEditor: React.FC<ReservationEditorProps> = ({
-    isOpen, onClose, onSave, onDelete, reservationToEdit, services, shopSchedule, shopId
+    isOpen, onClose, onSave, onDelete, reservationToEdit, services, shopSchedule, shopId, minBookingNotice, maxBookingHorizon
 }) => {
     const { t } = useLanguage();
     const isEditing = !!reservationToEdit;
@@ -173,11 +176,14 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
-                                    <Calendar 
-                                        schedule={shopSchedule} 
+                                    {/* FIX: Pass missing 'minBookingNotice' and 'maxBookingHorizon' props to the Calendar component. */}
+                                    <Calendar
+                                        schedule={shopSchedule}
                                         serviceDuration={totalDuration}
                                         selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
                                         onSelectDate={handleDateSelect}
+                                        minBookingNotice={minBookingNotice}
+                                        maxBookingHorizon={maxBookingHorizon}
                                     />
                                 </div>
                                 <div>

@@ -1,4 +1,5 @@
 
+
 // This file contains a utility function for converting object keys from snake_case to camelCase.
 // This is crucial for translating data from the backend (PostgreSQL/Supabase) to the frontend (TypeScript/JS).
 
@@ -69,4 +70,43 @@ export const parseSafeInt = (value: string | number | undefined | null): number 
   }
   const num = parseInt(String(value), 10);
   return isNaN(num) ? 0 : num;
+};
+
+/**
+ * Parses duration strings like '30m', '4h', '2d', '12w' into milliseconds.
+ * @param durationStr The string to parse.
+ * @returns The duration in milliseconds.
+ */
+const parseDuration = (durationStr: string): number => {
+    const value = parseInt(durationStr.slice(0, -1), 10);
+    const unit = durationStr.slice(-1);
+    if (isNaN(value)) return 0;
+
+    switch (unit) {
+        case 'm': return value * 60 * 1000;
+        case 'h': return value * 60 * 60 * 1000;
+        case 'd': return value * 24 * 60 * 60 * 1000;
+        case 'w': return value * 7 * 24 * 60 * 60 * 1000;
+        default: return 0;
+    }
+}
+
+/**
+ * Calculates the minimum and maximum bookable dates based on shop policies.
+ * @param minNoticeStr - Minimum notice period (e.g., '4h', '1d').
+ * @param maxHorizonStr - Maximum booking horizon (e.g., '12w', '52w').
+ * @returns An object with minDate and maxDate as Date objects.
+ */
+export const getBookingBoundaries = (minNoticeStr: string, maxHorizonStr: string): { minDate: Date, maxDate: Date } => {
+    const now = new Date();
+    
+    const minNoticeMs = parseDuration(minNoticeStr);
+    const minDate = new Date(now.getTime() + minNoticeMs);
+    minDate.setHours(0, 0, 0, 0); // Start from the beginning of the day
+
+    const maxHorizonMs = parseDuration(maxHorizonStr);
+    const maxDate = new Date(now.getTime() + maxHorizonMs);
+    maxDate.setHours(23, 59, 59, 999); // End of the day
+
+    return { minDate, maxDate };
 };
