@@ -1,23 +1,21 @@
 
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CompanyIcon, UserCircleIcon } from './Icons';
+import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CogIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
-import ShopInformation from './dashboard/ShopInformation';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
 import Reservations from './dashboard/Reservations';
 import Analytics from './dashboard/Analytics';
-import Account from './dashboard/Account';
+import Settings from './dashboard/Settings';
 import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
 import { toCamelCase } from '../lib/utils';
 import AlertModal from './AlertModal';
 
-type ViewType = 'home' | 'shop' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics' | 'account';
+type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
 
 export interface Service {
   id: string;
@@ -350,11 +348,10 @@ const Dashboard: React.FC = () => {
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
-    { id: 'shop', label: t.shopInformation, icon: <CompanyIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
-    { id: 'account', label: t.account, icon: <UserCircleIcon className="w-6 h-6" /> },
+    { id: 'settings', label: t.settings, icon: <CogIcon className="w-6 h-6" /> },
   ];
 
   const renderContent = () => {
@@ -368,9 +365,12 @@ const Dashboard: React.FC = () => {
 
     switch (activeView) {
       case 'home':
-        return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id} />;
-      case 'shop':
-        return <ShopInformation shopData={shopData} onSave={handleSaveShop} />;
+        return <DashboardHome onNavigate={(view) => {
+          const newView = view === 'shop' ? 'settings' : view;
+          setActiveView(newView as ViewType);
+        }} setupStatus={setupStatus} shopId={shopData?.id} />;
+      case 'settings':
+        return <Settings shopData={shopData} onSave={handleSaveShop} />;
       case 'catalog':
         return <Catalog services={services} onEditService={navigateToServiceEditor} />;
       case 'serviceEditor':
@@ -385,8 +385,6 @@ const Dashboard: React.FC = () => {
         return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
       case 'analytics':
         return <Analytics />;
-      case 'account':
-        return <Account />;
       default:
         return <DashboardHome onNavigate={(view) => setActiveView(view as ViewType)} setupStatus={setupStatus} shopId={shopData?.id}/>;
     }
@@ -434,7 +432,6 @@ const Dashboard: React.FC = () => {
             {renderContent()}
             </main>
             
-            {/* FIX: Pass missing 'minBookingNotice' and 'maxBookingHorizon' props to ReservationEditor. */}
             {isReservationEditorOpen && shopData && (
             <ReservationEditor
                 isOpen={isReservationEditorOpen}
