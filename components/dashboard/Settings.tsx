@@ -71,6 +71,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
   
   const [formData, setFormData] = useState<Partial<Shop>>(getInitialFormData(shopData));
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   
   const [city, setCity] = useState('');
   const [radius, setRadius] = useState('20');
@@ -91,7 +92,21 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
     setFormData(getInitialFormData(shopData));
     setCity(shopData?.serviceAreas?.[0]?.city || '');
     setRadius(String(shopData?.serviceAreas?.[0]?.radius || '20'));
+    setIsDirty(false);
   }, [shopData]);
+  
+  useEffect(() => {
+    const initialData = getInitialFormData(shopData);
+    const initialCity = shopData?.serviceAreas?.[0]?.city || '';
+    const initialRadius = String(shopData?.serviceAreas?.[0]?.radius || '20');
+
+    const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialData);
+    const cityChanged = city !== initialCity;
+    const radiusChanged = radius !== initialRadius;
+
+    setIsDirty(formDataChanged || cityChanged || radiusChanged);
+  }, [formData, city, radius, shopData]);
+
 
   const steps = useMemo(() => [
     { id: 1, label: t.tabShopDetails, icon: <StorefrontIcon />, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
@@ -168,10 +183,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
 
     await onSave(updateData);
     setIsSaving(false);
-
-    if (activeStep < 3) {
-      setActiveStep(activeStep + 1);
-    }
   };
     
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -224,6 +235,25 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
   ];
   
   const bookingFeeOptions = Array.from({ length: 11 }, (_, i) => ({ value: (i * 5).toString(), label: `${i * 5}€` }));
+  
+  const TopSaveButton = () => (
+    <button 
+        type="button"
+        onClick={handleSaveClick}
+        disabled={!isDirty || isSaving}
+        className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+        {isSaving ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+        ) : (
+            <>
+                <SaveIcon className="w-5 h-5" />
+                <span>{t.saveModifications}</span>
+            </>
+        )}
+    </button>
+  );
+
 
   return (
     <div>
@@ -262,7 +292,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
       <div className="bg-white p-8 rounded-lg shadow-md">
         {activeStep === 1 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><StorefrontIcon className="w-6 h-6 text-brand-blue" /> {t.businessDetails}</h3>
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><StorefrontIcon className="w-6 h-6 text-brand-blue" /> {t.businessDetails}</h3>
+              <TopSaveButton />
+            </div>
             <div className="mt-6 mb-8">
               <label className="block text-sm font-bold text-brand-dark mb-2">{t.shopImage}</label>
               {formData.shopImageUrl ? (
@@ -354,7 +387,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         
         {activeStep === 2 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><ClockIcon className="w-6 h-6 text-brand-blue" /> {t.businessHours}</h3>
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><ClockIcon className="w-6 h-6 text-brand-blue" /> {t.businessHours}</h3>
+              <TopSaveButton />
+            </div>
             <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
             <div className="space-y-6">
               {daysOfWeek.map(day => (
@@ -395,7 +431,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         
         {activeStep === 3 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-4 border-b pb-4 flex items-center gap-3"><GavelIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><GavelIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
+              <TopSaveButton />
+            </div>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
@@ -474,15 +513,15 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         <div className="mt-8 flex justify-end">
             <button 
                 onClick={handleSaveClick} 
-                disabled={isSaving} 
-                className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75 min-w-[220px]"
+                disabled={!isDirty || isSaving}
+                className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px]"
             >
                 {isSaving ? (
                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
                 ) : (
                     <>
                         <SaveIcon className="w-5 h-5" />
-                        <span>{activeStep < 3 ? t.saveAndContinue : t.saveChanges}</span>
+                        <span>{t.saveModifications}</span>
                     </>
                 )}
             </button>

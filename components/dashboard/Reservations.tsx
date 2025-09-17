@@ -48,7 +48,8 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
           <p className="font-semibold text-brand-dark">{startTime}</p>
         </div>
       </div>
-      <div className="mt-4 pt-2 border-t flex flex-wrap gap-2 text-xs">
+      <div className="mt-4 pt-2 border-t flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-semibold text-brand-gray">{t.payment}:</span>
         <span className={`px-2 py-1 rounded-full font-semibold ${getStatusBadgeStyle(status)}`}>
           {t[`status_${status}`]}
         </span>
@@ -100,12 +101,12 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
       
       return Object.entries(groupedData).map(([date, resList]) => {
           let dateLabel = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-          if (date === today) dateLabel = "Today";
-          if (date === tomorrow) dateLabel = "Tomorrow";
+          if (date === today) dateLabel = t.today;
+          if (date === tomorrow) dateLabel = t.tomorrow;
 
           return (
             <div key={date}>
-              <h3 className="font-bold text-brand-dark mt-6 mb-2">{dateLabel}</h3>
+              <h3 className="font-bold text-brand-dark mt-6 mb-2">{dateLabel} ({resList.length})</h3>
               <div className="space-y-3">
                 {resList.map(res => <ReservationCard key={res.id} reservation={res} onEdit={onEdit} services={[]} />)}
               </div>
@@ -128,12 +129,12 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
       </div>
       
       <div>
-        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.upcoming}</h3>
+        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.upcoming} ({upcoming.length})</h3>
         {upcoming.length > 0 ? renderGroup(upcomingGrouped) : <p className="text-brand-gray mt-4">{t.noUpcomingReservations}</p>}
       </div>
 
       <div className="mt-12">
-        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.past}</h3>
+        <h3 className="text-xl font-bold text-brand-dark border-b pb-2">{t.past} ({past.length})</h3>
         {past.length > 0 ? renderGroup(pastGrouped) : <p className="text-brand-gray mt-4">{t.noPastReservations}</p>}
       </div>
     </div>

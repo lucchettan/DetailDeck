@@ -211,33 +211,46 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         {selectedService && (
                             <div className="mt-4">
                                 {isEditingDateTime ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
-                                            <Calendar
-                                                shopId={shopId}
-                                                schedule={shopSchedule}
-                                                serviceDuration={formData.duration || 0}
-                                                selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
-                                                onSelectDate={handleDateSelect}
-                                                minBookingNotice={minBookingNotice}
-                                                maxBookingHorizon={maxBookingHorizon}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
-                                            {formData.date && (
-                                                <TimeSlotPicker 
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
+                                                <Calendar
                                                     shopId={shopId}
                                                     schedule={shopSchedule}
                                                     serviceDuration={formData.duration || 0}
-                                                    selectedDate={new Date(formData.date + 'T00:00:00')}
-                                                    selectedTime={formData.startTime || null}
-                                                    onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                                    selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
+                                                    onSelectDate={handleDateSelect}
+                                                    minBookingNotice={minBookingNotice}
+                                                    maxBookingHorizon={maxBookingHorizon}
+                                                    disableBounds={true}
                                                 />
-                                            )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
+                                                {formData.date && (
+                                                    <TimeSlotPicker 
+                                                        shopId={shopId}
+                                                        schedule={shopSchedule}
+                                                        serviceDuration={formData.duration || 0}
+                                                        selectedDate={new Date(formData.date + 'T00:00:00')}
+                                                        selectedTime={formData.startTime || null}
+                                                        onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div className="mt-4 text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsEditingDateTime(false)}
+                                                disabled={!formData.startTime}
+                                                className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {t.confirm}
+                                            </button>
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="bg-gray-50 p-4 rounded-lg">
                                         <div className="flex justify-between items-center">

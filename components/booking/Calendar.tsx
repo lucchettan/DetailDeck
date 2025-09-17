@@ -63,16 +63,19 @@ interface CalendarProps {
     onSelectDate: (date: Date) => void;
     minBookingNotice: string;
     maxBookingHorizon: string;
+    disableBounds?: boolean;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ shopId, schedule, serviceDuration, selectedDate, onSelectDate, minBookingNotice, maxBookingHorizon }) => {
+const Calendar: React.FC<CalendarProps> = ({ shopId, schedule, serviceDuration, selectedDate, onSelectDate, minBookingNotice, maxBookingHorizon, disableBounds }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [monthlyReservations, setMonthlyReservations] = useState<Record<string, ExistingReservation[]>>({});
     const [isLoading, setIsLoading] = useState(false);
 
     const { minDate, maxDate } = useMemo(
-        () => getBookingBoundaries(minBookingNotice, maxBookingHorizon),
-        [minBookingNotice, maxBookingHorizon]
+        () => disableBounds 
+             ? { minDate: new Date(0), maxDate: new Date(8640000000000000) } 
+             : getBookingBoundaries(minBookingNotice, maxBookingHorizon),
+        [minBookingNotice, maxBookingHorizon, disableBounds]
     );
 
     const year = currentDate.getFullYear();
