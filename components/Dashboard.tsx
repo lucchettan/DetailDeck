@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StorefrontIcon, ListBulletIcon, CalendarDaysIcon, ChartPieIcon, CogIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, CalendarDaysIcon, ChartPieIcon, ClockIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
@@ -485,11 +485,11 @@ const Dashboard: React.FC = () => {
   };
 
   const navigationItems = [
-    { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
-    { id: 'catalog', label: t.catalog, icon: <ListBulletIcon className="w-6 h-6" /> },
+    { id: 'home', label: t.dashboardHome, icon: <HomeIcon className="w-6 h-6" /> },
+    { id: 'catalog', label: t.catalog, icon: <BookOpenIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
-    { id: 'settings', label: t.settings, icon: <CogIcon className="w-6 h-6" /> },
+    { id: 'settings', label: t.settings, icon: <ClockIcon className="w-6 h-6" /> },
   ];
 
   const renderContent = () => {
