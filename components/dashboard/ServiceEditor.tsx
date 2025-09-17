@@ -11,10 +11,12 @@ interface ServiceEditorProps {
   service: Service | null;
   shopAddOns: AddOn[];
   onBack: () => void;
-  onSave: (service: Omit<Service, 'id'> & { id?: string }) => Promise<boolean | void>;
+  onSave: (
+    service: Omit<Service, 'id'> & { id?: string },
+    specificAddOns: (Omit<AddOn, 'shopId'> & { id?: string })[],
+    deletedAddOnIds: string[]
+  ) => Promise<boolean | void>;
   onDelete: (serviceId: string) => void;
-  onSaveAddOn: (addOn: Omit<AddOn, 'id' | 'shopId'> & { id?: string }) => Promise<void>;
-  onDeleteAddOn: (addOnId: string) => Promise<void>;
 }
 
 const vehicleSizes = ['S', 'M', 'L', 'XL'] as const;
@@ -66,24 +68,27 @@ const DurationPicker: React.FC<{value?: string, onChange: (value: string) => voi
     );
 }
 
-const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBack, onSave, onDelete, onSaveAddOn, onDeleteAddOn }) => {
+const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBack, onSave, onDelete }) => {
   const { t } = useLanguage();
   const isEditing = service !== null;
   const [formData, setFormData] = useState(getInitialFormData(service));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
+  const [specificAddOns, setSpecificAddOns] = useState<(Omit<AddOn, 'shopId'> & { id?: string })[]>([]);
+  const [deletedAddOnIds, setDeletedAddOnIds] = useState<string[]>([]);
   const [newAddOn, setNewAddOn] = useState({ name: '', price: '10', duration: '15' });
-
-  const specificAddOns = useMemo(() => {
-    if (!service) return [];
-    return shopAddOns.filter(a => a.serviceId === service.id);
-  }, [shopAddOns, service]);
 
   useEffect(() => {
     setFormData(getInitialFormData(service));
+    if (service) {
+        setSpecificAddOns(shopAddOns.filter(a => a.serviceId === service.id));
+    } else {
+        setSpecificAddOns([]);
+    }
+    setDeletedAddOnIds([]);
     setErrors({});
-  }, [service]);
+  }, [service, shopAddOns]);
   
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -157,10 +162,22 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
     }
   };
   
-  const handleAddSpecificAddOn = async () => {
-    if (!service || !newAddOn.name.trim()) return;
-    await onSaveAddOn({ ...newAddOn, serviceId: service.id });
-    setNewAddOn({ name: '', price: '10', duration: '15' }); // Reset form
+  const handleAddSpecificAddOn = () => {
+    if (!newAddOn.name.trim()) return;
+    const newAddOnWithTempId = {
+      ...newAddOn,
+      id: `temp-${Date.now()}`,
+      serviceId: service?.id || null,
+    };
+    setSpecificAddOns(prev => [...prev, newAddOnWithTempId]);
+    setNewAddOn({ name: '', price: '10', duration: '15' });
+  };
+
+  const handleDeleteSpecificAddOn = (addOnId: string) => {
+    if (!addOnId.startsWith('temp-')) {
+        setDeletedAddOnIds(prev => [...prev, addOnId]);
+    }
+    setSpecificAddOns(prev => prev.filter(a => a.id !== addOnId));
   };
   
   const handleDelete = () => {
@@ -174,7 +191,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
     if (!validate()) return;
 
     setIsSaving(true);
-    const success = await onSave(formData);
+    const success = await onSave(formData, specificAddOns, deletedAddOnIds);
     setIsSaving(false);
 
     if (success && !isEditing) {
@@ -293,50 +310,48 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
                 )}
             </div>
 
-            {isEditing && (
-              <div className="border-t pt-6 mb-8">
-                  <h3 className="text-lg font-bold text-brand-dark mb-2">{t.specificAddOns}</h3>
-                  <p className="text-brand-gray text-sm mb-4">{t.specificAddOnsSubtitle}</p>
-                  <div className="space-y-4">
-                      {specificAddOns.map((addOn) => (
-                          <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-3 bg-gray-50 rounded-lg">
-                              <div className="md:col-span-2 font-semibold">
-                                  {addOn.name}
-                              </div>
-                              <div className="font-semibold">
-                                  €{addOn.price}
-                              </div>
-                              <div className="flex items-center justify-between">
-                                  <span className="font-semibold">{formatDuration(parseInt(addOn.duration))}</span>
-                                  <button type="button" onClick={() => onDeleteAddOn(addOn.id)} className="text-gray-400 hover:text-red-500">
-                                      <TrashIcon className="w-5 h-5"/>
-                                  </button>
-                              </div>
-                          </div>
-                      ))}
-                      {/* Add New Specific Addon Form */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center pt-4 border-t">
-                           <div className="md:col-span-2">
-                                <input type="text" placeholder={t.addOnName} value={newAddOn.name} onChange={(e) => setNewAddOn(p => ({...p, name: e.target.value}))} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+            <div className="border-t pt-6 mb-8">
+                <h3 className="text-lg font-bold text-brand-dark mb-2">{t.specificAddOns}</h3>
+                <p className="text-brand-gray text-sm mb-4">{t.specificAddOnsSubtitle}</p>
+                <div className="space-y-4">
+                    {specificAddOns.map((addOn) => (
+                        <div key={addOn.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-3 bg-gray-50 rounded-lg">
+                            <div className="md:col-span-2 font-semibold">
+                                {addOn.name}
                             </div>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                  <MoneyIcon className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input type="number" placeholder={t.price} value={newAddOn.price} onChange={(e) => setNewAddOn(p => ({...p, price: e.target.value}))} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
+                            <div className="font-semibold">
+                                €{addOn.price}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                    <DurationPicker value={newAddOn.duration} onChange={(value) => setNewAddOn(p => ({...p, duration: value}))} />
-                                </div>
-                                <button type="button" onClick={handleAddSpecificAddOn} className="bg-blue-100 text-brand-blue hover:bg-blue-200 p-2 rounded-lg">
-                                    <PlusIcon className="w-5 h-5"/>
+                            <div className="flex items-center justify-between">
+                                <span className="font-semibold">{formatDuration(parseInt(addOn.duration))}</span>
+                                <button type="button" onClick={() => handleDeleteSpecificAddOn(addOn.id!)} className="text-gray-400 hover:text-red-500">
+                                    <TrashIcon className="w-5 h-5"/>
                                 </button>
                             </div>
-                      </div>
-                  </div>
-              </div>
-            )}
+                        </div>
+                    ))}
+                    {/* Add New Specific Addon Form */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center pt-4 border-t">
+                          <div className="md:col-span-2">
+                              <input type="text" placeholder={t.addOnName} value={newAddOn.name} onChange={(e) => setNewAddOn(p => ({...p, name: e.target.value}))} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                          </div>
+                          <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MoneyIcon className="h-5 w-5 text-gray-400" />
+                              </div>
+                              <input type="number" placeholder={t.price} value={newAddOn.price} onChange={(e) => setNewAddOn(p => ({...p, price: e.target.value}))} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                  <DurationPicker value={newAddOn.duration} onChange={(value) => setNewAddOn(p => ({...p, duration: value}))} />
+                              </div>
+                              <button type="button" onClick={handleAddSpecificAddOn} className="bg-blue-100 text-brand-blue hover:bg-blue-200 p-2 rounded-lg">
+                                  <PlusIcon className="w-5 h-5"/>
+                              </button>
+                          </div>
+                    </div>
+                </div>
+            </div>
             
             <div className="mt-8 pt-8 border-t flex justify-end">
               <button type="button" onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">

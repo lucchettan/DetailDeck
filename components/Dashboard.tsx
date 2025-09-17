@@ -38,8 +38,6 @@ export interface Service {
   };
   singlePrice: { price?: string; duration?: string };
   imageUrl?: string;
-  // FIX: Add addOnIds property to associate services with add-ons.
-  addOnIds?: string[];
 }
 
 export interface Shop {
@@ -173,7 +171,11 @@ const Dashboard: React.FC = () => {
     catalog: services.length > 0,
   };
 
-  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean | void> => {
+  const handleSaveService = async (
+    serviceToSave: Omit<Service, 'id'> & { id?: string },
+    specificAddOns: (Omit<AddOn, 'shopId'> & { id?: string })[],
+    deletedAddOnIds: string[]
+  ): Promise<boolean | void> => {
     if (!shopData) {
         setAlertInfo({ isOpen: true, title: "Error", message: "Cannot save service: shop data is not loaded."});
         return false;
@@ -195,22 +197,47 @@ const Dashboard: React.FC = () => {
         delete (servicePayload as any).id;
     }
 
-    const { data, error } = await supabase
+    const { data: savedService, error: serviceError } = await supabase
       .from('services')
       .upsert(servicePayload)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error saving service:", error);
-      setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving service: ${error.message}`});
+    if (serviceError) {
+      console.error("Error saving service:", serviceError);
+      setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving service: ${serviceError.message}`});
       return false;
     }
 
-    if (data) {
-      await fetchData(); // Refresh all data to ensure consistency
+    if (savedService) {
+      const addOnPromises = specificAddOns.map(addOn => {
+        const addOnPayload = {
+          shop_id: shopData.id,
+          service_id: savedService.id,
+          name: addOn.name,
+          price: addOn.price,
+          duration: addOn.duration,
+          id: addOn.id?.startsWith('temp-') ? undefined : addOn.id,
+        };
+        if (!addOnPayload.id) {
+          delete (addOnPayload as any).id;
+        }
+        return supabase.from('add_ons').upsert(addOnPayload);
+      });
+
+      const deletePromises = deletedAddOnIds.map(id => supabase.from('add_ons').delete().eq('id', id));
+
+      const results = await Promise.all([...addOnPromises, ...deletePromises]);
+
+      const anyError = results.find(res => res.error);
+      if (anyError) {
+          console.error("Error saving/deleting add-ons:", anyError.error);
+          setAlertInfo({isOpen: true, title: "Save Error", message: `Error saving add-ons: ${anyError.error.message}`});
+          return false;
+      }
     }
     
+    await fetchData(); // Refresh all data to ensure consistency
     setActiveView('catalog');
     return true;
   };
@@ -466,8 +493,6 @@ const Dashboard: React.FC = () => {
                  onBack={() => setActiveView('catalog')} 
                  onSave={handleSaveService}
                  onDelete={handleDeleteService}
-                 onSaveAddOn={handleSaveAddOn}
-                 onDeleteAddOn={handleDeleteAddOn}
                />;
       case 'reservations':
         return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;

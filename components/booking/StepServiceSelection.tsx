@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Import AddOn type.
 import { Service, AddOn } from '../Dashboard';
@@ -46,12 +44,20 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
         }
     }, [selectedService]);
 
+    const availableAddOns = useMemo(() => {
+        if (!selectedService || !allAddOns) return [];
+        const global = allAddOns.filter(addOn => !addOn.serviceId);
+        const specific = allAddOns.filter(addOn => addOn.serviceId === selectedService.id);
+        return [...specific, ...global];
+    }, [selectedService, allAddOns]);
+    
     const handleServiceSelected = (service: Service) => {
         onSelectService(service);
+        const serviceHasAddons = allAddOns.some(addOn => addOn.serviceId === service.id || !addOn.serviceId);
+
         if (service.varies) {
             setSubStep('size');
-        // FIX: Check for associated add-ons using `addOnIds` property.
-        } else if (service.addOnIds && service.addOnIds.length > 0) {
+        } else if (serviceHasAddons) {
             setSubStep('addons');
         } else {
             onComplete();
@@ -60,8 +66,8 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
 
     const handleSizeSelected = (size: VehicleSize) => {
         onSelectVehicleSize(size);
-        // FIX: Check for associated add-ons using `addOnIds` property.
-        if (selectedService?.addOnIds && selectedService.addOnIds.length > 0) {
+        const serviceHasAddons = allAddOns.some(addOn => addOn.serviceId === selectedService?.id || !addOn.serviceId);
+        if (selectedService && serviceHasAddons) {
             setSubStep('addons');
         } else {
             onComplete();
@@ -125,13 +131,6 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
             );
 
         case 'addons':
-            // FIX: Get the full AddOn objects available for the selected service.
-            const availableAddOns = useMemo(() => {
-                if (!selectedService?.addOnIds || !allAddOns) return [];
-                return allAddOns.filter(addOn => selectedService.addOnIds.includes(addOn.id));
-            }, [selectedService, allAddOns]);
-            
-            // FIX: Check if there are any available add-ons.
             if (!selectedService || availableAddOns.length === 0) return null;
             return (
                 <div>
