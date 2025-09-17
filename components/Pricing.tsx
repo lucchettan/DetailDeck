@@ -27,13 +27,13 @@ const Pricing: React.FC = () => {
                 <p className="text-brand-gray mt-2 mb-6 min-h-[3rem]">{plan.description}</p>
                 
                 <div className="mb-8">
-                  <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-extrabold text-brand-dark">€{plan.price}</span>
-                      <span className="text-xl font-medium text-brand-gray line-through">€{plan.originalPrice}</span>
+                  <span className="text-5xl font-medium text-brand-gray line-through">€{plan.originalPrice}</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-2xl font-extrabold text-brand-dark">€{plan.price}</span>
+                      <span className="text-lg text-brand-gray">
+                        {plan.period}
+                      </span>
                   </div>
-                  <span className="text-lg text-brand-gray">
-                    {plan.period}
-                  </span>
                 </div>
 
                 <ul className="space-y-4 mb-8 flex-grow">
