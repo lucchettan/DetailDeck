@@ -1,19 +1,14 @@
+
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { trackEvent } from '../lib/analytics';
 
 interface HeroProps {
-  onEarlyAccessClick: () => void;
   onWaitingListClick: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick, onWaitingListClick }) => {
+const Hero: React.FC<HeroProps> = ({ onWaitingListClick }) => {
   const { t } = useLanguage();
-
-  const handlePreorderClick = () => {
-    trackEvent('cta_click_preorder');
-    onEarlyAccessClick();
-  };
 
   const handleWaitingListClick = () => {
     trackEvent('cta_click_waitinglist');
@@ -33,12 +28,6 @@ const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick, onWaitingListClick }) =
           {t.heroSubtitle1} <span className="font-bold text-brand-dark">{t.heroSubtitle2}</span>
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button 
-              onClick={handlePreorderClick}
-              className="bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-4 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30"
-            >
-              {t.getEarlyAccess}
-            </button>
             <button 
               onClick={handleWaitingListClick}
               className="bg-white text-brand-blue font-bold py-4 px-8 rounded-lg text-lg border-2 border-brand-blue hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 shadow-sm"

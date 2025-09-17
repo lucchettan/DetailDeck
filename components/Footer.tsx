@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
         <div className="mt-12 border-t border-gray-200 pt-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} ResaOne. {t.copyright}</p>
+          <p>{t.customFooter}</p>
         </div>
       </div>
     </footer>

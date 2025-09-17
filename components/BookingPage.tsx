@@ -148,15 +148,20 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     const validateClientInfo = () => {
         const errors: ClientInfoErrors = {};
-        if (!clientVehicle.trim()) errors.vehicle = t.requiredField;
-        if (!clientInfo.firstName.trim()) errors.firstName = t.requiredField;
-        if (!clientInfo.lastName.trim()) errors.lastName = t.requiredField;
+        // FIX: Use 'fieldIsRequired' translation key.
+        if (!clientVehicle.trim()) errors.vehicle = t.fieldIsRequired;
+        // FIX: Use 'fieldIsRequired' translation key.
+        if (!clientInfo.firstName.trim()) errors.firstName = t.fieldIsRequired;
+        // FIX: Use 'fieldIsRequired' translation key.
+        if (!clientInfo.lastName.trim()) errors.lastName = t.fieldIsRequired;
         if (!clientInfo.email.trim()) {
-            errors.email = t.requiredField;
+            // FIX: Use 'fieldIsRequired' translation key.
+            errors.email = t.fieldIsRequired;
         } else if (!/^\S+@\S+\.\S+$/.test(clientInfo.email)) {
             errors.email = t.emailValidationError;
         }
-        if (!clientInfo.phone.trim()) errors.phone = t.requiredField;
+        // FIX: Use 'fieldIsRequired' translation key.
+        if (!clientInfo.phone.trim()) errors.phone = t.fieldIsRequired;
         setClientInfoErrors(errors);
         return Object.keys(errors).length === 0;
     }

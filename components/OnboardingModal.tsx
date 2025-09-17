@@ -49,8 +49,10 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!formData.shopName.trim()) newErrors.shopName = t.requiredField;
-    if (!formData.address.trim()) newErrors.address = t.requiredField;
+    // FIX: Use 'fieldIsRequired' translation key.
+    if (!formData.shopName.trim()) newErrors.shopName = t.fieldIsRequired;
+    // FIX: Use 'fieldIsRequired' translation key.
+    if (!formData.address.trim()) newErrors.address = t.fieldIsRequired;
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

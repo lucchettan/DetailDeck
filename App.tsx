@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -21,34 +19,17 @@ import { trackEvent } from './lib/analytics';
 import BookingPage from './components/BookingPage';
 import Benefits from './components/Benefits';
 
-// This is a central type used across payment flows.
-export type SelectedPlanId = 'solo' | 'lifetime';
-export interface SelectedPlan {
-  id: SelectedPlanId;
-  name: string;
-  billingCycle: 'monthly' | 'yearly' | 'onetime';
-  price: string;
-}
-
 const AppContent: React.FC = () => {
   const { user, loading, demoLogin } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialView, setAuthInitialView] = useState<'login' | 'signup'>('signup');
-  const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
-  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
   const [path, setPath] = useState(window.location.pathname);
 
   useEffect(() => {
     // Track page view for analytics
     trackEvent('page_view');
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('payment_success') === 'true') {
-      setShowPaymentSuccess(true);
-      window.history.replaceState(null, '', window.location.pathname);
-    }
     
     const onLocationChange = () => {
       setPath(window.location.pathname);
@@ -66,16 +47,6 @@ const AppContent: React.FC = () => {
   const handleSignUpSuccess = () => {
     setIsAuthModalOpen(false);
     setIsOnboardingModalOpen(true);
-  };
-
-  // Unified flow: all "choose plan" buttons now open the early access modal.
-  const handleChoosePlan = () => {
-    setIsEarlyAccessModalOpen(true);
-  };
-  
-  const handleSwitchToLogin = () => {
-    setIsEarlyAccessModalOpen(false);
-    openAuthModal('login');
   };
   
   if (loading) {
@@ -97,22 +68,17 @@ const AppContent: React.FC = () => {
     return <Dashboard />;
   }
   
-  if (showPaymentSuccess) {
-    return <PaymentSuccess onReturnToHome={() => setShowPaymentSuccess(false)} />;
-  }
-
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
       <Header onLogInClick={() => openAuthModal('login')} onSignUpClick={() => openAuthModal('signup')} onDemoClick={demoLogin} />
       <main>
         <Hero 
-          onEarlyAccessClick={() => setIsEarlyAccessModalOpen(true)} 
           onWaitingListClick={() => setIsWaitingListModalOpen(true)}
         />
         <Benefits />
         <HowItWorks />
         <Features />
-        <Pricing onChoosePlan={handleChoosePlan} />
+        <Pricing />
         <FAQ />
       </main>
       <Footer />
@@ -123,9 +89,9 @@ const AppContent: React.FC = () => {
         onSignUpSuccess={handleSignUpSuccess}
       />
       <EarlyAccessModal
-        isOpen={isEarlyAccessModalOpen}
-        onClose={() => setIsEarlyAccessModalOpen(false)}
-        onLoginClick={handleSwitchToLogin}
+        isOpen={false}
+        onClose={() => {}}
+        onLoginClick={() => {}}
       />
       <WaitingListModal
         isOpen={isWaitingListModalOpen}
@@ -135,6 +101,7 @@ const AppContent: React.FC = () => {
         isOpen={isOnboardingModalOpen}
         onClose={() => setIsOnboardingModalOpen(false)}
       />
+      <PaymentSuccess onReturnToHome={() => {}} />
     </div>
   );
 }

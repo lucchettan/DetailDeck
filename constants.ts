@@ -99,16 +99,14 @@ export const HOW_IT_WORKS_STEPS = {
 };
 
 export interface PricingPlan {
-  id: 'solo' | 'lifetime';
+  id: 'monthly' | 'annual' | 'lifetime';
   name: string;
+  price: string;
+  originalPrice: string;
+  period: string;
   description: string;
-  disabled: boolean;
-  pricing: {
-    monthly?: { regular: string };
-    yearly?: { regular: string; earlyBird: string };
-    onetime?: { regular: string; earlyBird: string };
-  };
   features: string[];
+  isFeatured?: boolean;
 }
 
 export interface PricingPlans {
@@ -121,71 +119,92 @@ export interface PricingPlans {
 export const PRICING_PLANS: PricingPlans = {
   en: [
     { 
-      id: 'solo',
-      name: 'Solo', 
-      description: 'For the individual detailer getting started.',
-      disabled: false,
-      pricing: { 
-        monthly: { regular: '100' },
-        yearly: { regular: '900', earlyBird: '400' } 
-      },
-      features: ['1 User', 'Unlimited Bookings', 'Free Booking Page', 'Basic Analytics'] 
+      id: 'monthly',
+      name: 'Monthly', 
+      price: '100',
+      originalPrice: '150',
+      period: '/month',
+      description: 'Perfect for getting started and experiencing all features.',
+      features: ['All Pro Features', 'Unlimited Bookings', 'Free Booking Page', 'Email Support'] 
+    },
+    {
+      id: 'annual',
+      name: 'Annual',
+      price: '900',
+      originalPrice: '1500',
+      period: '/year',
+      description: 'Save big with an annual commitment.',
+      isFeatured: true,
+      features: ['Everything in Monthly', 'Priority Support', 'Early access to new features']
     },
     {
       id: 'lifetime',
       name: 'Lifetime',
-      description: 'One payment for lifetime access. Never worry about subscriptions again.',
-      disabled: false,
-      pricing: { 
-        onetime: { regular: '1500', earlyBird: '1000' }
-      },
-      features: ['Everything in Solo', 'Lifetime Updates', 'VIP Support', 'Benefit from all future features']
+      price: '1500',
+      originalPrice: '3000',
+      period: 'one time',
+      description: 'Pay once, own it forever. The ultimate deal.',
+      features: ['Everything in Annual', 'Lifetime Updates', 'VIP Support Channel']
     }
   ],
   fr: [
     { 
-      id: 'solo',
-      name: 'Solo', 
-      description: 'Pour l\'artisan indépendant qui se lance.',
-      disabled: false,
-      pricing: { 
-        monthly: { regular: '100' }, 
-        yearly: { regular: '900', earlyBird: '400' }
-      },
-      features: ['1 Utilisateur', 'Réservations illimitées', 'Page de réservation gratuite', 'Analyses de base'] 
+      id: 'monthly',
+      name: 'Mensuel', 
+      price: '100',
+      originalPrice: '150',
+      period: '/mois',
+      description: 'Idéal pour commencer et découvrir toutes les fonctionnalités.',
+      features: ['Toutes les fonctionnalités Pro', 'Réservations illimitées', 'Page de réservation gratuite', 'Support par email'] 
+    },
+    {
+      id: 'annual',
+      name: 'Annuel',
+      price: '900',
+      originalPrice: '1500',
+      period: '/an',
+      description: 'Économisez en vous engageant sur une année.',
+      isFeatured: true,
+      features: ['Tout du plan Mensuel', 'Support prioritaire', 'Accès anticipé aux nouveautés']
     },
     {
       id: 'lifetime',
       name: 'À Vie',
-      description: 'Un paiement unique pour un accès à vie. Ne vous souciez plus jamais des abonnements.',
-      disabled: false,
-      pricing: { 
-        onetime: { regular: '1500', earlyBird: '1000' }
-      },
-      features: ['Tout de Solo', 'Mises à jour à vie', 'Support VIP', 'Bénéficier de toutes les futures features']
+      price: '1500',
+      originalPrice: '3000',
+      period: 'une fois',
+      description: 'Payez une seule fois, profitez-en à vie. La meilleure offre.',
+      features: ['Tout du plan Annuel', 'Mises à jour à vie', 'Support VIP dédié']
     }
   ],
   es: [
-    { 
-      id: 'solo',
-      name: 'Solo', 
-      description: 'Para el detallista individual que está empezando.',
-      disabled: false,
-      pricing: { 
-        monthly: { regular: '100' },
-        yearly: { regular: '900', earlyBird: '400' }
-      },
-      features: ['1 Usuario', 'Reservas ilimitadas', 'Página de reserva gratuita', 'Análisis básicos'] 
+     { 
+      id: 'monthly',
+      name: 'Mensual', 
+      price: '100',
+      originalPrice: '150',
+      period: '/mes',
+      description: 'Perfecto para empezar y probar todas las características.',
+      features: ['Todas las funciones Pro', 'Reservas ilimitadas', 'Página de reserva gratuita', 'Soporte por correo electrónico'] 
+    },
+    {
+      id: 'annual',
+      name: 'Anual',
+      price: '900',
+      originalPrice: '1500',
+      period: '/año',
+      description: 'Ahorra a lo grande con un compromiso anual.',
+      isFeatured: true,
+      features: ['Todo del plan Mensual', 'Soporte prioritario', 'Acceso anticipado a nuevas funciones']
     },
     {
       id: 'lifetime',
       name: 'De por vida',
-      description: 'Un pago único para acceso de por vida. No te preocupes más por las suscripciones.',
-      disabled: false,
-      pricing: { 
-        onetime: { regular: '1500', earlyBird: '1000' }
-      },
-      features: ['Todo en Solo', 'Actualizaciones de por vida', 'Soporte VIP', 'Benefíciate de todas las futuras funciones']
+      price: '1500',
+      originalPrice: '3000',
+      period: 'una vez',
+      description: 'Paga una vez, úsalo para siempre. La oferta definitiva.',
+      features: ['Todo del plan Anual', 'Actualizaciones de por vida', 'Canal de soporte VIP']
     }
   ]
 };
@@ -203,21 +222,4 @@ export const FAQ_ITEMS = {
     { question: '¿Qué pasarelas de pago admiten?', answer: 'Admitimos Stripe y PayPal para pagos en línea sin problemas. También ofrecemos una opción de "pago en el local". Para asegurar las citas realizadas con esta opción, requerimos un depósito de 20 €. Se aplicará una tarifa de cancelación por cualquier anulación realizada con menos de 24 horas de antelación a la cita.' },
     { question: '¿Es ResaOne adecuado para negocios de detailing móvil?', answer: 'Sí, es perfecto para detallistas móviles. Puedes establecer áreas de servicio, gestionar tu horario de viaje y permitir que los clientes te reserven en su ubicación.' },
   ]
-};
-
-export const STRIPE_PRICE_IDS = {
-  earlyAccess: {
-    solo: 'price_1S7K9pJ6ahugFRx7pjhzkB9n',
-    lifetime: 'price_1S7K9vJ6ahugFRx70OCj4CPp',
-  },
-  // IMPORTANT: Replace these placeholder IDs with your actual Stripe Price IDs from your Stripe Dashboard.
-  regular: {
-    solo: {
-      monthly: 'price_REPLACE_WITH_SOLO_MONTHLY_ID',
-      yearly: 'price_REPLACE_WITH_SOLO_YEARLY_ID',
-    },
-    lifetime: {
-      onetime: 'price_REPLACE_WITH_LIFETIME_ONETIME_ID',
-    }
-  }
 };
