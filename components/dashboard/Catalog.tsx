@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service, AddOn } from '../Dashboard';
-import { PlusIcon, ImageIcon, MoneyIcon, HourglassIcon, InformationCircleIcon, TagIcon } from '../Icons';
+import { PlusIcon, ImageIcon, MoneyIcon, HourglassIcon, InformationCircleIcon, ListBulletIcon } from '../Icons';
 import { formatDuration } from '../../lib/utils';
 
 interface CatalogProps {
@@ -32,7 +32,7 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
   }
 
   const tabs = useMemo(() => [
-    { id: 'services', label: t.tabServices, icon: <TagIcon /> },
+    { id: 'services', label: t.tabServices, icon: <ListBulletIcon /> },
     { id: 'addons', label: t.tabAddOns, icon: <PlusIcon /> },
   ], [t]);
 

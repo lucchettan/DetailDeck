@@ -211,15 +211,57 @@ export const PRICING_PLANS: PricingPlans = {
 
 export const FAQ_ITEMS = {
   en: [
-    { question: 'What payment gateways do you support?', answer: 'We support Stripe and PayPal for seamless online payments. We also offer an \'in-store payment\' option. To secure appointments made with this option, we require a €20 deposit. A fee is applied for any cancellation made less than 24 hours before the appointment.' },
-    { question: 'Is ResaOne suitable for mobile detailing businesses?', answer: 'Yes, it\'s perfect for mobile detailers. You can set service areas, manage your travel schedule, and allow clients to book you at their location, all from our platform.' },
+    { 
+      question: 'How will my clients be able to book?', 
+      answer: 'It\'s super simple! Once you set up your page, you get a unique link (e.g., resaone.com/your-name). Share this link on your social media, website, or directly with your clients. They just have to click, choose a service and an available time slot, and confirm. That\'s it! They can book 24/7, even when you\'re busy.' 
+    },
+    { 
+      question: 'Can my clients book my entire catalog at any time?', 
+      answer: 'Absolutely not! You remain in complete control. In your settings, you define your working hours, days off, and even the minimum notice for a booking. Your clients will only see and be able to book the slots where you are actually available.' 
+    },
+    { 
+      question: 'How long does it take to set up?', 
+      answer: 'It\'s very fast! In less than 15 minutes, you can set up your basic information, add your first services, and define your availability. Your booking page is then ready to be shared to receive your first bookings.' 
+    },
+    { 
+      question: 'What happens after I sign up?', 
+      answer: 'Once your account is created, you get direct access to your dashboard. A simple getting started guide helps you configure the 3 key steps: your shop info, your availability, and your first services. That\'s all it takes to start accepting online bookings.' 
+    },
   ],
   fr: [
-    { question: 'Quelles passerelles de paiement supportez-vous ?', answer: 'Nous prenons en charge Stripe et PayPal pour des paiements en ligne fluides. Nous offrons également une option de "paiement sur place". Pour garantir les rendez-vous pris avec cette option, nous exigeons un acompte de 20 €. Des frais d\'annulation seront appliqués pour toute annulation faite moins de 24 heures avant le rendez-vous.' },
-    { question: 'ResaOne est-il adapté aux entreprises de detailing mobile ?', answer: 'Oui, c\'est parfait pour les detailers mobiles. Vous pouvez définir des zones de service, gérer votre planning de déplacement et permettre aux clients de vous réserver à leur emplacement.' },
+    { 
+      question: "Comment mes clients vont-ils pouvoir réserver ?", 
+      answer: "C'est très simple ! Une fois votre page configurée, vous recevez un lien unique (ex: resaone.com/votre-nom). Partagez ce lien sur vos réseaux sociaux, votre site web ou directement avec vos clients. Ils n'auront qu'à cliquer, choisir une prestation et un créneau disponible, puis valider. C'est tout ! Ils peuvent réserver 24/7, même quand vous êtes occupé."
+    },
+    { 
+      question: "Mes clients pourront réserver tout mon catalogue n'importe quand?", 
+      answer: "Absolument pas ! Vous gardez le contrôle total. Dans vos paramètres, vous définissez vos horaires de travail, vos jours de repos, et même le délai minimum pour une réservation. Vos clients ne verront et ne pourront réserver que les créneaux où vous êtes réellement disponible." 
+    },
+    { 
+      question: "En combien de temps c'est mis en place ?", 
+      answer: "C'est très rapide ! En moins de 15 minutes, vous pouvez configurer vos informations de base, ajouter vos premiers services et définir vos disponibilités. Votre page de réservation est alors prête à être partagée pour recevoir vos premières réservations." 
+    },
+    { 
+      question: "Que se passe-t-il une fois que je me suis inscrit ?", 
+      answer: "Une fois votre compte créé, vous accédez directement à votre tableau de bord. Un guide de démarrage simple vous aide à configurer les 3 étapes clés : infos de votre boutique, vos disponibilités et vos premiers services. C'est tout ce qu'il faut pour commencer à accepter des réservations en ligne." 
+    },
   ],
   es: [
-    { question: '¿Qué pasarelas de pago admiten?', answer: 'Admitimos Stripe y PayPal para pagos en línea sin problemas. También ofrecemos una opción de "pago en el local". Para asegurar las citas realizadas con esta opción, requerimos un depósito de 20 €. Se aplicará una tarifa de cancelación por cualquier anulación realizada con menos de 24 horas de antelación a la cita.' },
-    { question: '¿Es ResaOne adecuado para negocios de detailing móvil?', answer: 'Sí, es perfecto para detallistas móviles. Puedes establecer áreas de servicio, gestionar tu horario de viaje y permitir que los clientes te reserven en su ubicación.' },
+    { 
+      question: '¿Cómo podrán reservar mis clientes?', 
+      answer: '¡Es muy fácil! Una vez que configuras tu página, obtienes un enlace único (ej: resaone.com/tu-nombre). Comparte este enlace en tus redes sociales, sitio web o directamente con tus clientes. Solo tienen que hacer clic, elegir un servicio y un horario disponible, y confirmar. ¡Eso es todo! Pueden reservar 24/7, incluso cuando estás ocupado.'
+    },
+    { 
+      question: '¿Mis clientes podrán reservar todo mi catálogo en cualquier momento?', 
+      answer: '¡Absolutamente no! Mantienes el control total. En tu configuración, defines tus horarios de trabajo, días libres e incluso el aviso mínimo para una reserva. Tus clientes solo verán y podrán reservar los horarios en los que realmente estás disponible.' 
+    },
+    { 
+      question: '¿Cuánto tiempo se tarda en configurarlo?', 
+      answer: '¡Es muy rápido! En menos de 15 minutos, puedes configurar tu información básica, añadir tus primeros servicios y definir tu disponibilidad. Tu página de reservas estará lista para ser compartida y recibir tus primeras reservas.' 
+    },
+    { 
+      question: '¿Qué sucede después de registrarme?', 
+      answer: 'Una vez creada tu cuenta, accedes directamente a tu panel de control. Una sencilla guía de inicio te ayuda a configurar los 3 pasos clave: la información de tu tienda, tu disponibilidad y tus primeros servicios. Eso es todo lo que necesitas para empezar a aceptar reservas online.' 
+    },
   ]
 };

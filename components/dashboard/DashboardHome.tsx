@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { StorefrontIcon, ClockIcon, TagIcon, CheckIcon, LinkIcon, ShareIcon, EyeIcon } from '../Icons';
+import { StorefrontIcon, ClockIcon, ListBulletIcon, CheckIcon, LinkIcon, ShareIcon, EyeIcon } from '../Icons';
 
 interface DashboardHomeProps {
   onNavigate: (nav: { view: string; step?: number }) => void;
@@ -46,7 +46,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
     { 
       id: 'catalog',
       title: t.addFirstService, 
-      icon: <TagIcon className="w-8 h-8 text-brand-blue" />, 
+      icon: <ListBulletIcon className="w-8 h-8 text-brand-blue" />, 
       isComplete: setupStatus.catalog
     },
   ];

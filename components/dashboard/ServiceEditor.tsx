@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon, PlusIcon, TrashIcon } from '../Icons';
+import { CloseIcon, MoneyIcon, HourglassIcon, ImageIcon, PlusIcon, TrashIcon, SaveIcon } from '../Icons';
 import { Service, AddOn } from '../Dashboard';
 import CustomSelect from '../CustomSelect';
 // FIX: Import 'formatDuration' to resolve usage error.
@@ -357,8 +357,15 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
               <button type="button" onClick={onBack} className="bg-gray-200 text-brand-dark font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors mr-4">
                 {t.cancel}
               </button>
-              <button type="submit" disabled={isSaving} className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75">
-                {isSaving ? '...' : (isEditing ? t.saveChanges : t.createService)}
+              <button type="submit" disabled={isSaving} className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-75 min-w-[150px]">
+                {isSaving ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                ) : (
+                    <>
+                        <SaveIcon className="w-5 h-5" />
+                        <span>{isEditing ? t.saveChanges : t.createService}</span>
+                    </>
+                )}
               </button>
             </div>
           </form>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StorefrontIcon, TagIcon, CalendarDaysIcon, ChartPieIcon, CogIcon } from './Icons';
+import { StorefrontIcon, ListBulletIcon, CalendarDaysIcon, ChartPieIcon, CogIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
@@ -490,7 +490,7 @@ const Dashboard: React.FC = () => {
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <StorefrontIcon className="w-6 h-6" /> },
-    { id: 'catalog', label: t.catalog, icon: <TagIcon className="w-6 h-6" /> },
+    { id: 'catalog', label: t.catalog, icon: <ListBulletIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
     { id: 'settings', label: t.settings, icon: <CogIcon className="w-6 h-6" /> },

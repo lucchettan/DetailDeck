@@ -16,6 +16,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const calendlyLink = "https://calendly.com/lucchettan/30min";
 
   const resetState = () => {
     setEmail('');
@@ -142,7 +143,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
               {t.waitingListSubtitle}
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="mb-6">
               <div className="space-y-4">
                 <input
                   type="email"
@@ -164,6 +165,22 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
                 </button>
               </div>
             </form>
+            
+            <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-gray-300"></div>
+                <span className="flex-shrink mx-4 text-brand-gray text-sm">{t.waitingListOr}</span>
+                <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <a
+                href={calendlyLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-4 block text-center bg-white text-brand-blue font-bold py-3 px-8 rounded-lg text-lg border-2 border-brand-blue hover:bg-blue-50 transition-all duration-300"
+            >
+                {t.waitingListDemoAction}
+            </a>
+
           </div>
         )}
       </div>
