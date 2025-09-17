@@ -22,7 +22,8 @@ export const translations = {
     // Hero
     heroTitle1: 'Automate Your Business,',
     heroTitle2: 'Effortlessly.',
-    heroSubtitle: 'The all-in-one platform for detailing pros. Boost your business with a booking platform that works for you, 24/7.',
+    heroSubtitle1: 'The all-in-one platform for detailing pros.',
+    heroSubtitle2: 'Boost your business with a booking platform that works for you, 24/7.',
     startTrial: 'Start Your Free Trial',
     learnMore: 'Learn More',
     launchingSoon: 'Available November 1st!',
@@ -365,12 +366,13 @@ export const translations = {
     confirmationSent: 'Un nouveau lien de confirmation a été envoyé à votre e-mail.',
     emailExistsError: 'Un compte avec cet e-mail existe déjà. Veuillez vous connecter ou utiliser un autre e-mail.',
     // Hero
-    heroTitle1: 'Automatisez Votre Activité,',
-    heroTitle2: 'Sans Effort.',
-    heroSubtitle: 'La plateforme tout-en-un pour les pros du detailing. Boostez votre activité avec une plateforme de réservation qui travaille pour vous, 24/7.',
+    heroTitle1: "ResaOne: moins d'appels,",
+    heroTitle2: 'plus de réservations.',
+    heroSubtitle1: "Permet à tes clients de réserver en ligne 24/7, tu te concentres sur ton métier et ton planning se rempli tout seul.",
+    heroSubtitle2: "Gagne du temps et de l'argent.",
     startTrial: 'Commencez votre essai gratuit',
     learnMore: 'En savoir plus',
-    launchingSoon: 'Disponible le 1er novembre !',
+    launchingSoon: 'Tu es detailer automobile?',
     getEarlyAccess: 'Promotion de pré-commande',
     joinWaitingList: 'En savoir plus !',
     // Benefits
@@ -712,7 +714,8 @@ export const translations = {
     // Hero
     heroTitle1: 'Automatiza Tu Negocio,',
     heroTitle2: 'Sin Esfuerzo.',
-    heroSubtitle: 'La plataforma todo en uno para profesionales del detailing. Impulsa tu negocio con una plataforma de reservas que trabaja para ti, 24/7.',
+    heroSubtitle1: 'La plataforma todo en uno para profesionales del detailing.',
+    heroSubtitle2: 'Impulsa tu negocio con una plataforma de reservas que trabaja para ti, 24/7.',
     startTrial: 'Comienza tu prueba gratuita',
     learnMore: 'Saber más',
     launchingSoon: '¡Disponible el 1 de Noviembre!',

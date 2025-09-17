@@ -82,7 +82,39 @@ export interface Reservation {
 const Dashboard: React.FC = () => {
   const { user, logOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
-  const [activeView, setActiveView] = useState<ViewType>('home');
+  
+  const [activeView, setActiveViewInternal] = useState<ViewType>('home');
+  
+  useEffect(() => {
+    const path = window.location.pathname.split('/dashboard/')[1] || 'home';
+    const validViews = ['home', 'catalog', 'reservations', 'analytics', 'settings'];
+    if (validViews.includes(path)) {
+      setActiveViewInternal(path as ViewType);
+    }
+
+    const onPopState = () => {
+      const path = window.location.pathname.split('/dashboard/')[1] || 'home';
+      if (validViews.includes(path)) {
+        setActiveViewInternal(path as ViewType);
+      } else {
+        setActiveViewInternal('home');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const setActiveView = (view: ViewType) => {
+    setActiveViewInternal(view);
+    // serviceEditor is a special state, not a URL
+    if (view !== 'serviceEditor') {
+        const path = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
+        if (window.location.pathname !== path) {
+            window.history.pushState(null, '', path);
+        }
+    }
+  };
+  
   const [settingsTargetStep, setSettingsTargetStep] = useState(1);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);

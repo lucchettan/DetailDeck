@@ -30,22 +30,40 @@ const getPaymentStatusBadgeStyle = (status: Reservation['paymentStatus']) => {
 
 const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; services: {name: string, id: string}[] }> = ({ reservation, onEdit }) => {
   const { t } = useLanguage();
-  // Fix: Use camelCase properties from the 'Reservation' type.
-  const { date, startTime, clientName, serviceDetails, status, paymentStatus } = reservation;
+  // Destructure 'duration' to calculate end time.
+  const { startTime, duration, clientName, serviceDetails, status, paymentStatus } = reservation;
   
-  const formattedDate = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const calculateEndTime = (startTimeStr: string, durationMins: number): string => {
+    if (!startTimeStr || !startTimeStr.includes(':') || durationMins === undefined) {
+        return '';
+    }
+    const [hours, minutes] = startTimeStr.split(':').map(Number);
+    const totalStartMinutes = hours * 60 + minutes;
+    const totalEndMinutes = totalStartMinutes + durationMins;
+    
+    // Handle cases crossing midnight
+    const endHours = Math.floor(totalEndMinutes / 60) % 24;
+    const endMinutes = totalEndMinutes % 60;
+    
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  };
+
+  const endTime = calculateEndTime(startTime, duration);
 
   return (
     <button onClick={() => onEdit(reservation)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center">
-        <div>
-          {/* Fix: Use 'clientName' and 'serviceDetails'. */}
+        {/* Time information on the left */}
+        <div className="mt-2 sm:mt-0">
+          <p className="font-semibold text-brand-dark flex items-baseline gap-2">
+            <span className="text-lg">{startTime}</span>
+            {endTime && <span className="text-sm text-brand-gray">&ndash; {endTime}</span>}
+          </p>
+        </div>
+        {/* Client information on the right */}
+        <div className="sm:text-right">
           <p className="font-bold text-brand-dark">{clientName}</p>
           <p className="text-sm text-brand-gray">{serviceDetails?.name || 'Service not found'}</p>
-        </div>
-        <div className="mt-2 sm:mt-0 text-right">
-          {/* Fix: Use 'startTime'. */}
-          <p className="font-semibold text-brand-dark">{startTime}</p>
         </div>
       </div>
       <div className="mt-4 pt-2 border-t flex flex-wrap items-center gap-2 text-xs">
@@ -53,7 +71,6 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
         <span className={`px-2 py-1 rounded-full font-semibold ${getStatusBadgeStyle(status)}`}>
           {t[`status_${status}`]}
         </span>
-        {/* Fix: Use 'paymentStatus'. */}
         <span className={`px-2 py-1 rounded-full font-semibold ${getPaymentStatusBadgeStyle(paymentStatus)}`}>
           {t[`payment_${paymentStatus}`]}
         </span>

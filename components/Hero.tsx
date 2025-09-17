@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { trackEvent } from '../lib/analytics';
@@ -24,17 +23,16 @@ const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick, onWaitingListClick }) =
   return (
     <section className="relative py-24 md:py-32 bg-gradient-to-b from-white to-brand-light">
       <div className="relative container mx-auto px-6 text-center z-10">
+        <p className="font-semibold text-brand-dark bg-yellow-200/50 text-yellow-900 px-4 py-2 rounded-full border border-yellow-300/80 inline-block mb-6">
+            {t.launchingSoon}
+        </p>
         <h1 className="text-4xl md:text-6xl font-black text-brand-dark leading-tight mb-4">
           {t.heroTitle1} <span className="text-brand-blue">{t.heroTitle2}</span>
         </h1>
         <p className="text-lg md:text-xl text-brand-gray max-w-3xl mx-auto mb-8">
-          {t.heroSubtitle}
+          {t.heroSubtitle1} <span className="font-bold text-brand-dark">{t.heroSubtitle2}</span>
         </p>
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <p className="font-semibold text-brand-dark bg-yellow-200/50 text-yellow-900 px-4 py-2 rounded-full border border-yellow-300/80">
-            {t.launchingSoon}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
               onClick={handlePreorderClick}
               className="bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold py-4 px-8 rounded-lg text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30"
@@ -47,7 +45,6 @@ const Hero: React.FC<HeroProps> = ({ onEarlyAccessClick, onWaitingListClick }) =
             >
               {t.joinWaitingList}
             </button>
-          </div>
         </div>
       </div>
     </section>
