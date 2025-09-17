@@ -236,6 +236,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                                         selectedDate={new Date(formData.date + 'T00:00:00')}
                                                         selectedTime={formData.startTime || null}
                                                         onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                                        editingReservationId={reservationToEdit?.id}
                                                     />
                                                 )}
                                             </div>

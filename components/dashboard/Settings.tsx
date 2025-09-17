@@ -260,30 +260,34 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
       <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.settings}</h2>
       <p className="text-brand-gray mb-6">{t.settingsSubtitle}</p>
       
-      {/* Stepper */}
-      <div className="flex items-center w-full mb-8">
-        {steps.map((step, index) => {
+      {/* Tabs as Buttons */}
+      <div className="flex items-center gap-4 w-full mb-8 flex-wrap">
+        {steps.map((step) => {
             const isCompleted = step.isComplete(formData);
             const isCurrent = activeStep === step.id;
             return (
-            <React.Fragment key={step.id}>
-                <div 
-                onClick={() => setActiveStep(step.id)} 
-                className="flex items-center gap-3 cursor-pointer"
+                <button
+                    key={step.id}
+                    onClick={() => setActiveStep(step.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-300 ${
+                    isCurrent
+                        ? 'bg-blue-50 border-brand-blue shadow-md'
+                        : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    }`}
                 >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${ isCurrent ? 'bg-blue-100' : 'bg-gray-200' }`}>
-                        {React.cloneElement(step.icon, { 
-                            className: `w-6 h-6 ${isCompleted ? 'text-brand-blue' : 'text-gray-500'}` 
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                        isCurrent ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
+                        {React.cloneElement(step.icon, {
+                            className: `w-5 h-5 ${isCompleted ? 'text-brand-blue' : 'text-gray-500'}`
                         })}
                     </div>
                     <div>
-                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>{step.label}</p>
+                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>
+                            {step.label}
+                        </p>
                     </div>
-                </div>
-                {index < steps.length - 1 && (
-                    <div className={`flex-1 h-1 mx-4 transition-colors ${isCompleted ? 'bg-brand-blue' : 'bg-gray-200'}`} />
-                )}
-            </React.Fragment>
+                </button>
             )
         })}
       </div>

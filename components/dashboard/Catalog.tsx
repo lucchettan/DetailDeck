@@ -47,29 +47,33 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
         </div>
       </div>
       
-      {/* Stepper-like Tabs */}
-      <div className="flex items-center w-full mb-8 max-w-md">
-        {tabs.map((tab, index) => {
+      {/* Tabs as Buttons */}
+      <div className="flex items-center gap-4 w-full mb-8">
+        {tabs.map((tab) => {
             const isCurrent = activeTab === tab.id;
             return (
-            <React.Fragment key={tab.id}>
-                <div 
-                  onClick={() => setActiveTab(tab.id as TabType)} 
-                  className="flex items-center gap-3 cursor-pointer"
+                <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-300 w-full md:w-auto ${
+                    isCurrent
+                        ? 'bg-blue-50 border-brand-blue shadow-md'
+                        : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    }`}
                 >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${ isCurrent ? 'bg-blue-100' : 'bg-gray-200' }`}>
-                        {React.cloneElement(tab.icon, { 
-                            className: `w-6 h-6 ${isCurrent ? 'text-brand-blue' : 'text-gray-500'}` 
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                        isCurrent ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
+                        {React.cloneElement(tab.icon, {
+                            className: `w-5 h-5 ${isCurrent ? 'text-brand-blue' : 'text-gray-500'}`
                         })}
                     </div>
                     <div>
-                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>{tab.label}</p>
+                        <p className={`font-semibold transition-colors ${isCurrent ? 'text-brand-blue' : 'text-brand-dark'}`}>
+                            {tab.label}
+                        </p>
                     </div>
-                </div>
-                {index < tabs.length - 1 && (
-                    <div className={`flex-1 h-1 mx-4 transition-colors ${activeTab === 'addons' ? 'bg-brand-blue' : 'bg-gray-200'}`} />
-                )}
-            </React.Fragment>
+                </button>
             )
         })}
       </div>

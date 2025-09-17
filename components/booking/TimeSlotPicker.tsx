@@ -24,9 +24,10 @@ interface TimeSlotPickerProps {
     selectedDate: Date;
     selectedTime: string | null;
     onSelectTime: (time: string) => void;
+    editingReservationId?: string;
 }
 
-const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime }) => {
+const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime, editingReservationId }) => {
     const { t } = useLanguage();
     const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -40,11 +41,18 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             }
             setIsLoading(true);
             const dateString = selectedDate.toISOString().split('T')[0];
-            const { data, error } = await supabase
+            
+            let query = supabase
                 .from('reservations')
                 .select('start_time, duration')
                 .eq('shop_id', shopId)
                 .eq('date', dateString);
+
+            if (editingReservationId) {
+                query = query.neq('id', editingReservationId);
+            }
+
+            const { data, error } = await query;
             
             if (error) {
                 console.error("Error fetching reservations for day:", error);
@@ -55,7 +63,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             setIsLoading(false);
         };
         fetchReservationsForDay();
-    }, [selectedDate, shopId, serviceDuration]);
+    }, [selectedDate, shopId, serviceDuration, editingReservationId]);
 
 
     const availableSlots = useMemo(() => {
