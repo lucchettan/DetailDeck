@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { getBookingBoundaries } from '../../lib/utils';
+import { getBookingBoundaries, toYYYYMMDD } from '../../lib/utils';
 import { supabase } from '../../lib/supabaseClient';
 
 const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -85,8 +85,8 @@ const Calendar: React.FC<CalendarProps> = ({ shopId, schedule, serviceDuration, 
         const fetchMonthlyReservations = async () => {
             if (serviceDuration <= 0) return;
             setIsLoading(true);
-            const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
+            const firstDay = toYYYYMMDD(new Date(year, month, 1));
+            const lastDay = toYYYYMMDD(new Date(year, month + 1, 0));
 
             const { data, error } = await supabase
                 .from('reservations')
@@ -128,7 +128,7 @@ const Calendar: React.FC<CalendarProps> = ({ shopId, schedule, serviceDuration, 
                  continue;
             }
             
-            const dateString = date.toISOString().split('T')[0];
+            const dateString = toYYYYMMDD(date);
             const dayReservations = monthlyReservations[dateString] || [];
             
             if (getAvailableSlotsForDay(date, schedule, serviceDuration, dayReservations).length === 0) {

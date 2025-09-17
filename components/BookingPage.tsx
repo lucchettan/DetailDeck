@@ -30,6 +30,7 @@ export interface ClientInfoErrors {
     lastName?: string;
     email?: string;
     phone?: string;
+    vehicle?: string;
 }
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
@@ -43,8 +44,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [isConfirming, setIsConfirming] = useState(false);
 
     // Step 1 State
-    const [clientVehicle, setClientVehicle] = useState('');
-    const [clientVehicleError, setClientVehicleError] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
     const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
@@ -54,6 +53,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     
     // Step 3 State
+    const [clientVehicle, setClientVehicle] = useState('');
     const [clientInfo, setClientInfo] = useState<ClientInfo>({ firstName: '', lastName: '', email: '', phone: '' });
     const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
     const [specialInstructions, setSpecialInstructions] = useState('');
@@ -148,6 +148,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     const validateClientInfo = () => {
         const errors: ClientInfoErrors = {};
+        if (!clientVehicle.trim()) errors.vehicle = t.requiredField;
         if (!clientInfo.firstName.trim()) errors.firstName = t.requiredField;
         if (!clientInfo.lastName.trim()) errors.lastName = t.requiredField;
         if (!clientInfo.email.trim()) {
@@ -161,7 +162,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     }
 
     const handleConfirmBooking = async () => {
-        if (!selectedService || !selectedDate || !selectedTime || !validateClientInfo() || !shopData) return;
+        if (!selectedService || !selectedDate || !selectedTime || !shopData) return;
 
         setIsConfirming(true);
         setError(null);
@@ -206,17 +207,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
 
     const handleNextStep = () => {
         if (step === 'selection') {
-            if (!clientVehicle.trim()) {
-                setClientVehicleError(t.requiredField);
-                const vehicleInput = document.getElementById('clientVehicle');
-                vehicleInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            setClientVehicleError(null);
             setStep('datetime');
+        } else if (step === 'datetime') {
+            setStep('clientInfo');
+        } else if (step === 'clientInfo') {
+            if (validateClientInfo()) {
+                handleConfirmBooking();
+            }
         }
-        if (step === 'datetime') setStep('clientInfo');
-        if (step === 'clientInfo') handleConfirmBooking();
     }
 
     const handlePrevStep = () => {
@@ -335,6 +333,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         errors={clientInfoErrors}
                         specialInstructions={specialInstructions}
                         onSpecialInstructionsChange={setSpecialInstructions}
+                        clientVehicle={clientVehicle}
+                        onClientVehicleChange={(value) => {
+                            setClientVehicle(value);
+                            if (clientInfoErrors.vehicle) {
+                                setClientInfoErrors(prev => ({...prev, vehicle: undefined}));
+                            }
+                        }}
                     />
                  </div>
             )
@@ -345,12 +350,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                 <BookingForm
                     services={activeServices}
                     availableAddOns={availableAddOns}
-                    clientVehicle={clientVehicle}
-                    onClientVehicleChange={(value) => {
-                        setClientVehicle(value);
-                        if (clientVehicleError) setClientVehicleError(null);
-                    }}
-                    clientVehicleError={clientVehicleError}
                     selectedService={selectedService}
                     onSelectService={handleSelectService}
                     selectedVehicleSize={selectedVehicleSize}

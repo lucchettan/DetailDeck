@@ -14,9 +14,6 @@ type AvailableAddOn = {
 };
 interface BookingFormProps {
     services: Service[];
-    clientVehicle: string;
-    onClientVehicleChange: (value: string) => void;
-    clientVehicleError: string | null;
     selectedService: Service | null;
     onSelectService: (service: Service | null) => void;
     selectedVehicleSize: VehicleSize | null;
@@ -28,9 +25,6 @@ interface BookingFormProps {
 
 const BookingForm: React.FC<BookingFormProps> = ({
     services,
-    clientVehicle,
-    onClientVehicleChange,
-    clientVehicleError,
     selectedService,
     onSelectService,
     selectedVehicleSize,
@@ -76,21 +70,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
     return (
         <div className="space-y-8 pb-24">
-             {/* Client Vehicle */}
-            <div>
-                <label htmlFor="clientVehicle" className="text-xl font-bold text-brand-dark mb-4 block">{t.whatIsYourVehicle}</label>
-                 <input 
-                    id="clientVehicle"
-                    type="text"
-                    value={clientVehicle}
-                    onChange={(e) => onClientVehicleChange(e.target.value)}
-                    placeholder={t.whatIsYourVehiclePlaceholder}
-                    className={`w-full p-4 bg-white rounded-lg border-2 focus:ring-0 outline-none transition ${clientVehicleError ? 'border-red-500' : 'border-gray-200 focus:border-brand-blue'}`}
-                    required
-                 />
-                 {clientVehicleError && <p className="text-red-500 text-xs mt-1">{clientVehicleError}</p>}
-            </div>
-
             {/* Main Service Selection */}
             <div>
                 <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>

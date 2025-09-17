@@ -5,6 +5,7 @@ import { Reservation, Service, AddOn } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../booking/Calendar';
 import TimeSlotPicker from '../booking/TimeSlotPicker';
+import { toYYYYMMDD } from '../../lib/utils';
 
 interface ReservationEditorProps {
     isOpen: boolean;
@@ -28,7 +29,7 @@ const getInitialFormData = (reservation: Reservation | null): Partial<Reservatio
         clientEmail: '',
         clientPhone: '',
         serviceId: '',
-        date: new Date().toISOString().split('T')[0],
+        date: toYYYYMMDD(new Date()),
         startTime: '',
         status: 'upcoming',
         paymentStatus: 'on_site',
@@ -118,7 +119,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     const handleDateSelect = (date: Date) => {
         setFormData(prev => ({
             ...prev,
-            date: date.toISOString().split('T')[0],
+            date: toYYYYMMDD(date),
             startTime: ''
         }));
     }

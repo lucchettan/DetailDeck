@@ -92,6 +92,19 @@ const parseDuration = (durationStr: string): number => {
 }
 
 /**
+ * Formats a JavaScript Date object into a 'YYYY-MM-DD' string, ignoring timezones.
+ * This is crucial for working with date columns in databases.
+ * @param date - The Date object to format.
+ * @returns The formatted 'YYYY-MM-DD' string.
+ */
+export const toYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Calculates the minimum and maximum bookable dates based on shop policies.
  * @param minNoticeStr - Minimum notice period (e.g., '4h', '1d').
  * @param maxHorizonStr - Maximum booking horizon (e.g., '12w', '52w').

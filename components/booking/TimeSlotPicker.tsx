@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabaseClient';
+import { toYYYYMMDD } from '../../lib/utils';
 
 // FIX: Added a guard to prevent crash if time is not a valid string.
 const timeToMinutes = (time: string) => {
@@ -40,13 +41,14 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
                 return;
             }
             setIsLoading(true);
-            const dateString = selectedDate.toISOString().split('T')[0];
+            const dateString = toYYYYMMDD(selectedDate);
             
             let query = supabase
                 .from('reservations')
                 .select('start_time, duration')
                 .eq('shop_id', shopId)
-                .eq('date', dateString);
+                .eq('date', dateString)
+                .neq('status', 'cancelled');
 
             if (editingReservationId) {
                 query = query.neq('id', editingReservationId);

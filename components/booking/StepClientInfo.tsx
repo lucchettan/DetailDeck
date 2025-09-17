@@ -9,9 +9,19 @@ interface StepClientInfoProps {
     errors: ClientInfoErrors;
     specialInstructions: string;
     onSpecialInstructionsChange: (value: string) => void;
+    clientVehicle: string;
+    onClientVehicleChange: (value: string) => void;
 }
 
-const StepClientInfo: React.FC<StepClientInfoProps> = ({ clientInfo, setClientInfo, errors, specialInstructions, onSpecialInstructionsChange }) => {
+const StepClientInfo: React.FC<StepClientInfoProps> = ({ 
+    clientInfo, 
+    setClientInfo, 
+    errors, 
+    specialInstructions, 
+    onSpecialInstructionsChange,
+    clientVehicle,
+    onClientVehicleChange
+}) => {
     const { t } = useLanguage();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,6 +33,19 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({ clientInfo, setClientIn
         <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-brand-dark mb-4">{t.yourInformation}</h2>
             <div className="space-y-4">
+                 <div>
+                    <label htmlFor="clientVehicle" className="block text-sm font-medium text-brand-dark mb-1">{t.whatIsYourVehicle}</label>
+                    <input
+                        id="clientVehicle"
+                        type="text"
+                        value={clientVehicle}
+                        onChange={(e) => onClientVehicleChange(e.target.value)}
+                        placeholder={t.whatIsYourVehiclePlaceholder}
+                        className={`w-full p-2 border rounded-lg ${errors.vehicle ? 'border-red-500' : 'border-gray-300'}`}
+                        required
+                    />
+                    {errors.vehicle && <p className="text-red-500 text-xs mt-1">{errors.vehicle}</p>}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label htmlFor="firstName" className="block text-sm font-medium text-brand-dark mb-1">{t.firstName}</label>
