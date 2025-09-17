@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, GavelIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon } from '../Icons';
+import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
 import { Shop } from '../Dashboard';
 
@@ -28,8 +28,6 @@ const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
         businessType: 'local',
         minBookingNotice: '4h',
         maxBookingHorizon: '12w',
-        acceptsOnSitePayment: false,
-        bookingFee: '20',
         ...shopData,
         schedule: shopData?.schedule || initialSchedule,
     }
@@ -111,7 +109,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
   const steps = useMemo(() => [
     { id: 1, label: t.tabShopDetails, icon: <StorefrontIcon />, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
     { id: 2, label: t.tabAvailability, icon: <ClockIcon />, isComplete: (data: Partial<Shop>) => !!data.schedule },
-    { id: 3, label: t.tabPolicies, icon: <GavelIcon />, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
+    { id: 3, label: t.tabPolicies, icon: <ShieldCheckIcon />, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
     { id: 4, label: t.tabAccount, icon: <UserCircleIcon />, isComplete: () => true },
   ], [t]);
 
@@ -233,8 +231,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
     { value: '12w', label: t.horizon_12_weeks }, { value: '24w', label: t.horizon_24_weeks },
     { value: '52w', label: t.horizon_52_weeks },
   ];
-  
-  const bookingFeeOptions = Array.from({ length: 11 }, (_, i) => ({ value: (i * 5).toString(), label: `${i * 5}€` }));
   
   const TopSaveButton = () => (
     <button 
@@ -436,7 +432,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         {activeStep === 3 && (
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
-              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><GavelIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><ShieldCheckIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
               <TopSaveButton />
             </div>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
@@ -455,35 +451,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                         {horizonOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
                 </div>
-                <div className="md:col-span-2 border-t pt-8">
-                     <label className="block text-sm font-bold text-brand-dark mb-2">{t.onSitePayment}</label>
-                     <label htmlFor="acceptsOnSitePayment" className="flex items-center mt-2 cursor-pointer">
-                        <div className="relative">
-                            <input id="acceptsOnSitePayment" type="checkbox" className="sr-only" checked={!!formData.acceptsOnSitePayment} onChange={(e) => handleInputChange('acceptsOnSitePayment', e.target.checked)} />
-                            <div className={`block w-14 h-8 rounded-full transition ${formData.acceptsOnSitePayment ? 'bg-brand-blue' : 'bg-gray-300'}`}></div>
-                            <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${formData.acceptsOnSitePayment ? 'transform translate-x-6' : ''}`}></div>
-                        </div>
-                        <span className="ml-4 text-brand-gray">{t.acceptOnSitePayments}</span>
-                     </label>
-                </div>
-                {formData.acceptsOnSitePayment && (
-                     <div className="md:col-span-2">
-                        <label htmlFor="bookingFee" className="block text-sm font-bold text-brand-dark">{t.bookingFee}</label>
-                        <p className="text-xs text-brand-gray mb-2">{t.bookingFeeSubtitle}</p>
-                        <select
-                            id="bookingFee"
-                            value={formData.bookingFee || '20'}
-                            onChange={(e) => handleInputChange('bookingFee', e.target.value)}
-                            className="w-full md:w-1/2 p-2 border border-gray-300 rounded-lg bg-white"
-                        >
-                            {bookingFeeOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                </option>
-                            ))}
-                        </select>
-                     </div>
-                )}
             </div>
           </div>
         )}

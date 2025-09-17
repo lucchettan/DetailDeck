@@ -295,10 +295,6 @@ export const translations = {
     minBookingNoticeSubtitle: 'How much notice you need for a booking.',
     maxBookingHorizon: 'Maximum Booking Horizon',
     maxBookingHorizonSubtitle: 'How far in advance clients can book.',
-    onSitePayment: 'On-site Payment',
-    acceptOnSitePayments: 'Accept on-site payments (cash, card reader, etc.)',
-    bookingFee: 'Booking Deposit',
-    bookingFeeSubtitle: 'Require a deposit to secure bookings made with the on-site payment option.',
   },
   fr: {
     // Header & Auth
@@ -596,10 +592,6 @@ export const translations = {
     minBookingNoticeSubtitle: 'Le préavis minimum requis pour une réservation.',
     maxBookingHorizon: 'Horizon de réservation maximum',
     maxBookingHorizonSubtitle: 'Jusqu\'à quand les clients peuvent réserver à l\'avance.',
-    onSitePayment: 'Paiement sur place',
-    acceptOnSitePayments: 'Accepter les paiements sur place (espèces, TPE, etc.)',
-    bookingFee: 'Acompte de réservation',
-    bookingFeeSubtitle: 'Exiger un acompte pour garantir les réservations avec paiement sur place.',
   },
   es: {
     // Header & Auth
@@ -897,9 +889,5 @@ export const translations = {
     minBookingNoticeSubtitle: 'Cuánta antelación necesitas para una reserva.',
     maxBookingHorizon: 'Horizonte máximo de reserva',
     maxBookingHorizonSubtitle: 'Con cuánta antelación pueden reservar los clientes.',
-    onSitePayment: 'Pago en el local',
-    acceptOnSitePayments: 'Aceptar pagos en el local (efectivo, datáfono, etc.)',
-    bookingFee: 'Depósito de reserva',
-    bookingFeeSubtitle: 'Requerir un depósito para asegurar las reservas con pago en el local.',
   }
 };

@@ -53,8 +53,6 @@ export interface Shop {
     schedule: any; 
     minBookingNotice: string;
     maxBookingHorizon: string;
-    acceptsOnSitePayment: boolean;
-    bookingFee: string;
 }
 
 export interface Reservation {
@@ -348,8 +346,6 @@ const Dashboard: React.FC = () => {
       schedule: updatedShopData.schedule,
       min_booking_notice: updatedShopData.minBookingNotice,
       max_booking_horizon: updatedShopData.maxBookingHorizon,
-      accepts_on_site_payment: updatedShopData.acceptsOnSitePayment,
-      booking_fee: updatedShopData.bookingFee,
     };
 
     Object.keys(payload).forEach(key => {
