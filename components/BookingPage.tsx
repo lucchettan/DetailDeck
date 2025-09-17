@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Service, Shop, AddOn, SpecificAddOn } from './Dashboard';
+import { Service, Shop, AddOn } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
@@ -12,11 +12,6 @@ import StepClientInfo from './booking/StepClientInfo';
 
 interface BookingPageProps {
   shopId: string;
-}
-
-interface ExistingReservation {
-    start_time: string;
-    duration: number;
 }
 
 type FullShopData = Shop & { services: Service[], addOns: AddOn[] };
@@ -36,9 +31,6 @@ export interface ClientInfoErrors {
     email?: string;
     phone?: string;
 }
-
-// Represents a unifed add-on for the booking form, can be global or specific
-type AvailableAddOn = AddOn | (SpecificAddOn & { id: string });
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
@@ -92,19 +84,16 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
-    const availableAddOns = useMemo((): AvailableAddOn[] => {
-        if (!selectedService || !shopData) return [];
+    const availableAddOns = useMemo((): AddOn[] => {
+        if (!selectedService || !shopData?.addOns) return [];
         
-        const specific = (selectedService.specificAddOns || []).map((addOn, index) => ({
-            id: `specific_${index}`,
-            shopId: shopData.id,
-            ...addOn
-        }));
-    
-        const global = (shopData.addOns || []).filter(addOn => 
-            (selectedService.addOnIds || []).includes(addOn.id)
-        );
-    
+        // Global add-ons have no serviceId but match the shopId
+        const global = shopData.addOns.filter(addOn => !addOn.serviceId);
+
+        // Specific add-ons are linked directly to the service
+        const specific = shopData.addOns.filter(addOn => addOn.serviceId === selectedService.id);
+
+        // Specific add-ons should probably appear first.
         return [...specific, ...global];
     }, [selectedService, shopData]);
 

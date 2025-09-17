@@ -23,12 +23,7 @@ export interface AddOn {
   name: string;
   price: string;
   duration: string;
-}
-
-export interface SpecificAddOn {
-  name: string;
-  price: string;
-  duration: string;
+  serviceId?: string | null;
 }
 
 export interface Service {
@@ -42,9 +37,9 @@ export interface Service {
     [key: string]: { price?: string; duration?: string; enabled?: boolean; };
   };
   singlePrice: { price?: string; duration?: string };
-  addOnIds: string[]; // Replaces the old embedded addOns
   imageUrl?: string;
-  specificAddOns?: SpecificAddOn[];
+  // FIX: Add addOnIds property to associate services with add-ons.
+  addOnIds?: string[];
 }
 
 export interface Shop {
@@ -131,14 +126,7 @@ const Dashboard: React.FC = () => {
                 .eq('shop_id', shop.id);
             
             if (servicesError) throw servicesError;
-
-            // FIX: Process services to ensure `addOnIds` is always an array, preventing crashes from `null` values in old data.
-            const processedServices = (toCamelCase(shopServices) as Service[]).map(service => ({
-              ...service,
-              addOnIds: service.addOnIds || [],
-              specificAddOns: service.specificAddOns || [],
-            }));
-            setServices(processedServices);
+            setServices(toCamelCase(shopServices) as Service[]);
 
 
             const { data: shopAddOns, error: addOnsError } = await supabase
@@ -185,7 +173,7 @@ const Dashboard: React.FC = () => {
     catalog: services.length > 0,
   };
 
-  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean> => {
+  const handleSaveService = async (serviceToSave: Omit<Service, 'id'> & { id?: string }): Promise<boolean | void> => {
     if (!shopData) {
         setAlertInfo({ isOpen: true, title: "Error", message: "Cannot save service: shop data is not loaded."});
         return false;
@@ -200,9 +188,7 @@ const Dashboard: React.FC = () => {
       varies: serviceToSave.varies,
       pricing: serviceToSave.pricing,
       single_price: serviceToSave.singlePrice,
-      add_on_ids: serviceToSave.addOnIds,
       image_url: serviceToSave.imageUrl,
-      specific_add_ons: serviceToSave.specificAddOns,
     };
     
     if (!servicePayload.id) {
@@ -222,14 +208,7 @@ const Dashboard: React.FC = () => {
     }
 
     if (data) {
-      const savedService = toCamelCase(data) as Service;
-      setServices(prev => {
-        const exists = prev.some(s => s.id === savedService.id);
-        if (exists) {
-          return prev.map(s => s.id === savedService.id ? savedService : s);
-        }
-        return [...prev, savedService];
-      });
+      await fetchData(); // Refresh all data to ensure consistency
     }
     
     setActiveView('catalog');
@@ -260,6 +239,7 @@ const Dashboard: React.FC = () => {
       name: addOnToSave.name,
       price: addOnToSave.price,
       duration: addOnToSave.duration,
+      service_id: addOnToSave.serviceId || null,
     };
 
     if (!payload.id) {
@@ -482,10 +462,12 @@ const Dashboard: React.FC = () => {
         const service = editingServiceId ? services.find(s => s.id === editingServiceId) : null;
         return <ServiceEditor 
                  service={service} 
-                 allAddOns={addOns}
+                 shopAddOns={addOns}
                  onBack={() => setActiveView('catalog')} 
                  onSave={handleSaveService}
                  onDelete={handleDeleteService}
+                 onSaveAddOn={handleSaveAddOn}
+                 onDeleteAddOn={handleDeleteAddOn}
                />;
       case 'reservations':
         return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;

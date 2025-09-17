@@ -17,6 +17,8 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('services');
 
+  const globalAddOns = useMemo(() => addOns.filter(a => !a.serviceId), [addOns]);
+
   const getPriceDisplay = (service: Service): string => {
       if (service.varies) {
           const enabledPrices = Object.values(service.pricing)
@@ -134,7 +136,7 @@ const Catalog: React.FC<CatalogProps> = ({ services, addOns, onEditService, onEd
                     <PlusIcon className="w-10 h-10 mb-2" />
                     <span className="font-bold text-lg">{t.addNewAddOn}</span>
                 </button>
-                {addOns.map(addOn => (
+                {globalAddOns.map(addOn => (
                     <div key={addOn.id} onClick={() => onEditAddOn(addOn.id)} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:border-brand-blue border border-gray-200 transition-all duration-300 cursor-pointer">
                         <h3 className="text-lg font-bold text-brand-dark">{addOn.name}</h3>
                         <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center text-brand-dark">
