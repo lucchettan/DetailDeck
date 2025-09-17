@@ -169,7 +169,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
         const confirmedAddOns = Array.from(selectedAddOns).map(id => {
             const addOn = addOnMap.get(id);
-            return { name: addOn?.name, price: addOn?.price, duration: addOn?.duration };
+            return { id: addOn?.id, name: addOn?.name, price: addOn?.price, duration: addOn?.duration };
         }).filter(a => a.name);
         
         const { error: insertError } = await supabase.from('reservations').insert({

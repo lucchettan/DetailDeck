@@ -556,6 +556,7 @@ const Dashboard: React.FC = () => {
                 onDelete={handleDeleteReservation}
                 reservationToEdit={editingReservation}
                 services={services}
+                addOns={addOns}
                 shopSchedule={shopData.schedule}
                 shopId={shopData.id}
                 minBookingNotice={shopData.minBookingNotice}

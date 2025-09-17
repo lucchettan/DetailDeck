@@ -53,7 +53,8 @@ const StepServiceSelection: React.FC<StepServiceSelectionProps> = ({
     
     const handleServiceSelected = (service: Service) => {
         onSelectService(service);
-        const serviceHasAddons = allAddOns.some(addOn => addOn.serviceId === service.id || !addOn.serviceId);
+        const addonsForThisService = allAddOns.filter(addOn => !addOn.serviceId || addOn.serviceId === service.id);
+        const serviceHasAddons = addonsForThisService.length > 0;
 
         if (service.varies) {
             setSubStep('size');
