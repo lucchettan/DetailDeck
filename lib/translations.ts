@@ -103,8 +103,9 @@ export const translations = {
     dashboardHome: 'Home',
     catalog: 'Catalog',
     reservations: 'Reservations',
-    analytics: 'Analytics',
     settings: 'Settings',
+    // FIX: Add missing 'analytics' translation key.
+    analytics: 'Analytics',
     settingsSubtitle: 'Manage your shop details, availability, and account.',
     tabShopDetails: 'Shop Details',
     tabAvailability: 'Availability',
@@ -400,8 +401,9 @@ export const translations = {
     dashboardHome: 'Accueil',
     catalog: 'Catalogue',
     reservations: 'Réservations',
-    analytics: 'Analyses',
     settings: 'Paramètres',
+    // FIX: Add missing 'analytics' translation key.
+    analytics: 'Statistiques',
     settingsSubtitle: 'Gérez les détails de votre boutique, vos disponibilités et votre compte.',
     tabShopDetails: 'Infos boutique',
     tabAvailability: 'Disponibilités',
@@ -697,8 +699,9 @@ export const translations = {
     dashboardHome: 'Inicio',
     catalog: 'Catálogo',
     reservations: 'Reservas',
-    analytics: 'Análisis',
     settings: 'Configuración',
+    // FIX: Add missing 'analytics' translation key.
+    analytics: 'Analíticas',
     settingsSubtitle: 'Gestiona los detalles de tu tienda, disponibilidad y cuenta.',
     tabShopDetails: 'Detalles de la tienda',
     tabAvailability: 'Disponibilidad',

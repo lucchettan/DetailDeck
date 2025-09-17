@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { HomeIcon, BookOpenIcon, CalendarDaysIcon, ChartPieIcon, ClockIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, CalendarDaysIcon, ClockIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
 import Reservations from './dashboard/Reservations';
-import Analytics from './dashboard/Analytics';
 import Settings from './dashboard/Settings';
 import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
@@ -15,7 +14,7 @@ import AlertModal from './AlertModal';
 import AddOnEditor from './dashboard/AddOnEditor';
 import BookingPreviewModal from './booking/BookingPreviewModal';
 
-type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'analytics';
+type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations';
 
 export interface AddOn {
   id: string;
@@ -85,7 +84,7 @@ const Dashboard: React.FC = () => {
   
   useEffect(() => {
     const path = window.location.pathname.split('/dashboard/')[1] || 'home';
-    const validViews = ['home', 'catalog', 'reservations', 'analytics', 'settings'];
+    const validViews = ['home', 'catalog', 'reservations', 'settings'];
     if (validViews.includes(path)) {
       setActiveViewInternal(path as ViewType);
     }
@@ -488,7 +487,6 @@ const Dashboard: React.FC = () => {
     { id: 'home', label: t.dashboardHome, icon: <HomeIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <BookOpenIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
-    { id: 'analytics', label: t.analytics, icon: <ChartPieIcon className="w-6 h-6" /> },
     { id: 'settings', label: t.settings, icon: <ClockIcon className="w-6 h-6" /> },
   ];
 
@@ -524,8 +522,6 @@ const Dashboard: React.FC = () => {
                />;
       case 'reservations':
         return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
-      case 'analytics':
-        return <Analytics />;
       default:
         return <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick}/>;
     }
