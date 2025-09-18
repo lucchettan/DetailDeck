@@ -63,22 +63,59 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             setLoading(true);
             setError(null);
             
-            const { data, error: dbError } = await supabase
-                .from('shops')
-                .select('*, services(*), add_ons(*)')
-                .eq('id', shopId)
-                .single();
+            try {
+                // 1. Fetch shop
+                const { data: shop, error: shopError } = await supabase
+                    .from('shops')
+                    .select('*')
+                    .eq('id', shopId)
+                    .single();
 
-            if (dbError || !data) {
-                console.error("Error fetching shop data:", dbError);
-                setError(dbError?.code === 'PGRST116' ? t.shopNotFound : t.errorLoadingShop);
-            } else {
-                setShopData(toCamelCase(data) as FullShopData);
+                if (shopError) {
+                    if (shopError.code === 'PGRST116') {
+                        throw new Error(t.shopNotFound);
+                    }
+                    throw shopError;
+                }
+                
+                if (!shop) {
+                    throw new Error(t.shopNotFound);
+                }
+
+                // 2. Fetch services
+                const { data: services, error: servicesError } = await supabase
+                    .from('services')
+                    .select('*')
+                    .eq('shop_id', shop.id);
+                
+                if (servicesError) throw servicesError;
+
+                // 3. Fetch add-ons
+                const { data: addOns, error: addOnsError } = await supabase
+                    .from('add_ons')
+                    .select('*')
+                    .eq('shop_id', shop.id);
+                
+                if (addOnsError) throw addOnsError;
+                
+                // 4. Combine and set state
+                const fullShopData: FullShopData = {
+                    ...(toCamelCase(shop) as Shop),
+                    services: toCamelCase(services) as Service[],
+                    addOns: toCamelCase(addOns) as AddOn[],
+                };
+
+                setShopData(fullShopData);
+
+            } catch (e: any) {
+                console.error("Error fetching shop data:", e);
+                setError(`${t.errorLoadingShop}\n\n${e.message}`);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         fetchShopData();
-    }, [shopId, t.shopNotFound, t.errorLoadingShop]);
+    }, [shopId, t]);
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -266,7 +303,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     };
     
     if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div></div>;
-    if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray">{error || t.errorLoadingShop}</p></div>;
+    if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray whitespace-pre-wrap">{error || t.errorLoadingShop}</p></div>;
 
     const activeServices = shopData.services?.filter(s => s.status === 'active') || [];
 
