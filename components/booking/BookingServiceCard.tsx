@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Service } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, HourglassIcon, CheckBadgeIcon } from '../Icons';
@@ -95,4 +94,4 @@ const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSele
     );
 };
 
-export default BookingServiceCard;
+export default memo(BookingServiceCard);

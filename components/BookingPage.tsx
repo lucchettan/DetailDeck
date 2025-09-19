@@ -9,6 +9,7 @@ import FloatingSummary from './booking/FloatingSummary';
 import { toCamelCase, parseSafeInt } from '../lib/utils';
 import BookingForm from './booking/BookingForm';
 import StepClientInfo from './booking/StepClientInfo';
+import BookingPageSkeleton from './booking/BookingPageSkeleton';
 
 interface BookingPageProps {
   shopId: string;
@@ -302,7 +303,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             .replace('{price}', totalPrice.toString());
     };
     
-    if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div></div>;
+    if (loading) return <BookingPageSkeleton />;
     if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray whitespace-pre-wrap">{error || t.errorLoadingShop}</p></div>;
 
     const activeServices = shopData.services?.filter(s => s.status === 'active') || [];
