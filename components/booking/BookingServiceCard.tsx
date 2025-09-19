@@ -14,12 +14,12 @@ interface BookingServiceCardProps {
 const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSelected, onSelect, index }) => {
     const { t } = useLanguage();
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [canLoadImage, setCanLoadImage] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Stagger image loading
+        // Stagger the card's appearance to create a "waterfall" effect
         const timer = setTimeout(() => {
-            setCanLoadImage(true);
+            setIsVisible(true);
         }, index * 100); // 100ms delay per card
 
         return () => clearTimeout(timer);
@@ -44,10 +44,10 @@ const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSele
     return (
         <button
             onClick={onSelect}
-            className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue/50' : 'border-transparent hover:border-brand-blue/50'}`}
+            className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all ease-out duration-500 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue/50' : 'border-transparent hover:border-brand-blue/50'} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
             <div className="h-40 w-full bg-gray-100 relative">
-                {service.imageUrl && canLoadImage ? (
+                {service.imageUrl && isVisible ? (
                     <>
                         {!imageLoaded && (
                             <div className="absolute inset-0 flex items-center justify-center">
