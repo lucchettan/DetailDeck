@@ -241,12 +241,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceName}</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
+                <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder={t.serviceNamePlaceholder} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required />
                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
                 <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceStatus}</label>
-                <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                   <option value="active">{t.active}</option>
                   <option value="inactive">{t.inactive}</option>
                 </select>
@@ -254,7 +254,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
             </div>
             <div className="mb-8">
               <label className="block text-sm font-bold text-brand-dark mb-1">{t.serviceDescription}</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border bg-white border-gray-300 rounded-lg"></textarea>
+              <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"></textarea>
             </div>
             
             <div className="border-t pt-6 mb-8">
@@ -281,7 +281,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <MoneyIcon className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg disabled:bg-gray-100" />
+                                    <input type="number" placeholder={t.price} value={formData.pricing[size]?.price || ''} onChange={(e) => handlePricingChange(size, 'price', e.target.value)} disabled={!formData.pricing[size]?.enabled} className="w-full p-2 pl-10 border bg-white border-gray-300 shadow-sm rounded-lg disabled:bg-gray-100 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                                 </div>
                                 <div className="relative">
                                     <DurationPicker value={formData.pricing[size]?.duration} onChange={(value) => handlePricingChange(size, 'duration', value)} disabled={!formData.pricing[size]?.enabled} />
@@ -296,7 +296,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <MoneyIcon className="h-5 w-5 text-gray-400" />
                                 </div>
-                                <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
+                                <input type="number" placeholder={t.price} value={formData.singlePrice?.price || ''} onChange={(e) => handleSinglePriceChange('price', e.target.value)} className="w-full p-2 pl-10 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                             </div>
                             {errors.singlePrice && <p className="text-red-500 text-xs mt-1">{errors.singlePrice}</p>}
                         </div>
@@ -333,13 +333,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({ service, shopAddOns, onBa
                     {/* Add New Specific Addon Form */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center pt-4 border-t">
                           <div className="md:col-span-2">
-                              <input type="text" placeholder={t.addOnName} value={newAddOn.name} onChange={(e) => setNewAddOn(p => ({...p, name: e.target.value}))} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                              <input type="text" placeholder={t.addOnName} value={newAddOn.name} onChange={(e) => setNewAddOn(p => ({...p, name: e.target.value}))} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                           </div>
                           <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <MoneyIcon className="h-5 w-5 text-gray-400" />
                               </div>
-                              <input type="number" placeholder={t.price} value={newAddOn.price} onChange={(e) => setNewAddOn(p => ({...p, price: e.target.value}))} className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg" />
+                              <input type="number" placeholder={t.price} value={newAddOn.price} onChange={(e) => setNewAddOn(p => ({...p, price: e.target.value}))} className="w-full p-2 pl-10 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                           </div>
                           <div className="flex items-center gap-2">
                               <div className="flex-1">

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ClientInfo, ClientInfoErrors } from '../BookingPage';
@@ -41,7 +42,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                         value={clientVehicle}
                         onChange={(e) => onClientVehicleChange(e.target.value)}
                         placeholder={t.whatIsYourVehiclePlaceholder}
-                        className={`w-full p-2 border rounded-lg ${errors.vehicle ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full p-2 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 ${errors.vehicle ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`}
                         required
                     />
                     {errors.vehicle && <p className="text-red-500 text-xs mt-1">{errors.vehicle}</p>}
@@ -53,7 +54,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <UserCircleIcon className="h-5 w-5 text-gray-400" />
                             </div>
-                            <input type="text" name="firstName" id="firstName" value={clientInfo.firstName} onChange={handleChange} placeholder={t.firstNamePlaceholder} className={`w-full p-2 pl-10 border rounded-lg ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`} required />
+                            <input type="text" name="firstName" id="firstName" value={clientInfo.firstName} onChange={handleChange} placeholder={t.firstNamePlaceholder} className={`w-full p-2 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 ${errors.firstName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                         </div>
                         {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                     </div>
@@ -63,7 +64,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <UserCircleIcon className="h-5 w-5 text-gray-400" />
                             </div>
-                            <input type="text" name="lastName" id="lastName" value={clientInfo.lastName} onChange={handleChange} placeholder={t.lastNamePlaceholder} className={`w-full p-2 pl-10 border rounded-lg ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`} required />
+                            <input type="text" name="lastName" id="lastName" value={clientInfo.lastName} onChange={handleChange} placeholder={t.lastNamePlaceholder} className={`w-full p-2 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 ${errors.lastName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                         </div>
                         {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
                     </div>
@@ -74,7 +75,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <EnvelopeIcon className="h-5 w-5 text-gray-400" />
                         </div>
-                        <input type="email" name="email" id="email" value={clientInfo.email} onChange={handleChange} placeholder={t.emailPlaceholder} className={`w-full p-2 pl-10 border rounded-lg ${errors.email ? 'border-red-500' : 'border-gray-300'}`} required />
+                        <input type="email" name="email" id="email" value={clientInfo.email} onChange={handleChange} placeholder={t.emailPlaceholder} className={`w-full p-2 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 ${errors.email ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                     </div>
                     {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
@@ -84,7 +85,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <PhoneIcon className="h-5 w-5 text-gray-400" />
                         </div>
-                        <input type="tel" name="phone" id="phone" value={clientInfo.phone} onChange={handleChange} placeholder={t.phoneNumberPlaceholder} className={`w-full p-2 pl-10 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`} required />
+                        <input type="tel" name="phone" id="phone" value={clientInfo.phone} onChange={handleChange} placeholder={t.phoneNumberPlaceholder} className={`w-full p-2 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 ${errors.phone ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                     </div>
                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
@@ -96,7 +97,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                         onChange={(e) => onSpecialInstructionsChange(e.target.value)}
                         rows={3}
                         placeholder={t.specialInstructionsPlaceholder}
-                        className="w-full p-2 bg-white rounded-lg border border-gray-300 focus:border-brand-blue focus:ring-0 outline-none transition"
+                        className="w-full p-2 bg-white rounded-lg border border-gray-300 shadow-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition"
                      />
                 </div>
             </div>

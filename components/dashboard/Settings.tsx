@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon } from '../Icons';
+import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon, MapPinIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
 import { Shop } from '../Dashboard';
 
@@ -170,14 +171,21 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
 
   const handleSaveClick = async () => {
     setIsSaving(true);
-    const { id, ownerId, ...updateData } = formData;
+    let updateData = { ...formData };
     
     if (updateData.businessType === 'mobile') {
         updateData.serviceAreas = city ? [{ city, radius: parseInt(radius, 10) }] : [];
-        updateData.address = undefined;
+        updateData.addressLine1 = undefined;
+        updateData.addressCity = undefined;
+        updateData.addressPostalCode = undefined;
+        updateData.addressCountry = undefined;
     } else {
         updateData.serviceAreas = [];
     }
+
+    delete updateData.id;
+    delete (updateData as Partial<Shop> & { ownerId?: string }).ownerId;
+
 
     await onSave(updateData);
     setIsSaving(false);
@@ -325,17 +333,17 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label htmlFor="shopName" className="block text-sm font-bold text-brand-dark mb-2">{t.shopName}</label>
-                  <input type="text" id="shopName" value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                  <input type="text" id="shopName" value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                   <label htmlFor="email" className="block text-sm font-bold text-brand-dark mb-2">{t.emailAddress}</label>
-                  <input type="email" id="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                  <input type="email" id="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
               </div>
               <div>
                   <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-2">{t.phoneNumber}</label>
-                  <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" />
+                  <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
               </div>
             </div>
             <div className="mb-6">
@@ -349,9 +357,14 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                         </div>
                       </button>
                       {formData.businessType === 'local' && (
-                        <div className="mt-4 pt-4 border-t">
-                            <label htmlFor="address" className="block text-sm font-bold text-brand-dark mb-2">{t.address}</label>
-                            <input type="text" id="address" value={formData.address || ''} onChange={(e) => handleInputChange('address', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg"/>
+                        <div className="mt-4 pt-4 border-t space-y-4">
+                            <label className="block text-sm font-bold text-brand-dark">{t.address}</label>
+                            <input type="text" value={formData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} placeholder="Address Line 1" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                               <input type="text" value={formData.addressCity || ''} onChange={(e) => handleInputChange('addressCity', e.target.value)} placeholder="City" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
+                               <input type="text" value={formData.addressPostalCode || ''} onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} placeholder="Postal Code" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
+                               <input type="text" value={formData.addressCountry || ''} onChange={(e) => handleInputChange('addressCountry', e.target.value)} placeholder="Country" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
+                            </div>
                         </div>
                       )}
                   </div>
@@ -366,7 +379,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t items-end">
                             <div>
                             <label htmlFor="city" className="block text-sm font-bold text-brand-dark mb-2">{t.operatingCity}</label>
-                            <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border bg-white border-gray-300 rounded-lg"/>
+                            <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
                             </div>
                             <div>
                             <label className="block text-sm font-bold text-brand-dark">{t.serviceRadius}</label>
@@ -440,14 +453,14 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                 <div>
                     <label htmlFor="minBookingNotice" className="block text-sm font-bold text-brand-dark">{t.minBookingNotice}</label>
                     <p className="text-xs text-brand-gray mb-2">{t.minBookingNoticeSubtitle}</p>
-                    <select id="minBookingNotice" value={formData.minBookingNotice || '4h'} onChange={(e) => handleInputChange('minBookingNotice', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                    <select id="minBookingNotice" value={formData.minBookingNotice || '4h'} onChange={(e) => handleInputChange('minBookingNotice', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                         {noticeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
                 </div>
                  <div>
                     <label htmlFor="maxBookingHorizon" className="block text-sm font-bold text-brand-dark">{t.maxBookingHorizon}</label>
                     <p className="text-xs text-brand-gray mb-2">{t.maxBookingHorizonSubtitle}</p>
-                    <select id="maxBookingHorizon" value={formData.maxBookingHorizon || '12w'} onChange={(e) => handleInputChange('maxBookingHorizon', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                    <select id="maxBookingHorizon" value={formData.maxBookingHorizon || '12w'} onChange={(e) => handleInputChange('maxBookingHorizon', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                         {horizonOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
                 </div>
@@ -462,11 +475,11 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                 <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-brand-dark mb-1">{t.newPassword}</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-brand-dark mb-1">{t.confirmNewPassword}</label>
-                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 rounded-lg" required />
+                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required />
                     </div>
                     {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
                     {passwordSuccess && <p className="text-green-600 text-sm">{passwordSuccess}</p>}

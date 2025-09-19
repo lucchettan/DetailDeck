@@ -163,14 +163,14 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
                 {/* Shop Name */}
                 <div>
                     <label htmlFor="shopNameOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
-                    <input type="text" name="shopName" id="shopNameOnboarding" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                    <input type="text" name="shopName" id="shopNameOnboarding" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border shadow-sm focus:outline-none focus:ring-1 transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                     {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
                 </div>
                 
                 {/* Address */}
                 <div>
                     <label htmlFor="addressOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
-                    <input type="text" name="address" id="addressOnboarding" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border focus:ring-2 focus:outline-none transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-brand-blue'}`} required />
+                    <input type="text" name="address" id="addressOnboarding" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border shadow-sm focus:outline-none focus:ring-1 transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
                     {errors.address && <p className="text-red-500 text-xs text-left mt-1">{errors.address}</p>}
                 </div>
             </div>

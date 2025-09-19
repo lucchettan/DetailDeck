@@ -99,7 +99,7 @@ const AddOnEditor: React.FC<AddOnEditorProps> = ({ isOpen, onClose, onSave, onDe
               type="text"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full p-2 border bg-white border-gray-300 rounded-lg"
+              className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
               required
             />
           </div>
@@ -116,7 +116,7 @@ const AddOnEditor: React.FC<AddOnEditorProps> = ({ isOpen, onClose, onSave, onDe
                   type="number"
                   value={formData.price}
                   onChange={handleInputChange}
-                  className="w-full p-2 pl-10 border bg-white border-gray-300 rounded-lg"
+                  className="w-full p-2 pl-10 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                   required
                 />
               </div>

@@ -148,7 +148,7 @@ const WaitingListModal: React.FC<WaitingListModalProps> = ({ isOpen, onClose }) 
                 <input
                   type="email"
                   placeholder={t.emailAddress}
-                  className="w-full px-4 py-3 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-brand-blue focus:outline-none transition disabled:bg-gray-100 disabled:text-gray-500"
+                  className="w-full px-4 py-3 bg-white rounded-lg border border-gray-300 shadow-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none transition disabled:bg-gray-100 disabled:text-gray-500"
                   aria-label={t.emailAddress}
                   required
                   value={email}

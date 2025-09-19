@@ -44,7 +44,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onChange, p
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="relative w-full p-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
+        className="relative w-full p-2 pl-3 pr-10 text-left bg-white border border-gray-300 shadow-sm rounded-lg cursor-pointer focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >

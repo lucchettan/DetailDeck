@@ -166,9 +166,9 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                     <div>
                         <h3 className="font-bold text-brand-dark mb-2">{t.clientInformation}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input name="clientName" value={formData.clientName} onChange={handleInputChange} placeholder={t.clientName} className="p-2 border rounded-lg" required/>
-                            <input name="clientEmail" type="email" value={formData.clientEmail} onChange={handleInputChange} placeholder={t.clientEmail} className="p-2 border rounded-lg" />
-                            <input name="clientPhone" type="tel" value={formData.clientPhone} onChange={handleInputChange} placeholder={t.clientPhone} className="p-2 border rounded-lg" />
+                            <input name="clientName" value={formData.clientName} onChange={handleInputChange} placeholder={t.clientName} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required/>
+                            <input name="clientEmail" type="email" value={formData.clientEmail} onChange={handleInputChange} placeholder={t.clientEmail} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                            <input name="clientPhone" type="tel" value={formData.clientPhone} onChange={handleInputChange} placeholder={t.clientPhone} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                         </div>
                     </div>
                     
@@ -177,7 +177,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t.selectService}</label>
-                                <select value={formData.serviceId} onChange={(e) => handleServiceChange(e.target.value)} className="w-full p-2 border rounded-lg bg-white" required>
+                                <select value={formData.serviceId} onChange={(e) => handleServiceChange(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required>
                                     <option value="" disabled>-- Select a service --</option>
                                     {services.filter(s => s.status === 'active').map(s => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
@@ -276,7 +276,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t.reservationStatus}</label>
-                                <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border rounded-lg bg-white">
+                                <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                                     <option value="upcoming">{t.status_upcoming}</option>
                                     <option value="completed">{t.status_completed}</option>
                                     <option value="cancelled">{t.status_cancelled}</option>
@@ -284,7 +284,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">{t.paymentStatus}</label>
-                                <select name="paymentStatus" value={formData.paymentStatus} onChange={handleInputChange} className="w-full p-2 border rounded-lg bg-white">
+                                <select name="paymentStatus" value={formData.paymentStatus} onChange={handleInputChange} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                                     <option value="paid">{t.payment_paid}</option>
                                     <option value="pending_deposit">{t.payment_pending_deposit}</option>
                                     <option value="on_site">{t.payment_on_site}</option>

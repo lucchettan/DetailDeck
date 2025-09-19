@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,15 +97,15 @@ const LanguageSwitcher: React.FC = () => {
 }
 
 
-const Header: React.FC<{ onLogInClick: () => void; onSignUpClick: () => void; onDemoClick: () => void; }> = ({ onLogInClick, onSignUpClick, onDemoClick }) => {
+const Header: React.FC<{ onDemoClick: () => void; }> = ({ onDemoClick }) => {
   const { t } = useLanguage();
-  const { user, logOut } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 bg-white/80 backdrop-blur-sm z-50 shadow-md">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <a href="#" className="flex items-center">
+          <a href="/" className="flex items-center">
              <h1 className="text-2xl font-bold text-brand-dark">
               <span>Resa</span><span className="text-brand-blue">One</span>
             </h1>
@@ -114,17 +113,9 @@ const Header: React.FC<{ onLogInClick: () => void; onSignUpClick: () => void; on
           <nav className="flex items-center space-x-3 sm:space-x-6">
             <LanguageSwitcher />
             {user ? (
-              <>
-                 <a href="#dashboard" className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base">
-                  {t.dashboard}
-                </a>
-                <button 
-                  onClick={logOut}
-                  className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
-                >
-                  {t.logout}
-                </button>
-              </>
+              <a href="/dashboard" className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base">
+                {t.dashboard}
+              </a>
             ) : (
               <>
                 <a href="#pricing" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.pricing}</a>
@@ -135,18 +126,18 @@ const Header: React.FC<{ onLogInClick: () => void; onSignUpClick: () => void; on
                 >
                   {t.accessDemo}
                 </button>
-                <button
-                  onClick={onLogInClick}
+                <a
+                  href="/signin"
                   className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base"
                 >
                   {t.login}
-                </button>
-                <button 
-                  onClick={onSignUpClick}
+                </a>
+                <a 
+                  href="/signin"
                   className="bg-brand-blue text-white font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
                 >
                   {t.signUp}
-                </button>
+                </a>
               </>
             )}
           </nav>

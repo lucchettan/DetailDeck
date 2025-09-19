@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -47,7 +48,11 @@ export interface Shop {
     email?: string;
     shopImageUrl?: string;
     businessType: 'local' | 'mobile';
-    address?: string;
+    address?: string; // Kept for backward compatibility
+    addressLine1?: string;
+    addressCity?: string;
+    addressPostalCode?: string;
+    addressCountry?: string;
     serviceAreas?: any[]; 
     schedule: any; 
     minBookingNotice: string;
@@ -340,7 +345,10 @@ const Dashboard: React.FC = () => {
       email: updatedShopData.email,
       shop_image_url: updatedShopData.shopImageUrl,
       business_type: updatedShopData.businessType,
-      address: updatedShopData.address,
+      address_line1: updatedShopData.addressLine1,
+      address_city: updatedShopData.addressCity,
+      address_postal_code: updatedShopData.addressPostalCode,
+      address_country: updatedShopData.addressCountry,
       service_areas: updatedShopData.serviceAreas,
       schedule: updatedShopData.schedule,
       min_booking_notice: updatedShopData.minBookingNotice,
