@@ -1,9 +1,11 @@
+
 import React, { useRef, useEffect, useMemo } from 'react';
 import { Service } from '../Dashboard';
 import { VehicleSize } from '../BookingPage';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CheckBadgeIcon, HourglassIcon, ImageIcon } from '../Icons';
 import { formatDuration, parseSafeInt } from '../../lib/utils';
+import BookingServiceCard from './BookingServiceCard';
 
 // Represents a unifed add-on for the booking form, can be global or specific
 type AvailableAddOn = { 
@@ -51,19 +53,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
         if (!price || isNaN(parseInt(price))) return 'N/A';
         return `€${price}`;
     }
-    
-    const getStartingPriceDisplay = (service: Service) => {
-        if (!service.varies) {
-            return { price: getPriceDisplay(service.singlePrice.price), duration: formatDuration(parseSafeInt(service.singlePrice.duration)) };
-        }
-        const prices = Object.values(service.pricing || {}).filter(p => p.enabled && p.price).map(p => parseInt(p.price!));
-        if (prices.length > 0) {
-            const minPrice = Math.min(...prices);
-            const minPriceDuration = Object.values(service.pricing || {}).find(p => p.enabled && parseInt(p.price!) === minPrice)?.duration;
-            return { price: t.fromPrice.replace('{price}', minPrice.toString()), duration: formatDuration(parseSafeInt(minPriceDuration)) };
-        }
-        return { price: 'N/A', duration: ''};
-    }
 
     const showVehicleSelection = selectedService && selectedService.varies;
     const showAddons = selectedService && availableAddOns.length > 0;
@@ -74,50 +63,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
             <div>
                 <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {services.map(service => {
+                    {services.map((service, index) => {
                         const isSelected = selectedService?.id === service.id;
-                        const { price, duration } = getStartingPriceDisplay(service);
-
                         return (
-                            <button 
+                            <BookingServiceCard
                                 key={service.id}
-                                onClick={() => onSelectService(isSelected ? null : service)}
-                                className={`relative text-left bg-white rounded-lg shadow-md hover:shadow-xl border-2 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden ${isSelected ? 'border-brand-blue ring-2 ring-brand-blue/50' : 'border-transparent hover:border-brand-blue/50'}`}
-                            >
-                                {service.imageUrl ? (
-                                    <div className="h-40 w-full">
-                                        <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover"/>
-                                    </div>
-                                ) : (
-                                    !isSelected && (
-                                        <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
-                                            <ImageIcon className="w-12 h-12 text-gray-300" />
-                                        </div>
-                                    )
-                                )}
-                                <div className="p-4 flex flex-col flex-grow">
-                                    <div className="flex-grow">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="text-lg font-bold text-brand-dark pr-2">{service.name}</h3>
-                                        </div>
-                                        <p className="text-brand-gray mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
-                                    </div>
-                                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-xl font-bold text-brand-dark">{price}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-sm text-brand-gray">
-                                            <HourglassIcon className="w-4 h-4" />
-                                            <span>{duration}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {isSelected && (
-                                    <div className="absolute top-3 right-3 w-6 h-6 bg-brand-blue rounded-full flex items-center justify-center text-white">
-                                        <CheckBadgeIcon className="w-7 h-7" />
-                                    </div>
-                                )}
-                            </button>
+                                service={service}
+                                isSelected={isSelected}
+                                onSelect={() => onSelectService(isSelected ? null : service)}
+                                index={index}
+                            />
                         )
                     })}
                 </div>
