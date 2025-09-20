@@ -58,20 +58,22 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
 
 
   useEffect(() => {
     setFormData(getInitialFormData(serviceToEdit, initialCategory));
-    const initialFormulas = (formulasForService.length > 0 ? formulasForService : []).map(f => ({
+    const initialFormulas = (formulasForService.length > 0 ? formulasForService : [{ name: 'Basique', description: '', additionalPrice: 0, additionalDuration: 0 }]).map(f => ({
         ...f,
         includedItems: f.description ? f.description.split('\n').filter(line => line.trim() !== '') : []
     }));
     setFormulas(initialFormulas);
     setSupplements(supplementsForService);
     setSpecificAddOns(addOnsForService);
-    setOriginalImageUrl(serviceToEdit?.imageUrl || null);
+    setImagePreviewUrl(serviceToEdit?.imageUrl || null);
     setImageFile(null);
+    setImageToDelete(null);
   }, [serviceToEdit, initialCategory, formulasForService, supplementsForService, addOnsForService]);
 
   const handleInputChange = (field: keyof Service, value: any) => {
@@ -79,7 +81,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
   
   const handleRemoveImage = () => {
-    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    if (imagePreviewUrl) {
+      // If the image was already saved, mark it for deletion upon saving
+      if (serviceToEdit?.imageUrl === imagePreviewUrl) {
+        setImageToDelete(imagePreviewUrl);
+      }
+      setImagePreviewUrl(null);
+    }
     setImageFile(null);
   };
 
@@ -87,12 +95,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     setImageFile(file);
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData(prev => ({ ...prev, imageUrl: event.target?.result as string }));
-    };
-    reader.readAsDataURL(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
   };
 
   const handleSaveClick = async () => {
@@ -101,19 +104,26 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         return;
     }
     setIsSaving(true);
-    let finalImageUrl = formData.imageUrl;
+    let finalImageUrl = serviceToEdit?.imageUrl; // Start with the existing URL
 
     try {
-        // Handle image changes: deletion or new upload
-        const oldImageShouldBeDeleted = originalImageUrl && (originalImageUrl !== formData.imageUrl || !formData.imageUrl);
-        if (oldImageShouldBeDeleted) {
-            const oldImagePath = originalImageUrl.split('/service-images/')[1];
+        // 1. Delete old image if marked for deletion
+        if (imageToDelete) {
+            const oldImagePath = imageToDelete.split('/service-images/')[1];
             if (oldImagePath) {
                 await supabase.storage.from('service-images').remove([oldImagePath]);
             }
+            finalImageUrl = '';
         }
 
+        // 2. Upload new image if a new file is present
         if (imageFile) {
+            // If there was an old image that is different from the one marked for deletion, delete it too
+            if (serviceToEdit?.imageUrl && serviceToEdit.imageUrl !== imageToDelete) {
+                const oldImagePath = serviceToEdit.imageUrl.split('/service-images/')[1];
+                await supabase.storage.from('service-images').remove([oldImagePath]);
+            }
+        
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
             const filePath = `${shopId}/${fileName}`;
@@ -145,7 +155,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const serviceId = savedService.id;
 
         const formulasToSave = formulas.map(f => ({
-            ...f,
+            id: f.id,
+            name: f.name,
+            additional_price: f.additionalPrice,
+            additional_duration: f.additionalDuration,
             description: f.includedItems.join('\n').trim(),
             service_id: serviceId,
         }));
@@ -154,10 +167,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const addOnsToSave = specificAddOns.map(a => ({ ...a, service_id: serviceId, shop_id: shopId }));
 
         const upsertRelated = async (tableName: string, items: any[]) => {
-            if (items.length > 0) {
-                const { error } = await supabase.from(tableName).upsert(items);
-                if (error) throw error;
-            }
+            const { data, error } = await supabase.from(tableName).upsert(items);
+            if (error) throw error;
+            return data;
         };
 
         const originalItemIds = {
@@ -183,16 +195,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             deleteRelated('service_vehicle_size_supplements', supplements, originalItemIds.supplements),
             deleteRelated('add_ons', specificAddOns, originalItemIds.addOns),
         ]);
-      
-        if (!isEditing && formulas.length === 0) {
-          await supabase.from('formulas').insert({ service_id: serviceId, name: 'Basique', description: '', additional_price: 0, additional_duration: 0 });
-        }
         
         await onSave();
 
     } catch (error: any) {
         console.error("Save error:", error);
-        setAlertInfo({ isOpen: true, title: "Save Error", message: error.message });
+        setAlertInfo({ isOpen: true, title: "Save Error", message: `Error during save: ${error.message}` });
     } finally {
         setIsSaving(false);
     }
@@ -281,12 +289,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                     </div>
                     <div>
                         <div className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
-                            {formData.imageUrl ? <img src={formData.imageUrl} alt="Service" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
+                            {imagePreviewUrl ? <img src={imagePreviewUrl} alt="Service Preview" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
                         </div>
                         <input type="file" id="serviceImageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
                         <div className="mt-2 flex gap-2">
                             <label htmlFor="serviceImageUpload" className="flex-1 block text-center bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.changeImage}</label>
-                            {formData.imageUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><TrashIcon /></button>}
+                            {imagePreviewUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200" title={t.removeImage}><TrashIcon /></button>}
                         </div>
                     </div>
                 </div>
