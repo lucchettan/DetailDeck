@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -304,7 +305,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         switch(step) {
             case 'vehicleSize':
                 return (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         {shopData.supportedVehicleSizes.map(size => (
                             <button
                                 key={size}
@@ -333,7 +334,15 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                            { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule || {}} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
+                            { selectedDate ? <TimeSlotPicker 
+                                                shopId={shopId} 
+                                                schedule={shopData.schedule || {}} 
+                                                serviceDuration={totalDuration} 
+                                                selectedDate={selectedDate} 
+                                                selectedTime={selectedTime} 
+                                                onSelectTime={setSelectedTime} 
+                                                minBookingNotice={shopData.minBookingNotice}
+                                            />
                             : <p className="text-sm text-brand-gray">{t.selectDate}</p>
                             }
                         </div>

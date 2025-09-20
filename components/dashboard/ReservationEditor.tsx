@@ -154,6 +154,8 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                                     selectedTime={formData.startTime || null}
                                                     onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
                                                     editingReservationId={reservationToEdit?.id}
+                                                    // FIX: The 'minBookingNotice' prop was missing and is required by TimeSlotPicker.
+                                                    minBookingNotice={minBookingNotice}
                                                 />
                                             )}
                                         </div>

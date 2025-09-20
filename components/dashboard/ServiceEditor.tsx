@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon } from '../Icons';
+import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon, Bars3Icon } from '../Icons';
 import { Service, Formula, VehicleSizeSupplement, AddOn } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
+import { toSnakeCase } from '../../lib/utils';
 
 type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
 
@@ -61,6 +62,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
 
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
 
   useEffect(() => {
     setFormData(getInitialFormData(serviceToEdit, initialCategory));
@@ -82,7 +86,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   
   const handleRemoveImage = () => {
     if (imagePreviewUrl) {
-      // If the image was already saved, mark it for deletion upon saving
       if (serviceToEdit?.imageUrl === imagePreviewUrl) {
         setImageToDelete(imagePreviewUrl);
       }
@@ -104,10 +107,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         return;
     }
     setIsSaving(true);
-    let finalImageUrl = serviceToEdit?.imageUrl; // Start with the existing URL
+    let finalImageUrl = formData.imageUrl;
 
     try {
-        // 1. Delete old image if marked for deletion
         if (imageToDelete) {
             const oldImagePath = imageToDelete.split('/service-images/')[1];
             if (oldImagePath) {
@@ -116,12 +118,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             finalImageUrl = '';
         }
 
-        // 2. Upload new image if a new file is present
         if (imageFile) {
-            // If there was an old image that is different from the one marked for deletion, delete it too
             if (serviceToEdit?.imageUrl && serviceToEdit.imageUrl !== imageToDelete) {
                 const oldImagePath = serviceToEdit.imageUrl.split('/service-images/')[1];
-                await supabase.storage.from('service-images').remove([oldImagePath]);
+                if (oldImagePath) await supabase.storage.from('service-images').remove([oldImagePath]);
             }
         
             const fileExt = imageFile.name.split('.').pop();
@@ -133,21 +133,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             finalImageUrl = data.publicUrl;
         }
 
-        const servicePayload = {
-            shop_id: shopId,
-            name: formData.name,
-            description: formData.description,
-            status: formData.status,
-            category: formData.category,
-            base_price: formData.basePrice,
-            base_duration: formData.baseDuration,
-            image_url: finalImageUrl,
-            ...(formData.id && { id: formData.id }),
-        };
+        const servicePayload = { ...formData, shopId, imageUrl: finalImageUrl };
 
         const { data: savedService, error: serviceError } = await supabase
             .from('services')
-            .upsert(servicePayload)
+            .upsert(toSnakeCase(servicePayload))
             .select()
             .single();
         
@@ -155,21 +145,19 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const serviceId = savedService.id;
 
         const formulasToSave = formulas.map(f => ({
-            id: f.id,
-            name: f.name,
-            additional_price: f.additionalPrice,
-            additional_duration: f.additionalDuration,
+            ...f,
             description: f.includedItems.join('\n').trim(),
-            service_id: serviceId,
+            serviceId: serviceId,
         }));
         
-        const supplementsToSave = supplements.map(s => ({ ...s, service_id: serviceId }));
-        const addOnsToSave = specificAddOns.map(a => ({ ...a, service_id: serviceId, shop_id: shopId }));
+        const supplementsToSave = supplements.map(s => ({ ...s, serviceId: serviceId }));
+        const addOnsToSave = specificAddOns.map(a => ({ ...a, serviceId: serviceId, shopId: shopId }));
 
         const upsertRelated = async (tableName: string, items: any[]) => {
-            const { data, error } = await supabase.from(tableName).upsert(items);
+            if (items.length === 0) return;
+            const snakeCasedItems = items.map(toSnakeCase);
+            const { error } = await supabase.from(tableName).upsert(snakeCasedItems);
             if (error) throw error;
-            return data;
         };
 
         const originalItemIds = {
@@ -236,6 +224,23 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     newFormulas[formulaIndex].includedItems.splice(itemIndex, 1);
     setFormulas(newFormulas);
   }
+
+  const handleDragSort = (formulaIndex: number) => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    
+    const newFormulas = [...formulas];
+    const formulaToUpdate = newFormulas[formulaIndex];
+    const newIncludedItems = [...formulaToUpdate.includedItems];
+    
+    const dragItemContent = newIncludedItems.splice(dragItem.current, 1)[0];
+    newIncludedItems.splice(dragOverItem.current, 0, dragItemContent);
+    
+    dragItem.current = null;
+    dragOverItem.current = null;
+    
+    formulaToUpdate.includedItems = newIncludedItems;
+    setFormulas(newFormulas);
+  };
 
   const addSpecificAddOn = () => setSpecificAddOns(prev => [...prev, { name: '', price: 10, duration: 15 }]);
   const updateSpecificAddOn = (index: number, field: keyof AddOn, value: any) => {
@@ -341,8 +346,18 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                                 <label className="block text-sm font-medium text-gray-500 mb-2">{t.whatsIncluded}</label>
                                 <div className="space-y-2">
                                     {formula.includedItems.map((item, itemIndex) => (
-                                        <div key={itemIndex} className="flex items-center gap-2">
-                                            <CheckBadgeIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                        <div 
+                                            key={itemIndex}
+                                            className="flex items-center gap-2 group"
+                                            draggable
+                                            onDragStart={() => (dragItem.current = itemIndex)}
+                                            onDragEnter={() => (dragOverItem.current = itemIndex)}
+                                            onDragEnd={() => handleDragSort(formulaIndex)}
+                                            onDragOver={(e) => e.preventDefault()}
+                                        >
+                                            <div className="cursor-grab text-gray-400 group-hover:text-gray-600">
+                                                <Bars3Icon className="w-5 h-5" />
+                                            </div>
                                             <input 
                                                 type="text"
                                                 value={item}

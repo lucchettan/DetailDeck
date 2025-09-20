@@ -1,18 +1,20 @@
 
-// This file contains a utility function for converting object keys from snake_case to camelCase.
-// This is crucial for translating data from the backend (PostgreSQL/Supabase) to the frontend (TypeScript/JS).
+
+// This file contains utility functions for case conversion and date/time manipulation.
 
 const camelCase = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+const snakeCase = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+
 
 /**
  * Recursively converts the keys of an object using a provided converter function.
  * Handles nested objects and arrays.
- * @param converter - The function to convert a single key (e.g., camelCase).
+ * @param converter - The function to convert a single key.
  * @param obj - The object or array to convert.
  * @returns The new object or array with converted keys.
  */
 const convertCase = (converter: (key: string) => string, obj: any): any => {
-  if (obj === null || typeof obj !== 'object' || obj instanceof Date) {
+  if (obj === null || typeof obj !== 'object' || obj instanceof Date || obj instanceof File) {
     return obj;
   }
 
@@ -32,6 +34,13 @@ const convertCase = (converter: (key: string) => string, obj: any): any => {
  * @param obj - The object to convert.
  */
 export const toCamelCase = (obj: any) => convertCase(camelCase, obj);
+
+/**
+ * Converts all keys of an object from camelCase to snake_case.
+ * @param obj - The object to convert.
+ */
+export const toSnakeCase = (obj: any) => convertCase(snakeCase, obj);
+
 
 /**
  * Formats a duration in minutes into a human-readable string like "Xh XXmin".
@@ -113,14 +122,13 @@ export const toYYYYMMDD = (date: Date): string => {
 export const getBookingBoundaries = (minNoticeStr: string, maxHorizonStr: string): { minDate: Date, maxDate: Date } => {
     const now = new Date();
     
+    // The first bookable moment is now + notice period. This is the correct minDate.
     const minNoticeMs = parseDuration(minNoticeStr);
     const minDate = new Date(now.getTime() + minNoticeMs);
-    // Set minDate to the beginning of the day to allow booking for the whole day if it's eligible
-    minDate.setHours(0, 0, 0, 0); 
 
     const maxHorizonMs = parseDuration(maxHorizonStr);
     const maxDate = new Date(now.getTime() + maxHorizonMs);
-    maxDate.setHours(23, 59, 59, 999); // Set maxDate to the end of the day
+    maxDate.setHours(23, 59, 59, 999); // Set maxDate to the end of the last bookable day
 
     return { minDate, maxDate };
 };

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { getBookingBoundaries, toYYYYMMDD } from '../../lib/utils';
 
@@ -39,17 +41,20 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
         for (let day = 1; day <= numDays; day++) {
-            const date = new Date(year, month, day);
-            date.setHours(0,0,0,0);
+            const dayToCheckStart = new Date(year, month, day);
+            dayToCheckStart.setHours(0,0,0,0);
+            const dayToCheckEnd = new Date(year, month, day);
+            dayToCheckEnd.setHours(23,59,59,999);
             
-            // Check against min/max boundaries
-            if (date < minDate || date > maxDate) {
+            // A day is disabled if its end is before the first bookable moment,
+            // or its start is after the last bookable moment.
+            if (dayToCheckEnd < minDate || dayToCheckStart > maxDate) {
                  disabled.add(day);
                  continue;
             }
             
             // Check against static weekly schedule
-            const dayOfWeek = dayNames[date.getDay()];
+            const dayOfWeek = dayNames[dayToCheckStart.getDay()];
             const daySchedule = schedule[dayOfWeek];
 
             if (!daySchedule || !daySchedule.isOpen) {

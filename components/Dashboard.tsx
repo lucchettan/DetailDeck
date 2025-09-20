@@ -330,46 +330,13 @@ const Dashboard: React.FC = () => {
     { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
   ];
 
-  const renderContent = () => {
-    if (authLoading || loading) {
-      return (
-        <div className="flex items-center justify-center h-full flex-col">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
-        </div>
-      );
-    }
-
-    switch (activeView) {
-      case 'home':
-        return <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
-      case 'settings':
-        return <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />;
-      case 'catalog':
-        return <Catalog 
-                  services={services}
-                  onEditService={navigateToServiceEditor}
-                  onAddNewService={handleAddNewService}
-                />;
-      case 'serviceEditor':
-        const service = editingServiceId ? services.find(s => s.id === editingServiceId) : null;
-        return <ServiceEditor 
-                 serviceToEdit={service}
-                 initialCategory={newServiceCategory}
-                 formulasForService={service ? formulas.filter(f => f.serviceId === service.id) : []}
-                 supplementsForService={service ? supplements.filter(s => s.serviceId === service.id) : []}
-                 addOnsForService={service ? addOns.filter(a => a.serviceId === service.id) : []}
-                 shopId={shopData?.id || ''}
-                 supportedVehicleSizes={shopData?.supportedVehicleSizes || []}
-                 onBack={() => setActiveView('catalog')} 
-                 onSave={handleSaveService}
-                 onDelete={handleDeleteService}
-               />;
-      case 'reservations':
-        return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
-      default:
-        return <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick}/>;
-    }
-  };
+  if (authLoading || loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full flex-col">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -410,7 +377,39 @@ const Dashboard: React.FC = () => {
             </div>
             </header>
             <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-            {renderContent()}
+              {activeView === 'serviceEditor' ? (
+                 <ServiceEditor 
+                    serviceToEdit={editingServiceId ? services.find(s => s.id === editingServiceId) : null}
+                    initialCategory={newServiceCategory}
+                    formulasForService={editingServiceId ? formulas.filter(f => f.serviceId === editingServiceId) : []}
+                    supplementsForService={editingServiceId ? supplements.filter(s => s.serviceId === editingServiceId) : []}
+                    addOnsForService={editingServiceId ? addOns.filter(a => a.serviceId === editingServiceId) : []}
+                    shopId={shopData?.id || ''}
+                    supportedVehicleSizes={shopData?.supportedVehicleSizes || []}
+                    onBack={() => setActiveView('catalog')} 
+                    onSave={handleSaveService}
+                    onDelete={handleDeleteService}
+                  />
+              ) : (
+                <>
+                  <div style={{ display: activeView === 'home' ? 'block' : 'none' }}>
+                    <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />
+                  </div>
+                  <div style={{ display: activeView === 'catalog' ? 'block' : 'none' }}>
+                     <Catalog 
+                        services={services}
+                        onEditService={navigateToServiceEditor}
+                        onAddNewService={handleAddNewService}
+                      />
+                  </div>
+                   <div style={{ display: activeView === 'reservations' ? 'block' : 'none' }}>
+                    <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />
+                  </div>
+                  <div style={{ display: activeView === 'settings' ? 'block' : 'none' }}>
+                    <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />
+                  </div>
+                </>
+              )}
             </main>
             
             {isReservationEditorOpen && shopData && (

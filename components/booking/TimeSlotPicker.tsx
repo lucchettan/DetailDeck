@@ -1,9 +1,8 @@
 
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabaseClient';
-import { toYYYYMMDD } from '../../lib/utils';
+import { toYYYYMMDD, getBookingBoundaries } from '../../lib/utils';
 
 // FIX: Added a guard to prevent crash if time is not a valid string.
 const timeToMinutes = (time: string) => {
@@ -26,9 +25,10 @@ interface TimeSlotPickerProps {
     selectedTime: string | null;
     onSelectTime: (time: string) => void;
     editingReservationId?: string;
+    minBookingNotice: string;
 }
 
-const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime, editingReservationId }) => {
+const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime, editingReservationId, minBookingNotice }) => {
     const { t } = useLanguage();
     const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -77,10 +77,20 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             return [];
         }
 
+        const { minDate } = getBookingBoundaries(minBookingNotice, '0w');
+        const isToday = toYYYYMMDD(selectedDate) === toYYYYMMDD(new Date());
+
         const initialSlots: string[] = [];
         daySchedule.timeframes.forEach((frame: { from: string, to: string }) => {
             let currentTime = timeToMinutes(frame.from);
             const endTime = timeToMinutes(frame.to);
+            
+            if (isToday) {
+                const minTimeToday = minDate.getHours() * 60 + minDate.getMinutes();
+                if (currentTime < minTimeToday) {
+                    currentTime = Math.ceil(minTimeToday / 15) * 15;
+                }
+            }
 
             while (currentTime + serviceDuration <= endTime) {
                 const hours = Math.floor(currentTime / 60).toString().padStart(2, '0');
@@ -109,7 +119,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             );
         });
 
-    }, [selectedDate, schedule, serviceDuration, existingReservations]);
+    }, [selectedDate, schedule, serviceDuration, existingReservations, minBookingNotice]);
 
     if (isLoading) {
         return <div className="text-center p-4 bg-gray-50 rounded-lg">{t.loadingReservations}</div>;
