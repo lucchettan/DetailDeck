@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Header from './Header';
 import Hero from './Hero';
@@ -18,9 +19,19 @@ const LandingPage: React.FC = () => {
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   
+  const handleDemoClick = async () => {
+    const { error } = await demoLogin();
+    if (!error) {
+      window.location.href = '/dashboard';
+    } else {
+      console.error('Demo login failed:', error);
+      alert('Demo login failed. Please check the console for details and ensure the demo account is correctly seeded in your database.');
+    }
+  };
+  
   return (
     <div className="bg-white text-brand-gray font-sans antialiased">
-      <Header onDemoClick={demoLogin} />
+      <Header onDemoClick={handleDemoClick} />
       <main>
         <Hero 
           onWaitingListClick={() => setIsWaitingListModalOpen(true)}

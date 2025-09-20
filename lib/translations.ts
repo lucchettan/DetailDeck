@@ -225,7 +225,7 @@ export const translations = {
     bookingFailed: 'An error occurred while confirming your booking. Please try again.',
     forVehicle: 'for {vehicleSize}',
     withAddOns: ' with {addOnsList}',
-    bookingConfirmationMessage: 'Your booking for a **{servicesList}** for a **{vehicleSize}** vehicle on **{date}** at **{time}** for **€{price}** is confirmed!',
+    bookingConfirmationMessage: 'Your booking for **{servicesList}** for a **{vehicleSize}** vehicle on **{date}** at **{time}** for **€{price}** is confirmed!',
     bookingConfirmed: 'Booking Confirmed!',
     bookingConfirmationDetails: 'You will receive an email with all the details shortly.',
     bookAnotherService: 'Book Another Service',

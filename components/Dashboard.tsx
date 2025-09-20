@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { HomeIcon, BookOpenIcon, CalendarDaysIcon, ClockIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, CalendarDaysIcon, CogIcon as SettingsIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
@@ -37,9 +37,9 @@ export interface AddOn {
   id: string;
   shopId: string;
   name: string;
-  price: string;
-  duration: string;
-  serviceId: string;
+  price: number;
+  duration: number;
+  serviceId?: string; // Can be null for global add-ons
 }
 
 export interface Service {
@@ -52,8 +52,6 @@ export interface Service {
   basePrice: number;
   baseDuration: number; // in minutes
   imageUrl?: string;
-  formulas?: Formula[]; // Fetched separately
-  supplements?: VehicleSizeSupplement[]; // Fetched separately
 }
 
 export interface Shop {
@@ -83,8 +81,8 @@ export interface Reservation {
     duration: number; // minutes
     price: number;
     clientName: string;
-    clientEmail: string;
-    clientPhone: string;
+    clientEmail?: string;
+    clientPhone?: string;
     status: 'upcoming' | 'completed' | 'cancelled';
     paymentStatus: 'paid' | 'pending_deposit' | 'on_site';
     serviceDetails: {
@@ -130,7 +128,6 @@ const Dashboard: React.FC = () => {
 
   const setActiveView = (view: ViewType) => {
     setActiveViewInternal(view);
-    // serviceEditor is a special state, not a URL
     if (view !== 'serviceEditor') {
         const path = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
         if (window.location.pathname !== path) {
@@ -232,10 +229,7 @@ const Dashboard: React.FC = () => {
     catalog: services.length > 0,
   };
 
-  const handleSaveService = async (serviceData: any) => {
-    if (!shopData) return false;
-    // ... complex save logic involving services, formulas, supplements, add-ons
-    // For simplicity, we just refetch all data after any significant write operation.
+  const handleSaveService = async () => {
     await fetchData();
     setActiveView('catalog');
     return true;
@@ -255,12 +249,11 @@ const Dashboard: React.FC = () => {
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
      const payload: any = { ...updatedShopData };
-     // Convert camelCase back to snake_case for Supabase
      const snakeCasePayload: any = {};
      for (const key in payload) {
         snakeCasePayload[key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)] = payload[key];
      }
-     delete snakeCasePayload.id; // Not needed for update
+     delete snakeCasePayload.id;
 
      if (shopData) {
         const { data, error } = await supabase.from('shops').update(snakeCasePayload).eq('id', shopData.id).select().single();
@@ -282,8 +275,6 @@ const Dashboard: React.FC = () => {
   };
   
   const handleSaveReservation = async (reservationToSave: any) => {
-     // The reservation structure has changed, this needs to be updated.
-     // For now, just refetching data will give the impression of an update.
     await fetchData();
     setIsReservationEditorOpen(false);
     setEditingReservation(null);
@@ -336,7 +327,7 @@ const Dashboard: React.FC = () => {
     { id: 'home', label: t.dashboardHome, icon: <HomeIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <BookOpenIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
-    { id: 'settings', label: t.settings, icon: <ClockIcon className="w-6 h-6" /> },
+    { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
   ];
 
   const renderContent = () => {

@@ -2,8 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, SaveIcon, TrashIcon, PencilIcon } from '../Icons';
-import { Reservation, Service, AddOn } from '../Dashboard';
-import { supabase } from '../../lib/supabaseClient';
+import { Reservation, Service } from '../Dashboard';
 import Calendar from '../booking/Calendar';
 import TimeSlotPicker from '../booking/TimeSlotPicker';
 import { toYYYYMMDD } from '../../lib/utils';
@@ -116,8 +115,8 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         <h3 className="font-bold text-brand-dark mb-2">{t.clientInformation}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <input name="clientName" value={formData.clientName} onChange={handleInputChange} placeholder={t.clientName} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required/>
-                            <input name="clientEmail" type="email" value={formData.clientEmail} onChange={handleInputChange} placeholder={t.clientEmail} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
-                            <input name="clientPhone" type="tel" value={formData.clientPhone} onChange={handleInputChange} placeholder={t.clientPhone} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                            <input name="clientEmail" type="email" value={formData.clientEmail || ''} onChange={handleInputChange} placeholder={t.clientEmail} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                            <input name="clientPhone" type="tel" value={formData.clientPhone || ''} onChange={handleInputChange} placeholder={t.clientPhone} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                         </div>
                     </div>
                     
@@ -126,7 +125,6 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                         <div className="bg-gray-50 p-4 rounded-lg">
                             <p className="font-semibold text-brand-dark">Services</p>
                             <p className="text-sm text-brand-gray">{servicesSummary}</p>
-                            {/* Note: Editing services from this modal is complex. For now, we only display them. */}
                         </div>
                         <div className="mt-4">
                             {isEditingDateTime ? (

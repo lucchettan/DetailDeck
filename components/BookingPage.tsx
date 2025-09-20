@@ -1,9 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: Import new types required for the updated data model.
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon, CarIcon, CloseIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
@@ -11,14 +10,12 @@ import FloatingSummary from './booking/FloatingSummary';
 import { toCamelCase, parseSafeInt } from '../lib/utils';
 import StepClientInfo from './booking/StepClientInfo';
 import BookingPageSkeleton from './booking/BookingPageSkeleton';
-// FIX: Import the correct service card component.
 import BookingServiceCard from './booking/BookingServiceCard';
 
 interface BookingPageProps {
   shopId: string;
 }
 
-// FIX: Update FullShopData to include formulas and supplements needed for price calculation.
 type FullShopData = Shop & { 
     services: Service[], 
     addOns: AddOn[],
@@ -26,9 +23,13 @@ type FullShopData = Shop & {
     supplements: VehicleSizeSupplement[],
 };
 
-type BookingStep = 'selection' | 'datetime' | 'clientInfo' | 'confirmed';
-export type VehicleSize = 'S' | 'M' | 'L' | 'XL';
+type BookingStep = 'vehicleSize' | 'exterior' | 'interior' | 'complementary' | 'datetime' | 'clientInfo' | 'confirmed';
 
+export interface SelectedService {
+    serviceId: string;
+    formulaId: string;
+    addOnIds: string[];
+}
 export interface ClientInfo {
     firstName: string;
     lastName: string;
@@ -46,23 +47,21 @@ export interface ClientInfoErrors {
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
     
-    const [step, setStep] = useState<BookingStep>('selection');
+    const [step, setStep] = useState<BookingStep>('vehicleSize');
     const [shopData, setShopData] = useState<FullShopData | null>(null);
-    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
-    // Step 1 State
-    const [selectedService, setSelectedService] = useState<Service | null>(null);
-    const [selectedVehicleSize, setSelectedVehicleSize] = useState<VehicleSize | null>(null);
-    const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
+    // Cart state
+    const [selectedVehicleSize, setSelectedVehicleSize] = useState<string | null>(null);
+    const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+
+    const [currentServiceForFormula, setCurrentServiceForFormula] = useState<Service | null>(null);
+    const [showFormulaModal, setShowFormulaModal] = useState(false);
     
-    // Step 2 State
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    
-    // Step 3 State
     const [clientVehicle, setClientVehicle] = useState('');
     const [clientInfo, setClientInfo] = useState<ClientInfo>({ firstName: '', lastName: '', email: '', phone: '' });
     const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
@@ -74,51 +73,31 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             setError(null);
             
             try {
-                // 1. Fetch shop
-                const { data: shop, error: shopError } = await supabase
-                    .from('shops')
-                    .select('*')
-                    .eq('id', shopId)
-                    .single();
+                const { data: shop, error: shopError } = await supabase.from('shops').select('*').eq('id', shopId).single();
+                if (shopError) throw shopError.code === 'PGRST116' ? new Error(t.shopNotFound) : shopError;
 
-                if (shopError) {
-                    if (shopError.code === 'PGRST116') {
-                        throw new Error(t.shopNotFound);
-                    }
-                    throw shopError;
-                }
-                
-                if (!shop) {
-                    throw new Error(t.shopNotFound);
-                }
-
-                // FIX: Fetch all required data including formulas and supplements.
                 const [servicesRes, addOnsRes, formulasRes, supplementsRes] = await Promise.all([
-                    supabase.from('services').select('*').eq('shop_id', shop.id),
+                    supabase.from('services').select('*').eq('shop_id', shop.id).eq('status', 'active'),
                     supabase.from('add_ons').select('*').eq('shop_id', shop.id),
                     supabase.from('formulas').select('*, services(shop_id)').eq('services.shop_id', shop.id),
                     supabase.from('service_vehicle_size_supplements').select('*, services(shop_id)').eq('services.shop_id', shop.id)
                 ]);
 
-                if (servicesRes.error) throw servicesRes.error;
-                if (addOnsRes.error) throw addOnsRes.error;
-                if (formulasRes.error) throw formulasRes.error;
-                if (supplementsRes.error) throw supplementsRes.error;
-                
-                // 4. Combine and set state
-                const fullShopData: FullShopData = {
+                if (servicesRes.error || addOnsRes.error || formulasRes.error || supplementsRes.error) {
+                    throw new Error("Failed to load service details.");
+                }
+
+                setShopData({
                     ...(toCamelCase(shop) as Shop),
                     services: toCamelCase(servicesRes.data) as Service[],
                     addOns: toCamelCase(addOnsRes.data) as AddOn[],
                     formulas: toCamelCase(formulasRes.data) as Formula[],
                     supplements: toCamelCase(supplementsRes.data) as VehicleSizeSupplement[],
-                };
-
-                setShopData(fullShopData);
+                });
 
             } catch (e: any) {
                 console.error("Error fetching shop data:", e);
-                setError(`${t.errorLoadingShop}\n\n${e.message}`);
+                setError(`${t.errorLoadingShop}: ${e.message}`);
             } finally {
                 setLoading(false);
             }
@@ -130,108 +109,117 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
-    const availableAddOns = useMemo((): AddOn[] => {
-        if (!selectedService || !shopData?.addOns) return [];
-        
-        // Global add-ons have no serviceId but match the shopId
-        const global = shopData.addOns.filter(addOn => !addOn.serviceId);
-
-        // Specific add-ons are linked directly to the service
-        const specific = shopData.addOns.filter(addOn => addOn.serviceId === selectedService.id);
-
-        // Specific add-ons should probably appear first.
-        return [...specific, ...global];
-    }, [selectedService, shopData]);
-
-
-    // FIX: Refactored price calculation logic to use the new data model (basePrice, supplements, formulas).
     const { totalDuration, totalPrice } = useMemo(() => {
-        if (!selectedService || !shopData) return { totalDuration: 0, totalPrice: 0 };
+        let duration = 0;
+        let price = 0;
 
-        const serviceFormulas = shopData.formulas.filter(f => f.serviceId === selectedService.id);
-        let baseFormula = serviceFormulas.find(f => f.name.toLowerCase() === 'basique');
-        if (!baseFormula && serviceFormulas.length > 0) {
-            baseFormula = serviceFormulas[0];
-        }
+        if (!shopData || !selectedVehicleSize) return { totalDuration: 0, totalPrice: 0 };
         
-        let duration = selectedService.baseDuration + (baseFormula?.additionalDuration || 0);
-        let price = selectedService.basePrice + (baseFormula?.additionalPrice || 0);
+        const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
+        const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
+        const addOnMap = new Map(shopData.addOns.map(a => [a.id, a]));
+        const supplementMap = new Map(shopData.supplements.map(s => [`${s.serviceId}-${s.size}`, s]));
 
-        if (selectedVehicleSize && shopData.supplements) {
-            const supplement = shopData.supplements.find(s => s.serviceId === selectedService.id && s.size === selectedVehicleSize);
+        selectedServices.forEach(sel => {
+            const service = serviceMap.get(sel.serviceId);
+            const formula = formulaMap.get(sel.formulaId);
+            if (!service || !formula) return;
+
+            price += service.basePrice + formula.additionalPrice;
+            duration += service.baseDuration + formula.additionalDuration;
+            
+            const supplement = supplementMap.get(`${service.id}-${selectedVehicleSize}`);
             if (supplement) {
-                duration += supplement.additionalDuration;
                 price += supplement.additionalPrice;
+                duration += supplement.additionalDuration;
             }
-        }
 
-        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
-        selectedAddOns.forEach(addOnId => {
-            const addOn = addOnMap.get(addOnId);
-            if (addOn) {
-                duration += parseSafeInt(addOn.duration);
-                price += parseSafeInt(addOn.price);
-            }
+            sel.addOnIds.forEach(addOnId => {
+                const addOn = addOnMap.get(addOnId);
+                if (addOn) {
+                    price += parseSafeInt(addOn.price as any);
+                    duration += parseSafeInt(addOn.duration as any);
+                }
+            });
         });
         
         return { totalDuration: duration, totalPrice: price };
-    }, [selectedService, selectedVehicleSize, selectedAddOns, availableAddOns, shopData]);
+    }, [selectedServices, selectedVehicleSize, shopData]);
 
-    const toggleAddOn = (addOnId: string) => {
-        setSelectedAddOns(prev => {
-            const newSet = new Set(prev);
-            newSet.has(addOnId) ? newSet.delete(addOnId) : newSet.add(addOnId);
-            return newSet;
-        });
+
+    const handleServiceClick = (service: Service) => {
+        const formulas = shopData?.formulas.filter(f => f.serviceId === service.id) || [];
+        if (formulas.length > 1) {
+            setCurrentServiceForFormula(service);
+            setShowFormulaModal(true);
+        } else {
+            const defaultFormula = formulas[0];
+            if (defaultFormula) {
+                 setSelectedServices(prev => {
+                     const isSelected = prev.some(s => s.serviceId === service.id);
+                     if(isSelected) return prev.filter(s => s.serviceId !== service.id);
+                     return [...prev, { serviceId: service.id, formulaId: defaultFormula.id, addOnIds: [] }];
+                 });
+            }
+        }
     };
     
-     const handleSelectService = (service: Service | null) => {
-        if (service?.id === selectedService?.id) {
-            setSelectedService(null);
-            setSelectedVehicleSize(null);
-            setSelectedAddOns(new Set());
-        } else {
-            setSelectedService(service);
-            setSelectedVehicleSize(null);
-            setSelectedAddOns(new Set());
+    const handleFormulaSelect = (formulaId: string) => {
+        if (!currentServiceForFormula) return;
+        setSelectedServices(prev => {
+            const others = prev.filter(s => s.serviceId !== currentServiceForFormula.id);
+            return [...others, { serviceId: currentServiceForFormula.id, formulaId, addOnIds: [] }];
+        });
+        setShowFormulaModal(false);
+        setCurrentServiceForFormula(null);
+    }
+    
+    const handleNextStep = () => {
+        const steps: BookingStep[] = ['vehicleSize', 'exterior', 'interior', 'complementary', 'datetime', 'clientInfo', 'confirmed'];
+        const currentIndex = steps.indexOf(step);
+        if (currentIndex < steps.length - 1) {
+            setStep(steps[currentIndex + 1]);
+        } else if (step === 'clientInfo') {
+            if (validateClientInfo()) {
+              handleConfirmBooking();
+            }
         }
     };
 
+    const handlePrevStep = () => {
+        const steps: BookingStep[] = ['vehicleSize', 'exterior', 'interior', 'complementary', 'datetime', 'clientInfo'];
+        const currentIndex = steps.indexOf(step);
+        if (currentIndex > 0) {
+            setStep(steps[currentIndex - 1]);
+        }
+    }
+    
     const validateClientInfo = () => {
         const errors: ClientInfoErrors = {};
-        // FIX: Use 'fieldIsRequired' translation key.
         if (!clientVehicle.trim()) errors.vehicle = t.fieldIsRequired;
-        // FIX: Use 'fieldIsRequired' translation key.
         if (!clientInfo.firstName.trim()) errors.firstName = t.fieldIsRequired;
-        // FIX: Use 'fieldIsRequired' translation key.
         if (!clientInfo.lastName.trim()) errors.lastName = t.fieldIsRequired;
         if (!clientInfo.email.trim()) {
-            // FIX: Use 'fieldIsRequired' translation key.
             errors.email = t.fieldIsRequired;
         } else if (!/^\S+@\S+\.\S+$/.test(clientInfo.email)) {
             errors.email = t.emailValidationError;
         }
-        // FIX: Use 'fieldIsRequired' translation key.
         if (!clientInfo.phone.trim()) errors.phone = t.fieldIsRequired;
         setClientInfoErrors(errors);
         return Object.keys(errors).length === 0;
     }
 
-    const handleConfirmBooking = async () => {
-        if (!selectedService || !selectedDate || !selectedTime || !shopData) return;
+     const handleConfirmBooking = async () => {
+        if (!selectedServices.length || !selectedDate || !selectedTime || !shopData || !selectedVehicleSize) return;
 
         setIsConfirming(true);
         setError(null);
-
-        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
-        const confirmedAddOns = Array.from(selectedAddOns).map(id => {
-            const addOn = addOnMap.get(id);
-            return { id: addOn?.id, name: addOn?.name, price: addOn?.price, duration: addOn?.duration };
-        }).filter(a => a.name);
         
+        const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
+        const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
+
         const { error: insertError } = await supabase.from('reservations').insert({
             shop_id: shopId,
-            service_id: selectedService.id,
             date: selectedDate.toISOString().split('T')[0],
             start_time: selectedTime,
             duration: totalDuration,
@@ -242,11 +230,16 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             payment_status: 'on_site',
             status: 'upcoming',
             service_details: {
-                name: selectedService.name,
                 vehicleSize: selectedVehicleSize,
-                addOns: confirmedAddOns,
-                client_vehicle: clientVehicle,
-                special_instructions: specialInstructions,
+                clientVehicle: clientVehicle,
+                specialInstructions: specialInstructions,
+                services: selectedServices.map(s => ({
+                    serviceId: s.serviceId,
+                    serviceName: serviceMap.get(s.serviceId)?.name,
+                    formulaId: s.formulaId,
+                    formulaName: formulaMap.get(s.formulaId)?.name,
+                    addOns: [] // Add-on logic can be added here
+                }))
             }
         });
         
@@ -261,229 +254,111 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         setIsConfirming(false);
     };
 
-    const handleNextStep = () => {
-        if (step === 'selection') {
-            setStep('datetime');
-        } else if (step === 'datetime') {
-            setStep('clientInfo');
-        } else if (step === 'clientInfo') {
-            if (validateClientInfo()) {
-                handleConfirmBooking();
-            }
-        }
-    }
-
-    const handlePrevStep = () => {
-        if (step === 'datetime') setStep('selection');
-        if (step === 'clientInfo') setStep('datetime');
-    }
-
-    const resetBooking = () => {
-        setStep('selection');
-        setClientVehicle('');
-        setSelectedService(null);
-        setSelectedVehicleSize(null);
-        setSelectedAddOns(new Set());
-        setSpecialInstructions('');
-        setSelectedDate(null);
-        setSelectedTime(null);
-        setClientInfo({ firstName: '', lastName: '', email: '', phone: '' });
-        setClientInfoErrors({});
-        setError(null);
-    };
-
-    const getConfirmationMessage = () => {
-        if (!selectedService || !selectedDate || !selectedTime) return '';
-
-        const vehicleText = selectedVehicleSize ? t.forVehicle.replace('{vehicleSize}', t[`size_${selectedVehicleSize}`]) : '';
-        
-        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
-        const addOnsList = Array.from(selectedAddOns)
-            .map(id => addOnMap.get(id)?.name)
-            .filter(Boolean)
-            .join(', ');
-            
-        const addOnsText = addOnsList ? t.withAddOns.replace('{addOnsList}', addOnsList) : '';
-
-        const formattedDate = selectedDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-        return t.bookingConfirmationMessage
-            .replace('{serviceName}', selectedService.name)
-            .replace('{vehicleText}', vehicleText)
-            .replace('{addOnsText}', addOnsText)
-            .replace('{date}', formattedDate)
-            .replace('{time}', selectedTime)
-            .replace('{price}', totalPrice.toString());
-    };
-    
     if (loading) return <BookingPageSkeleton />;
     if (error || !shopData) return <div className="min-h-screen flex items-center justify-center text-center p-4"><p className="text-brand-gray whitespace-pre-wrap">{error || t.errorLoadingShop}</p></div>;
 
-    const activeServices = shopData.services?.filter(s => s.status === 'active') || [];
+    const fullAddress = [shopData.addressLine1, shopData.addressCity, shopData.addressPostalCode, shopData.addressCountry].filter(Boolean).join(', ');
+
+    const stepTitles: Record<BookingStep, string> = {
+        vehicleSize: t.selectVehicleSize,
+        exterior: t.selectExteriorServices,
+        interior: t.selectInteriorServices,
+        complementary: t.selectComplementaryServices,
+        datetime: t.selectDateTime,
+        clientInfo: t.yourInformation,
+        confirmed: t.bookingConfirmed,
+    };
+
+    const renderServiceCategoryStep = (category: 'exterior' | 'interior' | 'complementary') => {
+        const services = shopData.services.filter(s => s.category === category);
+        if (services.length === 0) {
+            handleNextStep();
+            return null; // Skip rendering if no services in category
+        }
+        return (
+            <div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {services.map((service, index) => (
+                        <BookingServiceCard
+                            key={service.id}
+                            service={service}
+                            isSelected={selectedServices.some(s => s.serviceId === service.id)}
+                            onSelect={() => handleServiceClick(service)}
+                            index={index}
+                        />
+                    ))}
+                 </div>
+            </div>
+        );
+    }
 
     const renderContent = () => {
-        if (step === 'confirmed') {
-            const messageParts = getConfirmationMessage().split('**');
-
-            return (
-                <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
+        switch(step) {
+            case 'vehicleSize':
+                return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {shopData.supportedVehicleSizes.map(size => (
+                            <button
+                                key={size}
+                                onClick={() => {setSelectedVehicleSize(size); handleNextStep();}}
+                                className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center h-32 bg-white hover:border-brand-blue hover:shadow-lg"
+                            >
+                                <CarIcon className="w-10 h-10 text-brand-dark mb-2"/>
+                                <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
+                            </button>
+                        ))}
+                    </div>
+                );
+            case 'exterior': return renderServiceCategoryStep('exterior');
+            case 'interior': return renderServiceCategoryStep('interior');
+            case 'complementary': return renderServiceCategoryStep('complementary');
+            case 'datetime': return (
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectDate}</h3>
+                            <Calendar 
+                                shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} 
+                                selectedDate={selectedDate} onSelectDate={setSelectedDate}
+                                minBookingNotice={shopData.minBookingNotice} maxBookingHorizon={shopData.maxBookingHorizon}
+                            />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
+                            { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
+                            : <p className="text-sm text-brand-gray">{t.selectDate}</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            );
+            case 'clientInfo': return (
+                <StepClientInfo 
+                    clientInfo={clientInfo} setClientInfo={setClientInfo}
+                    errors={clientInfoErrors}
+                    specialInstructions={specialInstructions} onSpecialInstructionsChange={setSpecialInstructions}
+                    clientVehicle={clientVehicle} onClientVehicleChange={setClientVehicle}
+                />
+            );
+            case 'confirmed': return (
+                 <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
                     <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.bookingConfirmed}</h2>
-                    <p className="text-brand-gray max-w-md mx-auto mb-6">
-                        {messageParts.map((part, index) => 
-                            index % 2 === 1 ? <strong key={index} className="text-brand-dark">{part}</strong> : part
-                        )}
-                        <br/><br/>
-                        {t.bookingConfirmationDetails}
-                    </p>
-                    <button onClick={resetBooking} className="bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all">
+                    <p className="text-brand-gray max-w-md mx-auto mb-6">{t.bookingConfirmationDetails}</p>
+                    <button onClick={() => window.location.reload()} className="bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all">
                         {t.bookAnotherService}
                     </button>
                 </div>
             )
+            default: return null;
         }
-        
-        if (step === 'datetime') {
-             return (
-                <div className="max-w-4xl mx-auto">
-                    <button onClick={handlePrevStep} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
-                        <ChevronLeftIcon className="w-5 h-5" />
-                        <span>{t.back}</span>
-                    </button>
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectDate}</h3>
-                                <Calendar 
-                                    shopId={shopId}
-                                    schedule={shopData.schedule} 
-                                    serviceDuration={totalDuration} 
-                                    selectedDate={selectedDate} 
-                                    onSelectDate={setSelectedDate}
-                                    minBookingNotice={shopData.minBookingNotice}
-                                    maxBookingHorizon={shopData.maxBookingHorizon}
-                                />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                                { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
-                                : <p className="text-sm text-brand-gray">{t.selectDate}</p>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )
-        }
-        
-        if (step === 'clientInfo') {
-            return (
-                 <div className="max-w-2xl mx-auto">
-                    <button onClick={handlePrevStep} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
-                        <ChevronLeftIcon className="w-5 h-5" />
-                        <span>{t.back}</span>
-                    </button>
-                    <StepClientInfo 
-                        clientInfo={clientInfo} 
-                        setClientInfo={setClientInfo}
-                        errors={clientInfoErrors}
-                        specialInstructions={specialInstructions}
-                        onSpecialInstructionsChange={setSpecialInstructions}
-                        clientVehicle={clientVehicle}
-                        onClientVehicleChange={(value) => {
-                            setClientVehicle(value);
-                            if (clientInfoErrors.vehicle) {
-                                setClientInfoErrors(prev => ({...prev, vehicle: undefined}));
-                            }
-                        }}
-                    />
-                 </div>
-            )
-        }
-
-        // FIX: Replaced obsolete BookingForm component with a new service selection UI.
-        return (
-            <div className="max-w-4xl mx-auto">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>
-                    {activeServices.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {activeServices.map((service, index) => (
-                                <BookingServiceCard
-                                    key={service.id}
-                                    service={service}
-                                    isSelected={selectedService?.id === service.id}
-                                    onSelect={() => handleSelectService(service)}
-                                    index={index}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-brand-gray">{t.noServicesAvailable}</p>
-                    )}
-
-                    {selectedService && (shopData.supportedVehicleSizes?.length || 0) > 1 && (
-                        <div className="mt-6 pt-6 border-t">
-                            <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectVehicleSize}</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {shopData.supportedVehicleSizes.map(size => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setSelectedVehicleSize(size as VehicleSize)}
-                                        className={`p-4 rounded-lg border-2 text-center transition-all ${selectedVehicleSize === size ? 'border-brand-blue bg-blue-50' : 'bg-white hover:border-brand-blue/50'}`}
-                                    >
-                                        <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {selectedService && availableAddOns.length > 0 && (
-                        <div className="mt-6 pt-6 border-t">
-                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectAddOns}</h3>
-                             <div className="space-y-3">
-                                {availableAddOns.map(addOn => (
-                                    <label key={addOn.id} className="flex items-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedAddOns.has(addOn.id)}
-                                            onChange={() => toggleAddOn(addOn.id)}
-                                            className="h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                                        />
-                                        <div className="ml-4 flex justify-between w-full">
-                                            <span className="font-semibold text-brand-dark">{addOn.name}</span>
-                                            <span className="text-brand-gray">+€{addOn.price}</span>
-                                        </div>
-                                    </label>
-                                ))}
-                             </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        )
     }
 
-    // FIX: Replaced 'varies' property check with logic based on the new data model.
     const buttonDisabled = () => {
-        if (step === 'selection' && (!selectedService || ((shopData.supportedVehicleSizes?.length || 0) > 1 && !selectedVehicleSize))) return true;
         if (step === 'datetime' && !selectedTime) return true;
         if (step === 'clientInfo' && isConfirming) return true;
         return false;
     }
-
-    const getButtonText = () => {
-        switch(step) {
-            case 'selection': return t.continueToDateTime;
-            case 'datetime': return t.continueToYourInfo;
-            case 'clientInfo': return t.confirmBooking;
-            default: return '';
-        }
-    };
-    
-    // FIX: Construct full address from individual fields to avoid error.
-    const fullAddress = [shopData.addressLine1, shopData.addressCity, shopData.addressPostalCode, shopData.addressCountry].filter(Boolean).join(', ');
 
     return (
         <div className="bg-brand-light min-h-screen font-sans">
@@ -495,42 +370,61 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         <ImageIcon className="w-16 h-16 text-gray-300" />
                     </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
-                <div className="absolute top-0 left-0 right-0 p-6 md:p-8 container mx-auto text-white">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                 <div className="absolute top-0 left-0 right-0 p-6 md:p-8 container mx-auto text-white">
                     <div className="flex items-center gap-3">
                         <StorefrontIcon className="w-8 h-8 flex-shrink-0" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.7))' }} />
                         <h1 className="text-3xl font-bold" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{shopData.name}</h1>
                     </div>
-                    <div className="mt-2 space-y-1 pl-2" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>
-                        {fullAddress && (
-                            <p className="flex items-center gap-2 text-sm">
-                                <MapPinIcon className="w-4 h-4 flex-shrink-0" />
-                                <span>{fullAddress}</span>
-                            </p>
-                        )}
-                        {shopData.phone && (
-                            <p className="flex items-center gap-2 text-sm">
-                                <PhoneIcon className="w-4 h-4 flex-shrink-0" />
-                                <span>{shopData.phone}</span>
-                            </p>
-                        )}
-                    </div>
-                </div>
+                 </div>
             </header>
             
-            <main className="container mx-auto p-4 md:p-8">
+            <main className="container mx-auto p-4 md:p-8 max-w-4xl">
+                 {step !== 'confirmed' && (
+                    <div className="mb-6">
+                        {step !== 'vehicleSize' && (
+                           <button onClick={handlePrevStep} className="flex items-center gap-2 font-semibold text-brand-gray hover:text-brand-dark mb-4">
+                                <ChevronLeftIcon className="w-5 h-5" />
+                                <span>{t.back}</span>
+                            </button>
+                        )}
+                        <h2 className="text-2xl font-bold text-brand-dark">{stepTitles[step]}</h2>
+                    </div>
+                 )}
                 {renderContent()}
             </main>
 
-            {step !== 'confirmed' && selectedService && (
+            {step !== 'confirmed' && step !== 'vehicleSize' && (
                 <FloatingSummary
                     totalDuration={totalDuration}
                     totalPrice={totalPrice}
                     onButtonClick={handleNextStep}
-                    buttonText={getButtonText()}
+                    buttonText={step === 'clientInfo' ? t.confirmBooking : t.nextStep}
                     buttonDisabled={buttonDisabled()}
                     isConfirming={isConfirming}
                 />
+            )}
+
+            {showFormulaModal && currentServiceForFormula && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <header className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-lg font-bold text-brand-dark">{t.chooseFormula}</h2>
+                            <button onClick={() => setShowFormulaModal(false)}><CloseIcon/></button>
+                        </header>
+                        <div className="p-4 space-y-3">
+                            {(shopData.formulas.filter(f => f.serviceId === currentServiceForFormula.id)).map(formula => (
+                                <button key={formula.id} onClick={() => handleFormulaSelect(formula.id)} className="w-full text-left p-4 border rounded-lg hover:bg-blue-50 hover:border-brand-blue">
+                                    <div className="flex justify-between">
+                                        <span className="font-bold">{formula.name}</span>
+                                        <span className="font-semibold text-brand-blue">+ {formula.additionalPrice}€</span>
+                                    </div>
+                                    <p className="text-sm text-brand-gray mt-1">{formula.description}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

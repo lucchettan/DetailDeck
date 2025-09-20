@@ -3,7 +3,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { Service } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, HourglassIcon, CheckBadgeIcon } from '../Icons';
-import { formatDuration, parseSafeInt } from '../../lib/utils';
+import { formatDuration } from '../../lib/utils';
 
 interface BookingServiceCardProps {
     service: Service;
@@ -18,15 +18,13 @@ const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSele
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Stagger the card's appearance to create a "waterfall" effect
         const timer = setTimeout(() => {
             setIsVisible(true);
-        }, index * 100); // 100ms delay per card
+        }, index * 100);
 
         return () => clearTimeout(timer);
     }, [index]);
 
-    // FIX: Replaced obsolete price calculation logic with one based on the current Service data model.
     const getStartingPriceDisplay = (service: Service) => {
         const price = service.basePrice ? t.fromPrice.replace('{price}', service.basePrice.toString()) : 'N/A';
         const duration = formatDuration(service.baseDuration);

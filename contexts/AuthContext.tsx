@@ -1,6 +1,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 // Fix: Removed unused and non-exported types from '@supabase/supabase-js'.
@@ -26,10 +27,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const mockUser: User = {
     id: 'mock-user-id-123',
     app_metadata: { provider: 'email', providers: ['email'] },
-    user_metadata: { first_name: 'Luc', email: 'lucchettan@gmail.com' },
+    user_metadata: { first_name: 'Alex', email: 'demo@resaone.com' },
     aud: 'authenticated',
     created_at: new Date().toISOString(),
-    email: 'lucchettan@gmail.com',
+    email: 'demo@resaone.com',
 };
 
 const mockSession: Session = {
@@ -77,7 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (credentials: SignUpWithPasswordCredentials): Promise<AuthResponse> => {
     if (IS_MOCK_MODE) {
         // Fix: Use type guard to safely access email or phone property for logging.
-        console.log(`%c[Auth MOCK]%c signUp called for ${'email' in credentials ? credentials.email : credentials.phone}. Logging in as mock user 'lucchettan@gmail.com'.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+        console.log(`%c[Auth MOCK]%c signUp called for ${'email' in credentials ? credentials.email : credentials.phone}. Logging in as mock user 'demo@resaone.com'.`, 'color: purple; font-weight: bold;', 'color: inherit;');
         setSession(mockSession);
         setUser(mockUser);
         // Fix: Corrected the mock response to match the AuthResponse type.
@@ -104,7 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Fix: Use type guard to safely access email or phone property for logging.
         console.log(`%c[Auth MOCK]%c logIn called for ${'email' in credentials ? credentials.email : credentials.phone}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
         // Fix: Use type guard to safely access email property for comparison.
-        if ('email' in credentials && credentials.email === 'lucchettan@gmail.com' && credentials.password === 'Potager12') {
+        if ('email' in credentials && credentials.email === 'demo@resaone.com' && credentials.password === 'ResaOneDemo123!') {
             setSession(mockSession);
             setUser(mockUser);
             return { session: mockSession, error: null };
@@ -139,8 +140,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const demoLogin = () => logIn({
-    email: 'lucchettan@gmail.com',
-    password: 'Potager12',
+    email: 'demo@resaone.com',
+    password: 'ResaOneDemo123!',
   });
 
   const resendSignUpConfirmation = async (email: string) => {

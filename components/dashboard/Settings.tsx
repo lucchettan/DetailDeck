@@ -319,7 +319,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
               <TopSaveButton />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                {/* Image Upload */}
                  <div>
                     <label className="block text-sm font-bold text-brand-dark mb-2">{t.shopImage}</label>
                     <div className="flex items-center gap-4">
@@ -330,15 +329,12 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                         <label htmlFor="shopImageUpload" className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.uploadImage}</label>
                     </div>
                  </div>
-                 {/* Empty div for layout */}
                  <div></div>
 
-                 {/* Shop Name */}
                  <div>
                     <label htmlFor="shopName" className="block text-sm font-bold text-brand-dark mb-1">{t.shopName}</label>
                     <input type="text" id="shopName" value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
                  </div>
-                 {/* Phone Number */}
                   <div>
                     <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-1">{t.phoneNumber}</label>
                     <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
@@ -488,7 +484,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-brand-dark mb-1">{t.confirmNewPassword}</label>
-                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required />
+                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required />
                     </div>
                     {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
                     {passwordSuccess && <p className="text-green-600 text-sm">{passwordSuccess}</p>}
