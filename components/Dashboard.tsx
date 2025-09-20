@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,6 +24,7 @@ export interface Formula {
   description?: string;
   additionalPrice: number;
   additionalDuration: number;
+  createdAt?: string;
 }
 
 export interface VehicleSizeSupplement {
@@ -31,6 +33,7 @@ export interface VehicleSizeSupplement {
     size: string;
     additionalPrice: number;
     additionalDuration: number;
+    createdAt?: string;
 }
 
 export interface AddOn {
@@ -40,6 +43,7 @@ export interface AddOn {
   price: number;
   duration: number;
   serviceId?: string; // Can be null for global add-ons
+  createdAt?: string;
 }
 
 export interface Service {
@@ -52,6 +56,7 @@ export interface Service {
   basePrice: number;
   baseDuration: number; // in minutes
   imageUrl?: string;
+  createdAt?: string;
 }
 
 export interface Shop {

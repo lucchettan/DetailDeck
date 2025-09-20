@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon, Bars3Icon } from '../Icons';
@@ -134,7 +135,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             finalImageUrl = data.publicUrl;
         }
 
-        const servicePayload = { ...formData, shopId, imageUrl: finalImageUrl };
+        const servicePayload: any = { ...formData, shopId, imageUrl: finalImageUrl };
+        delete servicePayload.createdAt;
 
         const { data: savedService, error: serviceError } = await supabase
             .from('services')
@@ -148,11 +150,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const formulasToSave = formulas.map(f => {
             const formulaData: any = {...f, description: f.includedItems.join('\n').trim(), serviceId: serviceId};
             delete formulaData.includedItems;
+            delete formulaData.createdAt;
             return formulaData;
         });
         
-        const supplementsToSave = supplements.map(s => ({ ...s, serviceId: serviceId }));
-        const addOnsToSave = specificAddOns.map(a => ({ ...a, serviceId: serviceId, shopId: shopId }));
+        const supplementsToSave = supplements.map(s => {
+            const supplementData: any = { ...s, serviceId: serviceId };
+            delete supplementData.createdAt;
+            return supplementData;
+        });
+        const addOnsToSave = specificAddOns.map(a => {
+            const addOnData: any = { ...a, serviceId: serviceId, shopId: shopId };
+            delete addOnData.createdAt;
+            return addOnData;
+        });
 
         const upsertRelated = async (tableName: string, items: any[]) => {
             if (items.length === 0) return;
