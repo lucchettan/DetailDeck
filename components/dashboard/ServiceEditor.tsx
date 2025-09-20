@@ -147,54 +147,32 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        // Prepare robust payloads for related items to avoid null ID constraint errors.
-        const formulasToSave = formulas.map(f => {
-            const cleanFormula: any = {
-                id: f.id || undefined,
-                service_id: serviceId,
-                name: f.name || 'Nouvelle Formule',
-                description: f.includedItems.join('\n').trim(),
-                additional_price: f.additionalPrice || 0,
-                additional_duration: f.additionalDuration || 0,
-            };
-            if (!cleanFormula.id) {
-                delete cleanFormula.id;
-            }
-            return cleanFormula;
-        });
+        const formulasToSave = formulas.map(f => ({
+            service_id: serviceId,
+            name: f.name || 'Nouvelle Formule',
+            description: f.includedItems.join('\n').trim(),
+            additional_price: f.additionalPrice || 0,
+            additional_duration: f.additionalDuration || 0,
+        }));
         
-        const supplementsToSave = supplements.map(s => {
-             const cleanSupplement: any = {
-                id: s.id || undefined,
-                service_id: serviceId,
-                size: s.size,
-                additional_price: s.additionalPrice || 0,
-                additional_duration: s.additionalDuration || 0,
-            };
-            if (!cleanSupplement.id) {
-                delete cleanSupplement.id;
-            }
-            return cleanSupplement;
-        });
+        const supplementsToSave = supplements.map(s => ({
+            service_id: serviceId,
+            size: s.size,
+            additional_price: s.additionalPrice || 0,
+            additional_duration: s.additionalDuration || 0,
+        }));
 
-        const addOnsToSave = specificAddOns.map(a => {
-            const cleanAddOn: any = {
-                id: a.id || undefined,
-                service_id: serviceId,
-                shop_id: shopId,
-                name: a.name || 'Nouvelle Option',
-                price: a.price || 0,
-                duration: a.duration || 0,
-            };
-            if (!cleanAddOn.id) {
-                delete cleanAddOn.id;
-            }
-            return cleanAddOn;
-        });
+        const addOnsToSave = specificAddOns.map(a => ({
+            service_id: serviceId,
+            shop_id: shopId,
+            name: a.name || 'Nouvelle Option',
+            price: a.price || 0,
+            duration: a.duration || 0,
+        }));
 
-        const upsertRelated = async (tableName: string, items: any[]) => {
+        const upsertRelated = async (tableName: string, items: any[], onConflict: string) => {
             if (items.length === 0) return;
-            const { error } = await supabase.from(tableName).upsert(items);
+            const { error } = await supabase.from(tableName).upsert(items, { onConflict });
             if (error) throw error;
         };
 
@@ -214,9 +192,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         };
 
         await Promise.all([
-            upsertRelated('formulas', formulasToSave),
-            upsertRelated('service_vehicle_size_supplements', supplementsToSave),
-            upsertRelated('add_ons', addOnsToSave),
+            upsertRelated('formulas', formulasToSave, 'service_id, name'),
+            upsertRelated('service_vehicle_size_supplements', supplementsToSave, 'service_id, size'),
+            upsertRelated('add_ons', addOnsToSave, 'service_id, name'),
             deleteRelated('formulas', formulas, originalItemIds.formulas),
             deleteRelated('service_vehicle_size_supplements', supplements, originalItemIds.supplements),
             deleteRelated('add_ons', specificAddOns, originalItemIds.addOns),
