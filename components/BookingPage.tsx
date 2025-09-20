@@ -180,9 +180,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         if (currentIndex < steps.length - 1) {
             setStep(steps[currentIndex + 1]);
         } else if (step === 'clientInfo') {
-            if (validateClientInfo()) {
-              handleConfirmBooking();
-            }
+            handleConfirmBooking();
         }
     };
 
@@ -210,6 +208,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     }
 
      const handleConfirmBooking = async () => {
+        if (!validateClientInfo()) return;
         if (!selectedServices.length || !selectedDate || !selectedTime || !shopData || !selectedVehicleSize) return;
 
         setIsConfirming(true);

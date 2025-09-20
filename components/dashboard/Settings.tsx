@@ -25,15 +25,24 @@ const initialSchedule: Schedule = {
 };
 
 const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
+  // FIX: Explicitly type `defaults` as `Partial<Shop>` to ensure `businessType` is not inferred as a generic `string`.
+  const defaults: Partial<Shop> = {
+    businessType: 'local',
+    minBookingNotice: '4h',
+    maxBookingHorizon: '12w',
+    supportedVehicleSizes: ['S', 'M', 'L', 'XL'],
+    schedule: initialSchedule,
+  };
+
+  if (shopData) {
     return {
-        businessType: 'local',
-        minBookingNotice: '4h',
-        maxBookingHorizon: '12w',
-        supportedVehicleSizes: ['S', 'M', 'L', 'XL'],
-        ...shopData,
-        schedule: shopData?.schedule || initialSchedule,
-    }
-}
+      ...defaults,
+      ...shopData,
+      schedule: shopData.schedule || initialSchedule,
+    };
+  }
+  return defaults;
+};
 
 const TimePicker: React.FC<{ value: string, onChange: (value: string) => void }> = ({ value, onChange }) => {
   const timeOptions = useMemo(() => {
