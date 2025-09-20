@@ -147,23 +147,31 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        const formulasToSave = formulas.map(f => {
-            const formulaData: any = {...f, description: f.includedItems.join('\n').trim(), serviceId: serviceId};
-            delete formulaData.includedItems;
-            delete formulaData.createdAt;
-            return formulaData;
-        });
+        const formulasToSave = formulas.map(f => ({
+            id: f.id,
+            serviceId: serviceId,
+            name: f.name,
+            description: f.includedItems.join('\n').trim(),
+            additionalPrice: f.additionalPrice || 0,
+            additionalDuration: f.additionalDuration || 0,
+        }));
         
-        const supplementsToSave = supplements.map(s => {
-            const supplementData: any = { ...s, serviceId: serviceId };
-            delete supplementData.createdAt;
-            return supplementData;
-        });
-        const addOnsToSave = specificAddOns.map(a => {
-            const addOnData: any = { ...a, serviceId: serviceId, shopId: shopId };
-            delete addOnData.createdAt;
-            return addOnData;
-        });
+        const supplementsToSave = supplements.map(s => ({
+            id: s.id,
+            serviceId: serviceId,
+            size: s.size,
+            additionalPrice: s.additionalPrice || 0,
+            additionalDuration: s.additionalDuration || 0,
+        }));
+
+        const addOnsToSave = specificAddOns.map(a => ({
+            id: a.id,
+            serviceId: serviceId,
+            shopId: shopId,
+            name: a.name,
+            price: a.price || 0,
+            duration: a.duration || 0,
+        }));
 
         const upsertRelated = async (tableName: string, items: any[]) => {
             if (items.length === 0) return;
