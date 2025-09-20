@@ -180,9 +180,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             duration: a.duration || 0,
         }));
 
-        const upsertRelated = async (tableName: string, items: any[], onConflict: string) => {
+        const upsertRelated = async (tableName: string, items: any[]) => {
             if (items.length === 0) return;
-            const { error } = await supabase.from(tableName).upsert(items, { onConflict });
+            const { error } = await supabase.from(tableName).upsert(items);
             if (error) throw error;
         };
 
@@ -202,9 +202,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         };
 
         await Promise.all([
-            upsertRelated('formulas', formulasToSave, 'service_id, name'),
-            upsertRelated('service_vehicle_size_supplements', supplementsToSave, 'service_id, size'),
-            upsertRelated('add_ons', addOnsToSave, 'service_id, name'),
+            upsertRelated('formulas', formulasToSave),
+            upsertRelated('service_vehicle_size_supplements', supplementsToSave),
+            upsertRelated('add_ons', addOnsToSave),
             deleteRelated('formulas', formulas, originalItemIds.formulas),
             deleteRelated('service_vehicle_size_supplements', supplements, originalItemIds.supplements),
             deleteRelated('add_ons', specificAddOns, originalItemIds.addOns),
