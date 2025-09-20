@@ -7,7 +7,7 @@ import { trackEvent } from './lib/analytics';
 import LandingPage from './components/LandingPage';
 import SignInPage from './components/SignInPage';
 import Dashboard from './components/Dashboard';
-import BookingPage from './components/booking/BookingPage';
+import BookingFlow from './components/booking/BookingFlow';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -54,7 +54,7 @@ const AppContent: React.FC = () => {
   const reservationMatch = path.match(/^\/reservation\/([0-9a-fA-F\-]+)/);
   if (reservationMatch) {
     const shopId = reservationMatch[1];
-    return <BookingPage shopId={shopId} />;
+    return <BookingFlow shopId={shopId} />;
   }
 
   if (path.startsWith('/dashboard')) {
