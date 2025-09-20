@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon, Bars3Icon } from '../Icons';
@@ -144,11 +145,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        const formulasToSave = formulas.map(f => ({
-            ...f,
-            description: f.includedItems.join('\n').trim(),
-            serviceId: serviceId,
-        }));
+        const formulasToSave = formulas.map(f => {
+            const formulaData: any = {...f, description: f.includedItems.join('\n').trim(), serviceId: serviceId};
+            delete formulaData.includedItems;
+            return formulaData;
+        });
         
         const supplementsToSave = supplements.map(s => ({ ...s, serviceId: serviceId }));
         const addOnsToSave = specificAddOns.map(a => ({ ...a, serviceId: serviceId, shopId: shopId }));
