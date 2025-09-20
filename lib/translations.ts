@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     // Header & Auth
@@ -187,6 +186,7 @@ export const translations = {
     addNewExteriorService: 'Add Exterior Service',
     addNewComplementaryService: 'Add Complementary Service',
     changeImage: 'Change Image',
+    removeImage: 'Remove Image',
     uploadImage: 'Upload an image',
     serviceStatus: 'Service Status',
     active: 'Active',
@@ -518,6 +518,7 @@ export const translations = {
     addNewExteriorService: 'Ajouter un service extérieur',
     addNewComplementaryService: 'Ajouter un service complémentaire',
     changeImage: 'Changer l\'image',
+    removeImage: 'Supprimer l\'image',
     uploadImage: 'Télécharger une image',
     serviceStatus: 'Statut du service',
     active: 'Actif',
@@ -849,6 +850,7 @@ export const translations = {
     addNewExteriorService: 'Añadir servicio exterior',
     addNewComplementaryService: 'Añadir servicio complementario',
     changeImage: 'Cambiar imagen',
+    removeImage: 'Eliminar imagen',
     uploadImage: 'Subir una imagen',
     serviceStatus: 'Estado del servicio',
     active: 'Activo',

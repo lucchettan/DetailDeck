@@ -420,7 +420,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                             <h2 className="text-lg font-bold text-brand-dark">{t.chooseFormula}</h2>
                             <button onClick={() => setShowFormulaModal(false)}><CloseIcon/></button>
                         </header>
-                        <div className="p-4 space-y-3">
+                        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
                             {(shopData.formulas.filter(f => f.serviceId === currentServiceForFormula.id)).map(formula => (
                                 <button key={formula.id} onClick={() => handleFormulaSelect(formula.id)} className="w-full text-left p-4 border rounded-lg hover:bg-blue-50 hover:border-brand-blue">
                                     <div className="flex justify-between">

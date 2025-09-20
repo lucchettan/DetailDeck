@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon } from '../Icons';
@@ -57,6 +56,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   
   const [isSaving, setIsSaving] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -68,48 +70,29 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setFormulas(initialFormulas);
     setSupplements(supplementsForService);
     setSpecificAddOns(addOnsForService);
+    setOriginalImageUrl(serviceToEdit?.imageUrl || null);
+    setImageFile(null);
   }, [serviceToEdit, initialCategory, formulasForService, supplementsForService, addOnsForService]);
 
   const handleInputChange = (field: keyof Service, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+  
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    setImageFile(null);
+  };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !shopId) {
-      return;
-    }
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${shopId}/${fileName}`;
-
+    setImageFile(file);
+    
     const reader = new FileReader();
     reader.onload = (event) => {
-      handleInputChange('imageUrl', event.target?.result as string);
+      setFormData(prev => ({ ...prev, imageUrl: event.target?.result as string }));
     };
     reader.readAsDataURL(file);
-
-    const { error: uploadError } = await supabase.storage
-      .from('service-images')
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      setAlertInfo({ 
-        isOpen: true, 
-        title: "Image Upload Failed", 
-        message: `Error: ${uploadError.message}.\n\nPlease ensure you have created a public bucket named 'service-images' in your Supabase project's Storage section.` 
-      });
-      handleInputChange('imageUrl', serviceToEdit?.imageUrl || '');
-      return;
-    }
-
-    const { data } = supabase.storage
-      .from('service-images')
-      .getPublicUrl(filePath);
-
-    if (data) {
-      handleInputChange('imageUrl', data.publicUrl);
-    }
   };
 
   const handleSaveClick = async () => {
@@ -118,7 +101,28 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         return;
     }
     setIsSaving(true);
+    let finalImageUrl = formData.imageUrl;
+
     try {
+        // Handle image changes: deletion or new upload
+        const oldImageShouldBeDeleted = originalImageUrl && (originalImageUrl !== formData.imageUrl || !formData.imageUrl);
+        if (oldImageShouldBeDeleted) {
+            const oldImagePath = originalImageUrl.split('/service-images/')[1];
+            if (oldImagePath) {
+                await supabase.storage.from('service-images').remove([oldImagePath]);
+            }
+        }
+
+        if (imageFile) {
+            const fileExt = imageFile.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            const filePath = `${shopId}/${fileName}`;
+            const { error: uploadError } = await supabase.storage.from('service-images').upload(filePath, imageFile);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage.from('service-images').getPublicUrl(filePath);
+            finalImageUrl = data.publicUrl;
+        }
+
         const servicePayload = {
             shop_id: shopId,
             name: formData.name,
@@ -127,7 +131,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             category: formData.category,
             base_price: formData.basePrice,
             base_duration: formData.baseDuration,
-            image_url: formData.imageUrl,
+            image_url: finalImageUrl,
             ...(formData.id && { id: formData.id }),
         };
 
@@ -140,48 +144,46 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        // Convert formulas with includedItems array back to description string for DB
-        const formulasToSave = formulas.map(f => {
-            const { includedItems, ...rest } = f;
-            return { ...rest, description: includedItems.join('\n') };
-        });
+        const formulasToSave = formulas.map(f => ({
+            ...f,
+            description: f.includedItems.join('\n').trim(),
+            service_id: serviceId,
+        }));
+        
+        const supplementsToSave = supplements.map(s => ({ ...s, service_id: serviceId }));
+        const addOnsToSave = specificAddOns.map(a => ({ ...a, service_id: serviceId, shop_id: shopId }));
 
-        // --- Robustly handle related items ---
-        const handleRelatedItems = async (
-            dbTable: string,
-            localItems: any[],
-            originalItems: any[],
-            foreignKey: string,
-            foreignKeyValue: string,
-            extraPayload: object = {}
-        ) => {
-            const toUpdate = localItems.filter(item => item.id && item[foreignKey] === foreignKeyValue);
-            const toInsert = localItems.filter(item => !item.id).map(({ id, ...rest }) => ({ ...rest, [foreignKey]: foreignKeyValue, ...extraPayload }));
-            
-            const localIds = new Set(localItems.map(item => item.id).filter(Boolean));
-            const toDelete = originalItems.filter(item => !localIds.has(item.id));
-
-            if (toDelete.length > 0) {
-                const { error } = await supabase.from(dbTable).delete().in('id', toDelete.map(item => item.id!));
+        const upsertRelated = async (tableName: string, items: any[]) => {
+            if (items.length > 0) {
+                const { error } = await supabase.from(tableName).upsert(items);
                 if (error) throw error;
             }
-            if (toUpdate.length > 0) {
-                const { error } = await supabase.from(dbTable).upsert(toUpdate);
-                if (error) throw error;
-            }
-            if (toInsert.length > 0) {
-                const { error } = await supabase.from(dbTable).insert(toInsert);
+        };
+
+        const originalItemIds = {
+            formulas: new Set(formulasForService.map(i => i.id)),
+            supplements: new Set(supplementsForService.map(i => i.id)),
+            addOns: new Set(addOnsForService.map(i => i.id)),
+        };
+
+        const deleteRelated = async (tableName: string, currentItems: any[], originalIds: Set<string>) => {
+            const currentIds = new Set(currentItems.map(i => i.id).filter(Boolean));
+            const idsToDelete = [...originalIds].filter(id => !currentIds.has(id));
+            if (idsToDelete.length > 0) {
+                const { error } = await supabase.from(tableName).delete().in('id', idsToDelete);
                 if (error) throw error;
             }
         };
 
         await Promise.all([
-            handleRelatedItems('formulas', formulasToSave, formulasForService, 'service_id', serviceId),
-            handleRelatedItems('service_vehicle_size_supplements', supplements, supplementsForService, 'service_id', serviceId),
-            handleRelatedItems('add_ons', specificAddOns, addOnsForService, 'service_id', serviceId, { shop_id: shopId })
+            upsertRelated('formulas', formulasToSave),
+            upsertRelated('service_vehicle_size_supplements', supplementsToSave),
+            upsertRelated('add_ons', addOnsToSave),
+            deleteRelated('formulas', formulas, originalItemIds.formulas),
+            deleteRelated('service_vehicle_size_supplements', supplements, originalItemIds.supplements),
+            deleteRelated('add_ons', specificAddOns, originalItemIds.addOns),
         ]);
       
-        // If it's a new service and no formulas were added, create a default one
         if (!isEditing && formulas.length === 0) {
           await supabase.from('formulas').insert({ service_id: serviceId, name: 'Basique', description: '', additional_price: 0, additional_duration: 0 });
         }
@@ -202,9 +204,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
   }
 
-  // Formula handlers
   const addFormula = () => setFormulas(prev => [...prev, { name: '', includedItems: [], additionalPrice: 10, additionalDuration: 15 }]);
-  const updateFormulaField = (index: number, field: keyof Formula, value: any) => {
+  const updateFormulaField = (index: number, field: keyof FormulaWithIncluded, value: any) => {
       const newFormulas = [...formulas];
       const val = (field === 'additionalPrice' || field === 'additionalDuration') ? Number(value) : value;
       (newFormulas[index] as any)[field] = val;
@@ -212,7 +213,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
   const removeFormula = (index: number) => setFormulas(formulas.filter((_, i) => i !== index));
 
-  // Included Items Handlers
   const addIncludedItem = (formulaIndex: number) => {
     const newFormulas = [...formulas];
     newFormulas[formulaIndex].includedItems.push('');
@@ -229,7 +229,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setFormulas(newFormulas);
   }
 
-  // Add-on handlers
   const addSpecificAddOn = () => setSpecificAddOns(prev => [...prev, { name: '', price: 10, duration: 15 }]);
   const updateSpecificAddOn = (index: number, field: keyof AddOn, value: any) => {
       const newAddons = [...specificAddOns];
@@ -239,7 +238,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
   const removeSpecificAddOn = (index: number) => setSpecificAddOns(specificAddOns.filter((_, i) => i !== index));
 
-  // Supplement handlers
   const updateSupplement = (size: string, field: 'additionalPrice' | 'additionalDuration', value: string) => {
     const numValue = Number(value);
     setSupplements(prev => {
@@ -286,7 +284,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                             {formData.imageUrl ? <img src={formData.imageUrl} alt="Service" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
                         </div>
                         <input type="file" id="serviceImageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
-                        <label htmlFor="serviceImageUpload" className="mt-2 w-full block text-center bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.uploadImage}</label>
+                        <div className="mt-2 flex gap-2">
+                            <label htmlFor="serviceImageUpload" className="flex-1 block text-center bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.changeImage}</label>
+                            {formData.imageUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><TrashIcon /></button>}
+                        </div>
                     </div>
                 </div>
             </section>
