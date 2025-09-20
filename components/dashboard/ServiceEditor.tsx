@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon, Bars3Icon } from '../Icons';
+import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckCircleIcon, Bars3Icon } from '../Icons';
 import { Service, Formula, VehicleSizeSupplement, AddOn } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
@@ -147,36 +147,54 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        const formulasToSave = formulas.map(f => ({
-            id: f.id,
-            serviceId: serviceId,
-            name: f.name,
-            description: f.includedItems.join('\n').trim(),
-            additionalPrice: f.additionalPrice || 0,
-            additionalDuration: f.additionalDuration || 0,
-        }));
+        // Prepare robust payloads for related items to avoid null ID constraint errors.
+        const formulasToSave = formulas.map(f => {
+            const cleanFormula: any = {
+                id: f.id || undefined,
+                service_id: serviceId,
+                name: f.name || 'Nouvelle Formule',
+                description: f.includedItems.join('\n').trim(),
+                additional_price: f.additionalPrice || 0,
+                additional_duration: f.additionalDuration || 0,
+            };
+            if (!cleanFormula.id) {
+                delete cleanFormula.id;
+            }
+            return cleanFormula;
+        });
         
-        const supplementsToSave = supplements.map(s => ({
-            id: s.id,
-            serviceId: serviceId,
-            size: s.size,
-            additionalPrice: s.additionalPrice || 0,
-            additionalDuration: s.additionalDuration || 0,
-        }));
+        const supplementsToSave = supplements.map(s => {
+             const cleanSupplement: any = {
+                id: s.id || undefined,
+                service_id: serviceId,
+                size: s.size,
+                additional_price: s.additionalPrice || 0,
+                additional_duration: s.additionalDuration || 0,
+            };
+            if (!cleanSupplement.id) {
+                delete cleanSupplement.id;
+            }
+            return cleanSupplement;
+        });
 
-        const addOnsToSave = specificAddOns.map(a => ({
-            id: a.id,
-            serviceId: serviceId,
-            shopId: shopId,
-            name: a.name,
-            price: a.price || 0,
-            duration: a.duration || 0,
-        }));
+        const addOnsToSave = specificAddOns.map(a => {
+            const cleanAddOn: any = {
+                id: a.id || undefined,
+                service_id: serviceId,
+                shop_id: shopId,
+                name: a.name || 'Nouvelle Option',
+                price: a.price || 0,
+                duration: a.duration || 0,
+            };
+            if (!cleanAddOn.id) {
+                delete cleanAddOn.id;
+            }
+            return cleanAddOn;
+        });
 
         const upsertRelated = async (tableName: string, items: any[]) => {
             if (items.length === 0) return;
-            const snakeCasedItems = items.map(toSnakeCase);
-            const { error } = await supabase.from(tableName).upsert(snakeCasedItems);
+            const { error } = await supabase.from(tableName).upsert(items);
             if (error) throw error;
         };
 
@@ -378,6 +396,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                                             <div className="cursor-grab text-gray-400 group-hover:text-gray-600">
                                                 <Bars3Icon className="w-5 h-5" />
                                             </div>
+                                            <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
                                             <input 
                                                 type="text"
                                                 value={item}
