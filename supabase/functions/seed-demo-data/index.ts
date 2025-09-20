@@ -71,15 +71,15 @@ serve(async (req: Request) => {
     const service_ext_2_id = services.find(s => s.name.includes('Céramique'))!.id;
     const service_comp_1_id = services.find(s => s.name.includes('Optiques'))!.id;
 
-    const { error: formulasError } = await supabaseClient.from('formulas').insert([
-        { service_id: service_int_1_id, name: 'Basique', description: 'Le service tel que décrit.', additional_price: 0, additional_duration: 0 },
-        { service_id: service_int_1_id, name: 'Pressing des Sièges', description: 'Nettoyage en profondeur des sièges en tissu par injection-extraction.', additional_price: 70, additional_duration: 90 },
-        { service_id: service_ext_1_id, name: 'Basique', description: 'Le service tel que décrit.', additional_price: 0, additional_duration: 0 },
-        { service_id: service_ext_1_id, name: 'Finition Lustrante', description: 'Application d\'une cire synthétique pour une brillance et protection accrues.', additional_price: 60, additional_duration: 60 },
+    const { data: formulas, error: formulasError } = await supabaseClient.from('formulas').insert([
+        { service_id: service_int_1_id, name: 'Basique', description: 'Aspiration complète de l\'habitacle\nDépoussiérage des plastiques\nNettoyage des vitres intérieures', additional_price: 0, additional_duration: 0 },
+        { service_id: service_int_1_id, name: 'Pressing des Sièges', description: 'Tout le contenu de la formule Basique\nNettoyage en profondeur des sièges\nShampouinage des moquettes', additional_price: 70, additional_duration: 90 },
+        { service_id: service_ext_1_id, name: 'Basique', description: 'Prélavage au canon à mousse\nLavage manuel technique des deux seaux\nNettoyage des jantes et pneus', additional_price: 0, additional_duration: 0 },
+        { service_id: service_ext_1_id, name: 'Finition Lustrante', description: 'Tout le contenu de la formule Basique\nApplication d\'une cire de protection\nBrillant des pneus', additional_price: 60, additional_duration: 60 },
         { service_id: service_ext_2_id, name: 'Garantie 2 ans', description: 'Protection céramique de haute qualité.', additional_price: 0, additional_duration: 0 },
         { service_id: service_ext_2_id, name: 'Garantie 5 ans', description: 'Revêtement premium auto-cicatrisant pour une protection maximale.', additional_price: 400, additional_duration: 120 },
         { service_id: service_comp_1_id, name: 'Basique', description: 'Rénovation complète des deux optiques avant.', additional_price: 0, additional_duration: 0 },
-    ]);
+    ]).select();
     if (formulasError) throw formulasError;
     
     const { error: supplementsError } = await supabaseClient.from('service_vehicle_size_supplements').insert([
@@ -103,6 +103,8 @@ serve(async (req: Request) => {
     ]);
     if(addonsError) throw addonsError;
 
+    const formulaInt1Id = formulas.find(f => f.service_id === service_int_1_id && f.name === 'Basique')!.id;
+    const formulaExt1Id = formulas.find(f => f.service_id === service_ext_1_id && f.name === 'Finition Lustrante')!.id;
 
     // 3. Create a couple of fake reservations
     const pastDate = new Date();
@@ -122,7 +124,7 @@ serve(async (req: Request) => {
         client_phone: '0611223344',
         status: 'completed',
         payment_status: 'paid',
-        service_details: { vehicleSize: "M", services: [{ serviceId: service_int_1_id, serviceName: "Nettoyage Intérieur Essentiel", formulaId: "placeholder", formulaName: "Basique", addOns: [] }] }
+        service_details: { vehicleSize: "M", services: [{ serviceId: service_int_1_id, serviceName: "Nettoyage Intérieur Essentiel", formulaId: formulaInt1Id, formulaName: "Basique", addOns: [] }] }
       },
       {
         shop_id,
@@ -135,7 +137,7 @@ serve(async (req: Request) => {
         client_phone: '0655667788',
         status: 'upcoming',
         payment_status: 'on_site',
-        service_details: { vehicleSize: "L", services: [{ serviceId: service_ext_1_id, serviceName: "Lavage Extérieur Premium", formulaId: "placeholder", formulaName: "Finition Lustrante", addOns: [] }] }
+        service_details: { vehicleSize: "L", services: [{ serviceId: service_ext_1_id, serviceName: "Lavage Extérieur Premium", formulaId: formulaExt1Id, formulaName: "Finition Lustrante", addOns: [] }] }
       }
     ]);
 
