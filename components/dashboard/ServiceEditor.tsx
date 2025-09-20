@@ -76,7 +76,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `${shopId}/${fileName}`;
 
-    // Optimistic UI update with local file
     const reader = new FileReader();
     reader.onload = (event) => {
       handleInputChange('imageUrl', event.target?.result as string);
@@ -93,7 +92,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         title: "Image Upload Failed", 
         message: `Error: ${uploadError.message}.\n\nPlease ensure you have created a public bucket named 'service-images' in your Supabase project's Storage section.` 
       });
-      handleInputChange('imageUrl', serviceToEdit?.imageUrl || ''); // Revert on failure
+      handleInputChange('imageUrl', serviceToEdit?.imageUrl || '');
       return;
     }
 
@@ -106,7 +105,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
   };
 
-
   const handleSaveClick = async () => {
     if (!shopId) {
         setAlertInfo({ isOpen: true, title: "Error", message: "Shop ID is missing. Cannot save." });
@@ -114,7 +112,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
     setIsSaving(true);
     try {
-        // 1. Upsert Service
         const servicePayload = {
             shop_id: shopId,
             name: formData.name,
@@ -136,63 +133,44 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        // 2. Handle Formulas (Robustly)
-        const toUpdateFormulas = formulas.filter(f => f.id).map(f => ({...f, service_id: serviceId}));
-        const toInsertFormulas = formulas.filter(f => !f.id).map(({ id, ...rest }) => ({ ...rest, service_id: serviceId }));
-        const formulaIdsToKeep = new Set(formulas.map(f => f.id).filter(Boolean));
-        const formulasToDelete = formulasForService.filter(f => !formulaIdsToKeep.has(f.id));
+        // --- Robustly handle related items ---
+        const handleRelatedItems = async (
+            dbTable: string,
+            localItems: any[],
+            originalItems: any[],
+            foreignKey: string,
+            foreignKeyValue: string,
+            extraPayload: object = {}
+        ) => {
+            const toUpdate = localItems.filter(item => item.id && item[foreignKey] === foreignKeyValue);
+            const toInsert = localItems.filter(item => !item.id).map(({ id, ...rest }) => ({ ...rest, [foreignKey]: foreignKeyValue, ...extraPayload }));
+            
+            const localIds = new Set(localItems.map(item => item.id).filter(Boolean));
+            const toDelete = originalItems.filter(item => !localIds.has(item.id));
 
-        if (formulasToDelete.length > 0) {
-            const { error } = await supabase.from('formulas').delete().in('id', formulasToDelete.map(f => f.id!));
-            if (error) throw error;
-        }
-        if (toUpdateFormulas.length > 0) {
-            const { error } = await supabase.from('formulas').upsert(toUpdateFormulas);
-            if (error) throw error;
-        }
-        if (toInsertFormulas.length > 0) {
-            const { error } = await supabase.from('formulas').insert(toInsertFormulas);
-            if (error) throw error;
-        }
-        
-        if (!isEditing && formulas.length === 0) {
-          await supabase.from('formulas').insert({ service_id: serviceId, name: t.formulas, description: '', additional_price: 0, additional_duration: 0 });
-        }
+            if (toDelete.length > 0) {
+                const { error } = await supabase.from(dbTable).delete().in('id', toDelete.map(item => item.id!));
+                if (error) throw error;
+            }
+            if (toUpdate.length > 0) {
+                const { error } = await supabase.from(dbTable).upsert(toUpdate);
+                if (error) throw error;
+            }
+            if (toInsert.length > 0) {
+                const { error } = await supabase.from(dbTable).insert(toInsert);
+                if (error) throw error;
+            }
+        };
+
+        await Promise.all([
+            handleRelatedItems('formulas', formulas, formulasForService, 'service_id', serviceId),
+            handleRelatedItems('service_vehicle_size_supplements', supplements, supplementsForService, 'service_id', serviceId),
+            handleRelatedItems('add_ons', specificAddOns, addOnsForService, 'service_id', serviceId, { shop_id: shopId })
+        ]);
       
-        // 3. Handle Supplements
-        const supplementPayloads = supportedVehicleSizes.map(size => {
-            const existing = supplements.find(s => s.size === size);
-            return {
-                id: existing?.id,
-                service_id: serviceId,
-                size: size,
-                additional_price: existing?.additionalPrice || 0,
-                additional_duration: existing?.additionalDuration || 0,
-            };
-        }).filter(s => s.additional_price || s.additional_duration || s.id);
-
-        if (supplementPayloads.length > 0) {
-            const { error } = await supabase.from('service_vehicle_size_supplements').upsert(supplementPayloads);
-            if(error) throw error;
-        }
-
-        // 4. Handle Specific Add-Ons (Robustly)
-        const toUpdateAddons = specificAddOns.filter(a => a.id).map(a => ({ ...a, shop_id: shopId, service_id: serviceId }));
-        const toInsertAddons = specificAddOns.filter(a => !a.id).map(({ id, ...rest }) => ({ ...rest, shop_id: shopId, service_id: serviceId }));
-        const addOnIdsToKeep = new Set(specificAddOns.map(a => a.id).filter(Boolean));
-        const addOnsToDelete = addOnsForService.filter(a => !addOnIdsToKeep.has(a.id));
-
-        if (addOnsToDelete.length > 0) {
-            const { error } = await supabase.from('add_ons').delete().in('id', addOnsToDelete.map(a => a.id!));
-            if (error) throw error;
-        }
-        if (toUpdateAddons.length > 0) {
-            const { error } = await supabase.from('add_ons').upsert(toUpdateAddons);
-            if (error) throw error;
-        }
-        if (toInsertAddons.length > 0) {
-            const { error } = await supabase.from('add_ons').insert(toInsertAddons);
-            if (error) throw error;
+        // If it's a new service and no formulas were added, create a default one
+        if (!isEditing && formulas.length === 0) {
+          await supabase.from('formulas').insert({ service_id: serviceId, name: 'Basique', description: '', additional_price: 0, additional_duration: 0 });
         }
         
         await onSave();
@@ -301,20 +279,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 {formulas.map((formula, index) => (
                     <div key={formula.id || `new-${index}`} className="grid grid-cols-1 md:grid-cols-10 gap-4 items-end">
                         <div className="md:col-span-3">
-                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.formulaName}</label>
+                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaName}</label>
                            <input value={formula.name || ''} onChange={e => updateFormula(index, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="w-full p-2 border-gray-200 border rounded-lg" />
                         </div>
                         <div className="md:col-span-3">
-                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.formulaDescription}</label>
+                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaDescription}</label>
                            <textarea value={formula.description || ''} onChange={e => updateFormula(index, 'description', e.target.value)} placeholder={t.formulaDescriptionPlaceholder} rows={1} className="w-full p-2 border-gray-200 border rounded-lg" />
                         </div>
                         <div className="md:col-span-2">
-                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.additionalPrice} (€)</label>
+                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalPrice}</label>
                            <input type="number" value={formula.additionalPrice || ''} onChange={e => updateFormula(index, 'additionalPrice', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                         </div>
                         <div className="md:col-span-2 flex items-center gap-2">
                           <div className="flex-grow">
-                             <label className="block text-xs font-medium text-gray-500 mb-1">{t.additionalDuration} (min)</label>
+                             <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalDuration}</label>
                              <input type="number" step="15" value={formula.additionalDuration || ''} onChange={e => updateFormula(index, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                           </div>
                            <button type="button" onClick={() => removeFormula(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>
@@ -348,16 +326,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 {specificAddOns.map((addOn, index) => (
                     <div key={addOn.id || `new-add-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div className="md:col-span-2">
-                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.addOnName}</label>
+                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.addOnName}</label>
                            <input value={addOn.name || ''} onChange={e => updateSpecificAddOn(index, 'name', e.target.value)} placeholder={t.addOnName} className="w-full p-2 border-gray-200 border rounded-lg" />
                         </div>
                         <div>
-                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.priceEUR}</label>
+                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.priceEUR}</label>
                            <input type="number" value={addOn.price ?? ''} onChange={e => updateSpecificAddOn(index, 'price', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-grow">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">{t.durationMIN}</label>
+                            <label className="block text-sm font-medium text-gray-500 mb-1">{t.durationMIN}</label>
                             <input type="number" step="15" value={addOn.duration ?? ''} onChange={e => updateSpecificAddOn(index, 'duration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                           </div>
                            <button type="button" onClick={() => removeSpecificAddOn(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>

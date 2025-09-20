@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { CloseIcon } from '../Icons';
-import BookingPage from '../BookingPage';
+import BookingFlow from './BookingFlow';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BookingPreviewModalProps {
@@ -50,7 +50,7 @@ const BookingPreviewModal: React.FC<BookingPreviewModalProps> = ({ isOpen, onClo
             </button>
         </header>
         <div className="overflow-y-auto flex-grow">
-            <BookingPage shopId={shopId} />
+            <BookingFlow shopId={shopId} />
         </div>
       </div>
        <style>{`

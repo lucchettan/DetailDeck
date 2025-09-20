@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -76,20 +75,30 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 const { data: shop, error: shopError } = await supabase.from('shops').select('*').eq('id', shopId).single();
                 if (shopError) throw shopError.code === 'PGRST116' ? new Error(t.shopNotFound) : shopError;
 
-                const [servicesRes, addOnsRes, formulasRes, supplementsRes] = await Promise.all([
-                    supabase.from('services').select('*').eq('shop_id', shop.id).eq('status', 'active'),
+                // Step 1: Fetch active services for the shop
+                const { data: services, error: servicesError } = await supabase
+                    .from('services')
+                    .select('*')
+                    .eq('shop_id', shop.id)
+                    .eq('status', 'active');
+                if (servicesError) throw servicesError;
+
+                const serviceIds = services.map(s => s.id);
+
+                // Step 2: Fetch related items using service IDs
+                const [addOnsRes, formulasRes, supplementsRes] = await Promise.all([
                     supabase.from('add_ons').select('*').eq('shop_id', shop.id),
-                    supabase.from('formulas').select('*, services(shop_id)').eq('services.shop_id', shop.id),
-                    supabase.from('service_vehicle_size_supplements').select('*, services(shop_id)').eq('services.shop_id', shop.id)
+                    serviceIds.length > 0 ? supabase.from('formulas').select('*').in('service_id', serviceIds) : Promise.resolve({ data: [], error: null }),
+                    serviceIds.length > 0 ? supabase.from('service_vehicle_size_supplements').select('*').in('service_id', serviceIds) : Promise.resolve({ data: [], error: null })
                 ]);
 
-                if (servicesRes.error || addOnsRes.error || formulasRes.error || supplementsRes.error) {
+                if (addOnsRes.error || formulasRes.error || supplementsRes.error) {
                     throw new Error("Failed to load service details.");
                 }
 
                 setShopData({
                     ...(toCamelCase(shop) as Shop),
-                    services: toCamelCase(servicesRes.data) as Service[],
+                    services: toCamelCase(services) as Service[],
                     addOns: toCamelCase(addOnsRes.data) as AddOn[],
                     formulas: toCamelCase(formulasRes.data) as Formula[],
                     supplements: toCamelCase(supplementsRes.data) as VehicleSizeSupplement[],
