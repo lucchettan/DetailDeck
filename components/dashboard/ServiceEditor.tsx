@@ -147,7 +147,15 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
-        const formulasToSave = formulas.map(f => ({
+        const createUpsertPayload = (item: any, basePayload: any) => {
+            const payload = { ...basePayload };
+            if (item.id) {
+                payload.id = item.id;
+            }
+            return payload;
+        };
+
+        const formulasToSave = formulas.map(f => createUpsertPayload(f, {
             service_id: serviceId,
             name: f.name || 'Nouvelle Formule',
             description: f.includedItems.join('\n').trim(),
@@ -155,14 +163,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             additional_duration: f.additionalDuration || 0,
         }));
         
-        const supplementsToSave = supplements.map(s => ({
-            service_id: serviceId,
-            size: s.size,
-            additional_price: s.additionalPrice || 0,
-            additional_duration: s.additionalDuration || 0,
+        const supplementsToSave = supplements
+            .filter(s => s.size)
+            .map(s => createUpsertPayload(s, {
+                service_id: serviceId,
+                size: s.size,
+                additional_price: s.additionalPrice || 0,
+                additional_duration: s.additionalDuration || 0,
         }));
 
-        const addOnsToSave = specificAddOns.map(a => ({
+        const addOnsToSave = specificAddOns.map(a => createUpsertPayload(a, {
             service_id: serviceId,
             shop_id: shopId,
             name: a.name || 'Nouvelle Option',
