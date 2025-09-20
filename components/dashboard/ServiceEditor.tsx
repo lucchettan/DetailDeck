@@ -422,16 +422,38 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             <section>
                 <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.vehicleSizeSupplements}</h3>
                 <p className="text-sm text-brand-gray mb-4">{t.vehicleSizeSupplementsSubtitle}</p>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {supportedVehicleSizes.map(size => {
                        const supplement = supplements.find(s=>s.size === size);
                        return (
-                        <div key={size} className="grid grid-cols-3 gap-4 items-center">
-                            <label className="font-semibold">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</label>
-                            <input type="number" value={supplement?.additionalPrice ?? ''} onChange={e => updateSupplement(size, 'additionalPrice', e.target.value)} placeholder={`${t.priceEUR}`} className="p-2 border-gray-200 border rounded-lg" />
-                            <input type="number" step="15" value={supplement?.additionalDuration ?? ''} onChange={e => updateSupplement(size, 'additionalDuration', e.target.value)} placeholder={`${t.durationMIN}`} className="p-2 border-gray-200 border rounded-lg" />
+                        <div key={size} className="bg-gray-50 p-4 rounded-lg border">
+                            <h4 className="font-bold text-brand-dark mb-3">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.additionalPrice}</label>
+                                    <input 
+                                        type="number" 
+                                        value={supplement?.additionalPrice ?? ''} 
+                                        onChange={e => updateSupplement(size, 'additionalPrice', e.target.value)} 
+                                        placeholder="€" 
+                                        className="w-full p-2 border-gray-200 border rounded-lg" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.additionalDuration}</label>
+                                    <input 
+                                        type="number" 
+                                        step="15" 
+                                        value={supplement?.additionalDuration ?? ''} 
+                                        onChange={e => updateSupplement(size, 'additionalDuration', e.target.value)} 
+                                        placeholder="min" 
+                                        className="w-full p-2 border-gray-200 border rounded-lg" 
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    )})}
+                       )
+                    })}
                 </div>
             </section>
             
