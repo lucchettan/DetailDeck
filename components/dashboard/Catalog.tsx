@@ -1,5 +1,4 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
 import { PlusIcon, ImageIcon, MoneyIcon } from '../Icons';
@@ -12,6 +11,7 @@ interface CatalogProps {
 
 const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewService }) => {
   const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'interior' | 'exterior' | 'complementary'>('interior');
 
   const { interiorServices, exteriorServices, complementaryServices } = useMemo(() => {
     return services.reduce((acc, service) => {
@@ -30,6 +30,12 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewServ
     });
   }, [services]);
 
+  const serviceCategories = {
+    interior: { list: interiorServices, addText: t.addNewInteriorService, label: t.interior },
+    exterior: { list: exteriorServices, addText: t.addNewExteriorService, label: t.exterior },
+    complementary: { list: complementaryServices, addText: t.addNewComplementaryService, label: t.complementary },
+  }
+
   const ServiceList: React.FC<{
     serviceList: Service[];
     onAdd: () => void;
@@ -41,7 +47,7 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewServ
           className="flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-brand-blue hover:bg-blue-50 transition-all duration-300 text-brand-gray hover:text-brand-dark min-h-[280px]"
       >
           <PlusIcon className="w-10 h-10 mb-2" />
-          <span className="font-bold text-lg">{addText}</span>
+          <span className="font-bold text-lg text-center">{addText}</span>
       </button>
       
       {serviceList.map(service => (
@@ -91,31 +97,38 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewServ
       </div>
       
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-md">
-          <div className="space-y-12">
-            <div>
-              <h3 className="text-xl font-bold text-brand-dark mb-4">{t.interiorServices}</h3>
+          <div className="border-b border-gray-200 mb-6">
+              <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                  {Object.keys(serviceCategories).map(catKey => {
+                      const category = serviceCategories[catKey as keyof typeof serviceCategories];
+                      const isActive = activeTab === catKey;
+                      return (
+                          <button
+                              key={catKey}
+                              onClick={() => setActiveTab(catKey as 'interior' | 'exterior' | 'complementary')}
+                              className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2
+                                  ${isActive 
+                                      ? 'border-brand-blue text-brand-blue' 
+                                      : 'border-transparent text-brand-gray hover:text-brand-dark hover:border-gray-300'
+                                  }`
+                              }
+                          >
+                              {category.label}
+                              <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-blue-100 text-brand-blue' : 'bg-gray-100 text-brand-gray'}`}>
+                                  {category.list.length}
+                              </span>
+                          </button>
+                      )
+                  })}
+              </nav>
+          </div>
+
+          <div>
               <ServiceList 
-                serviceList={interiorServices}
-                onAdd={() => onAddNewService('interior')}
-                addText={t.addNewInteriorService}
+                serviceList={serviceCategories[activeTab].list}
+                onAdd={() => onAddNewService(activeTab)}
+                addText={serviceCategories[activeTab].addText}
               />
-            </div>
-             <div>
-              <h3 className="text-xl font-bold text-brand-dark mb-4">{t.exteriorServices}</h3>
-              <ServiceList 
-                serviceList={exteriorServices}
-                onAdd={() => onAddNewService('exterior')}
-                addText={t.addNewExteriorService}
-              />
-            </div>
-             <div>
-              <h3 className="text-xl font-bold text-brand-dark mb-4">{t.complementaryServices}</h3>
-              <ServiceList 
-                serviceList={complementaryServices}
-                onAdd={() => onAddNewService('complementary')}
-                addText={t.addNewComplementaryService}
-              />
-            </div>
           </div>
       </div>
     </div>

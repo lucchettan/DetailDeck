@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ImageIcon, PlusIcon, TrashIcon, SaveIcon } from '../Icons';
+import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckBadgeIcon } from '../Icons';
 import { Service, Formula, VehicleSizeSupplement, AddOn } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
+
+type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
 
 interface ServiceEditorProps {
   serviceToEdit: Service | null;
@@ -48,7 +50,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const isEditing = serviceToEdit !== null;
 
   const [formData, setFormData] = useState<Partial<Service>>(getInitialFormData(serviceToEdit, initialCategory));
-  const [formulas, setFormulas] = useState<Partial<Formula>[]>([]);
+  const [formulas, setFormulas] = useState<FormulaWithIncluded[]>([]);
   const [supplements, setSupplements] = useState<Partial<VehicleSizeSupplement>[]>([]);
   const [specificAddOns, setSpecificAddOns] = useState<Partial<AddOn>[]>([]);
   
@@ -58,7 +60,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   useEffect(() => {
     setFormData(getInitialFormData(serviceToEdit, initialCategory));
-    setFormulas(formulasForService.length > 0 ? formulasForService : []);
+    const initialFormulas = (formulasForService.length > 0 ? formulasForService : []).map(f => ({
+        ...f,
+        includedItems: f.description ? f.description.split('\n').filter(line => line.trim() !== '') : []
+    }));
+    setFormulas(initialFormulas);
     setSupplements(supplementsForService);
     setSpecificAddOns(addOnsForService);
   }, [serviceToEdit, initialCategory, formulasForService, supplementsForService, addOnsForService]);
@@ -133,6 +139,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
 
+        // Convert formulas with includedItems array back to description string for DB
+        const formulasToSave = formulas.map(f => {
+            const { includedItems, ...rest } = f;
+            return { ...rest, description: includedItems.join('\n') };
+        });
+
         // --- Robustly handle related items ---
         const handleRelatedItems = async (
             dbTable: string,
@@ -163,7 +175,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         };
 
         await Promise.all([
-            handleRelatedItems('formulas', formulas, formulasForService, 'service_id', serviceId),
+            handleRelatedItems('formulas', formulasToSave, formulasForService, 'service_id', serviceId),
             handleRelatedItems('service_vehicle_size_supplements', supplements, supplementsForService, 'service_id', serviceId),
             handleRelatedItems('add_ons', specificAddOns, addOnsForService, 'service_id', serviceId, { shop_id: shopId })
         ]);
@@ -189,15 +201,34 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
   }
 
-  const addFormula = () => setFormulas(prev => [...prev, { name: '', description: '', additionalPrice: 10, additionalDuration: 15 }]);
-  const updateFormula = (index: number, field: keyof Formula, value: any) => {
+  // Formula handlers
+  const addFormula = () => setFormulas(prev => [...prev, { name: '', includedItems: [], additionalPrice: 10, additionalDuration: 15 }]);
+  const updateFormulaField = (index: number, field: keyof Formula, value: any) => {
       const newFormulas = [...formulas];
       const val = (field === 'additionalPrice' || field === 'additionalDuration') ? Number(value) : value;
       (newFormulas[index] as any)[field] = val;
       setFormulas(newFormulas);
   };
   const removeFormula = (index: number) => setFormulas(formulas.filter((_, i) => i !== index));
-  
+
+  // Included Items Handlers
+  const addIncludedItem = (formulaIndex: number) => {
+    const newFormulas = [...formulas];
+    newFormulas[formulaIndex].includedItems.push('');
+    setFormulas(newFormulas);
+  }
+  const updateIncludedItem = (formulaIndex: number, itemIndex: number, value: string) => {
+    const newFormulas = [...formulas];
+    newFormulas[formulaIndex].includedItems[itemIndex] = value;
+    setFormulas(newFormulas);
+  }
+  const removeIncludedItem = (formulaIndex: number, itemIndex: number) => {
+    const newFormulas = [...formulas];
+    newFormulas[formulaIndex].includedItems.splice(itemIndex, 1);
+    setFormulas(newFormulas);
+  }
+
+  // Add-on handlers
   const addSpecificAddOn = () => setSpecificAddOns(prev => [...prev, { name: '', price: 10, duration: 15 }]);
   const updateSpecificAddOn = (index: number, field: keyof AddOn, value: any) => {
       const newAddons = [...specificAddOns];
@@ -207,6 +238,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
   const removeSpecificAddOn = (index: number) => setSpecificAddOns(specificAddOns.filter((_, i) => i !== index));
 
+  // Supplement handlers
   const updateSupplement = (size: string, field: 'additionalPrice' | 'additionalDuration', value: string) => {
     const numValue = Number(value);
     setSupplements(prev => {
@@ -275,27 +307,47 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             <section>
                 <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.formulas}</h3>
                 <p className="text-sm text-brand-gray mb-4">{t.formulasSubtitle}</p>
-                <div className="space-y-4">
-                {formulas.map((formula, index) => (
-                    <div key={formula.id || `new-${index}`} className="grid grid-cols-1 md:grid-cols-10 gap-4 items-end">
-                        <div className="md:col-span-3">
-                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaName}</label>
-                           <input value={formula.name || ''} onChange={e => updateFormula(index, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="w-full p-2 border-gray-200 border rounded-lg" />
-                        </div>
-                        <div className="md:col-span-3">
-                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaDescription}</label>
-                           <textarea value={formula.description || ''} onChange={e => updateFormula(index, 'description', e.target.value)} placeholder={t.formulaDescriptionPlaceholder} rows={1} className="w-full p-2 border-gray-200 border rounded-lg" />
-                        </div>
-                        <div className="md:col-span-2">
-                           <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalPrice}</label>
-                           <input type="number" value={formula.additionalPrice || ''} onChange={e => updateFormula(index, 'additionalPrice', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
-                        </div>
-                        <div className="md:col-span-2 flex items-center gap-2">
-                          <div className="flex-grow">
-                             <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalDuration}</label>
-                             <input type="number" step="15" value={formula.additionalDuration || ''} onChange={e => updateFormula(index, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
-                          </div>
-                           <button type="button" onClick={() => removeFormula(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>
+                <div className="space-y-6">
+                {formulas.map((formula, formulaIndex) => (
+                    <div key={formula.id || `new-${formulaIndex}`} className="p-4 border rounded-lg bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-10 gap-4 items-start">
+                            <div className="md:col-span-4">
+                               <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaName}</label>
+                               <input value={formula.name || ''} onChange={e => updateFormulaField(formulaIndex, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="w-full p-2 border-gray-200 border rounded-lg" />
+                            </div>
+                            <div className="md:col-span-2">
+                               <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalPrice}</label>
+                               <input type="number" value={formula.additionalPrice ?? ''} onChange={e => updateFormulaField(formulaIndex, 'additionalPrice', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                            </div>
+                            <div className="md:col-span-2">
+                                 <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalDuration}</label>
+                                 <input type="number" step="15" value={formula.additionalDuration ?? ''} onChange={e => updateFormulaField(formulaIndex, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                            </div>
+                            <div className="md:col-span-2 flex justify-end items-center pt-6">
+                               <button type="button" onClick={() => removeFormula(formulaIndex)} className="p-2 text-red-500 hover:text-red-700"><TrashIcon className="w-6 h-6"/></button>
+                            </div>
+
+                            <div className="md:col-span-10 mt-2">
+                                <label className="block text-sm font-medium text-gray-500 mb-2">{t.whatsIncluded}</label>
+                                <div className="space-y-2">
+                                    {formula.includedItems.map((item, itemIndex) => (
+                                        <div key={itemIndex} className="flex items-center gap-2">
+                                            <CheckBadgeIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                            <input 
+                                                type="text"
+                                                value={item}
+                                                onChange={e => updateIncludedItem(formulaIndex, itemIndex, e.target.value)}
+                                                placeholder="e.g., Aspiration complète"
+                                                className="w-full p-2 border-gray-200 border rounded-lg"
+                                            />
+                                            <button type="button" onClick={() => removeIncludedItem(formulaIndex, itemIndex)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-5 h-5"/></button>
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={() => addIncludedItem(formulaIndex)} className="text-sm text-brand-blue font-semibold hover:underline flex items-center gap-1">
+                                        <PlusIcon className="w-4 h-4" /> {t.addFeature}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
