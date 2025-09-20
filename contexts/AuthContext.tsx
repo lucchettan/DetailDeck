@@ -1,7 +1,4 @@
 
-
-
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 // Fix: Removed unused and non-exported types from '@supabase/supabase-js'.
@@ -15,7 +12,7 @@ interface AuthContextType {
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<AuthResponse>;
   logIn: (credentials: SignInWithPasswordCredentials) => Promise<{ session: Session | null, error: AuthError | null }>;
   logOut: () => Promise<{ error: AuthError | null }>;
-  demoLogin: () => Promise<{ session: Session | null, error: AuthError | null }>;
+  accessDemo: () => Promise<{ error: AuthError | null }>;
   resendSignUpConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
   resetPasswordForEmail: (email: string) => Promise<{ error: AuthError | null }>;
   updateUserPassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -139,10 +136,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
-  const demoLogin = () => logIn({
-    email: 'demo@resaone.com',
-    password: 'ResaOneDemo123!',
-  });
+  const accessDemo = async (): Promise<{ error: AuthError | null }> => {
+    try {
+      const randomId = Math.random().toString(36).substring(2, 10);
+      const email = `demo-${randomId}@resaone.com`;
+      const password = `demoPass-${randomId}!`;
+
+      // In mock mode, just simulate success and set mock user
+      if (IS_MOCK_MODE) {
+        console.log(`%c[Auth MOCK]%c accessDemo called. Creating mock user ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+        setSession(mockSession);
+        setUser(mockUser);
+        return { error: null };
+      }
+
+      // 1. Create a new user
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+
+      if (signUpError) {
+        console.error('Demo account creation failed:', signUpError);
+        return { error: signUpError };
+      }
+      
+      // 2. If user is created and has a session, seed their data
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        
+        // Invoke the seeding function
+        const { error: functionError } = await supabase.functions.invoke('seed-demo-data');
+
+        if (functionError) {
+          console.error('Demo data seeding failed:', functionError);
+          // Attempt to sign out the user to prevent them from accessing a broken empty state
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          return { error: { name: 'FunctionInvokeError', message: `Failed to create demo environment: ${functionError.message}` } as AuthError };
+        }
+      } else {
+          const error = { name: 'AuthApiError', message: 'Failed to create a session for the demo account.' } as AuthError;
+          return { error };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('An unexpected error occurred during demo access:', error);
+      return { error: { name: 'UnexpectedError', message: error.message } as AuthError };
+    }
+  };
 
   const resendSignUpConfirmation = async (email: string) => {
     if (IS_MOCK_MODE) {
@@ -181,7 +223,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     logIn,
     logOut,
-    demoLogin,
+    accessDemo,
     resendSignUpConfirmation,
     resetPasswordForEmail,
     updateUserPassword,

@@ -68,9 +68,41 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Image handling logic would go here
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !shopId) {
+      return;
+    }
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${shopId}/${fileName}`;
+
+    // Optimistic UI update with local file
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      handleInputChange('imageUrl', event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    const { error: uploadError } = await supabase.storage
+      .from('service-images')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      setAlertInfo({ isOpen: true, title: "Image Upload Failed", message: `Error: ${uploadError.message}. Make sure you have created a public 'service-images' bucket in Supabase Storage.` });
+      handleInputChange('imageUrl', serviceToEdit?.imageUrl || ''); // Revert on failure
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from('service-images')
+      .getPublicUrl(filePath);
+
+    if (data) {
+      handleInputChange('imageUrl', data.publicUrl);
+    }
   };
+
 
   const handleSaveClick = async () => {
     setIsSaving(true);
@@ -104,6 +136,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           await supabase.from('formulas').insert({
               service_id: serviceId,
               name: 'Basique',
+              description: '',
               additional_price: 0,
               additional_duration: 0,
           });
@@ -116,14 +149,19 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
 
       if (formulas.length > 0) {
-        const formulaPayloads = formulas.map(f => ({
-            id: f.id,
-            service_id: serviceId,
-            name: f.name,
-            description: f.description,
-            additional_price: f.additionalPrice,
-            additional_duration: f.additionalDuration,
-        }));
+        const formulaPayloads = formulas.map(f => {
+            const payload: any = {
+                service_id: serviceId,
+                name: f.name,
+                description: f.description,
+                additional_price: f.additionalPrice,
+                additional_duration: f.additionalDuration,
+            };
+            if (f.id) { // Only include ID for existing formulas
+                payload.id = f.id;
+            }
+            return payload;
+        });
         const { error: formulasError } = await supabase.from('formulas').upsert(formulaPayloads);
         if (formulasError) throw formulasError;
       }
@@ -150,14 +188,19 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
 
       if (specificAddOns.length > 0) {
-        const addOnPayloads = specificAddOns.map(a => ({
-            id: a.id,
-            name: a.name,
-            price: a.price,
-            duration: a.duration,
-            shop_id: shopId,
-            service_id: serviceId
-        }));
+        const addOnPayloads = specificAddOns.map(a => {
+            const payload: any = {
+                name: a.name,
+                price: a.price,
+                duration: a.duration,
+                shop_id: shopId,
+                service_id: serviceId
+            };
+            if (a.id) { // Only include ID for existing add-ons
+                payload.id = a.id;
+            }
+            return payload;
+        });
         const { error: addOnsError } = await supabase.from('add_ons').upsert(addOnPayloads);
         if (addOnsError) throw addOnsError;
       }
@@ -178,7 +221,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
   }
 
-  const addFormula = () => setFormulas(prev => [...prev, { name: '', additionalPrice: 10, additionalDuration: 15 }]);
+  const addFormula = () => setFormulas(prev => [...prev, { name: '', description: '', additionalPrice: 10, additionalDuration: 15 }]);
   const updateFormula = (index: number, field: keyof Formula, value: any) => {
       const newFormulas = [...formulas];
       const val = (field === 'additionalPrice' || field === 'additionalDuration') ? Number(value) : value;
@@ -251,11 +294,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
               <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.basePriceAndDuration}</h3>
               <div className="grid grid-cols-2 gap-4">
                   <div>
-                      <label className="block text-sm font-medium text-brand-dark mb-1">{t.price} (€)</label>
+                      <label className="block text-sm font-medium text-brand-dark mb-1">{t.priceEUR}</label>
                       <input type="number" value={formData.basePrice || ''} onChange={e => handleInputChange('basePrice', Number(e.target.value))} className="w-full p-2 border-gray-200 border rounded-lg" />
                   </div>
                    <div>
-                      <label className="block text-sm font-medium text-brand-dark mb-1">{t.duration} (minutes)</label>
+                      <label className="block text-sm font-medium text-brand-dark mb-1">{t.durationMIN}</label>
                       <input type="number" step="15" value={formData.baseDuration || ''} onChange={e => handleInputChange('baseDuration', Number(e.target.value))} className="w-full p-2 border-gray-200 border rounded-lg" />
                   </div>
               </div>
@@ -266,12 +309,25 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <p className="text-sm text-brand-gray mb-4">{t.formulasSubtitle}</p>
                 <div className="space-y-4">
                 {formulas.map((formula, index) => (
-                    <div key={formula.id || `new-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        <input value={formula.name || ''} onChange={e => updateFormula(index, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="md:col-span-2 w-full p-2 border-gray-200 border rounded-lg" />
-                        <input type="number" value={formula.additionalPrice || ''} onChange={e => updateFormula(index, 'additionalPrice', e.target.value)} placeholder={`${t.additionalPrice} (€)`} className="w-full p-2 border-gray-200 border rounded-lg" />
-                        <div className="flex items-center gap-2">
-                          <input type="number" step="15" value={formula.additionalDuration || ''} onChange={e => updateFormula(index, 'additionalDuration', e.target.value)} placeholder={`${t.additionalDuration}`} className="w-full p-2 border-gray-200 border rounded-lg" />
-                           <button type="button" onClick={() => removeFormula(index)}><TrashIcon className="text-red-500 w-6 h-6"/></button>
+                    <div key={formula.id || `new-${index}`} className="grid grid-cols-1 md:grid-cols-10 gap-4 items-end">
+                        <div className="md:col-span-3">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.formulaName}</label>
+                           <input value={formula.name || ''} onChange={e => updateFormula(index, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="w-full p-2 border-gray-200 border rounded-lg" />
+                        </div>
+                        <div className="md:col-span-3">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.formulaDescription}</label>
+                           <textarea value={formula.description || ''} onChange={e => updateFormula(index, 'description', e.target.value)} placeholder={t.formulaDescriptionPlaceholder} rows={1} className="w-full p-2 border-gray-200 border rounded-lg" />
+                        </div>
+                        <div className="md:col-span-2">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.additionalPrice} (€)</label>
+                           <input type="number" value={formula.additionalPrice || ''} onChange={e => updateFormula(index, 'additionalPrice', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                        </div>
+                        <div className="md:col-span-2 flex items-center gap-2">
+                          <div className="flex-grow">
+                             <label className="block text-xs font-medium text-gray-500 mb-1">{t.durationMIN}</label>
+                             <input type="number" step="15" value={formula.additionalDuration || ''} onChange={e => updateFormula(index, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                          </div>
+                           <button type="button" onClick={() => removeFormula(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>
                         </div>
                     </div>
                 ))}
@@ -288,8 +344,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                        return (
                         <div key={size} className="grid grid-cols-3 gap-4 items-center">
                             <label className="font-semibold">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</label>
-                            <input type="number" value={supplement?.additionalPrice ?? ''} onChange={e => updateSupplement(size, 'additionalPrice', e.target.value)} placeholder={`${t.additionalPrice} (€)`} className="p-2 border-gray-200 border rounded-lg" />
-                            <input type="number" step="15" value={supplement?.additionalDuration ?? ''} onChange={e => updateSupplement(size, 'additionalDuration', e.target.value)} placeholder={`${t.additionalDuration}`} className="p-2 border-gray-200 border rounded-lg" />
+                            <input type="number" value={supplement?.additionalPrice ?? ''} onChange={e => updateSupplement(size, 'additionalPrice', e.target.value)} placeholder={`${t.priceEUR}`} className="p-2 border-gray-200 border rounded-lg" />
+                            <input type="number" step="15" value={supplement?.additionalDuration ?? ''} onChange={e => updateSupplement(size, 'additionalDuration', e.target.value)} placeholder={`${t.durationMIN}`} className="p-2 border-gray-200 border rounded-lg" />
                         </div>
                     )})}
                 </div>
@@ -300,12 +356,21 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 <p className="text-sm text-brand-gray mb-4">{t.specificAddOnsSubtitle}</p>
                 <div className="space-y-4">
                 {specificAddOns.map((addOn, index) => (
-                    <div key={addOn.id || `new-add-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        <input value={addOn.name || ''} onChange={e => updateSpecificAddOn(index, 'name', e.target.value)} placeholder={t.addOnName} className="md:col-span-2 w-full p-2 border-gray-200 border rounded-lg" />
-                        <input type="number" value={addOn.price ?? ''} onChange={e => updateSpecificAddOn(index, 'price', e.target.value)} placeholder={`${t.price} (€)`} className="w-full p-2 border-gray-200 border rounded-lg" />
+                    <div key={addOn.id || `new-add-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div className="md:col-span-2">
+                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.addOnName}</label>
+                           <input value={addOn.name || ''} onChange={e => updateSpecificAddOn(index, 'name', e.target.value)} placeholder={t.addOnName} className="w-full p-2 border-gray-200 border rounded-lg" />
+                        </div>
+                        <div>
+                           <label className="block text-xs font-medium text-gray-500 mb-1">{t.priceEUR}</label>
+                           <input type="number" value={addOn.price ?? ''} onChange={e => updateSpecificAddOn(index, 'price', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                        </div>
                         <div className="flex items-center gap-2">
-                          <input type="number" step="15" value={addOn.duration ?? ''} onChange={e => updateSpecificAddOn(index, 'duration', e.target.value)} placeholder={t.duration} className="w-full p-2 border-gray-200 border rounded-lg" />
-                           <button type="button" onClick={() => removeSpecificAddOn(index)}><TrashIcon className="text-red-500 w-6 h-6"/></button>
+                          <div className="flex-grow">
+                            <label className="block text-xs font-medium text-gray-500 mb-1">{t.durationMIN}</label>
+                            <input type="number" step="15" value={addOn.duration ?? ''} onChange={e => updateSpecificAddOn(index, 'duration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                          </div>
+                           <button type="button" onClick={() => removeSpecificAddOn(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>
                         </div>
                     </div>
                 ))}

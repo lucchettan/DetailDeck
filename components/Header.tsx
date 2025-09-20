@@ -97,7 +97,7 @@ const LanguageSwitcher: React.FC = () => {
 }
 
 
-const Header: React.FC<{ onDemoClick: () => void; }> = ({ onDemoClick }) => {
+const Header: React.FC<{ onDemoClick: () => void; isDemoLoading: boolean; }> = ({ onDemoClick, isDemoLoading }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
@@ -122,9 +122,17 @@ const Header: React.FC<{ onDemoClick: () => void; }> = ({ onDemoClick }) => {
                 <a href="#faq" className="text-brand-gray hover:text-brand-dark transition-colors duration-300 hidden md:block">{t.faq}</a>
                 <button
                   onClick={onDemoClick}
-                  className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base"
+                  disabled={isDemoLoading}
+                  className="bg-gray-100 text-brand-dark font-semibold py-2 px-4 sm:px-5 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm sm:text-base disabled:opacity-75 disabled:cursor-wait min-w-[150px]"
                 >
-                  {t.accessDemo}
+                  {isDemoLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-brand-dark"></div>
+                      <span>{t.accessingDemo}</span>
+                    </div>
+                  ) : (
+                    t.accessDemo
+                  )}
                 </button>
                 <a
                   href="/signin"

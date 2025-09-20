@@ -7,7 +7,7 @@ import { trackEvent } from './lib/analytics';
 import LandingPage from './components/LandingPage';
 import SignInPage from './components/SignInPage';
 import Dashboard from './components/Dashboard';
-import BookingPage from './components/BookingPage';
+import BookingPage from './components/booking/BookingPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();

@@ -2,12 +2,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon, CarIcon, CloseIcon } from './Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon, CarIcon, CloseIcon, CheckCircleIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
 import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
 import FloatingSummary from './booking/FloatingSummary';
-import { toCamelCase, parseSafeInt } from '../lib/utils';
+import { toCamelCase, parseSafeInt } from '../../lib/utils';
 import StepClientInfo from './booking/StepClientInfo';
 import BookingPageSkeleton from './booking/BookingPageSkeleton';
 import BookingServiceCard from './booking/BookingServiceCard';
@@ -317,14 +317,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         <div>
                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectDate}</h3>
                             <Calendar 
-                                shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} 
+                                shopId={shopId} schedule={shopData.schedule || {}} serviceDuration={totalDuration} 
                                 selectedDate={selectedDate} onSelectDate={setSelectedDate}
                                 minBookingNotice={shopData.minBookingNotice} maxBookingHorizon={shopData.maxBookingHorizon}
                             />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                            { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
+                            { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule || {}} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} />
                             : <p className="text-sm text-brand-gray">{t.selectDate}</p>
                             }
                         </div>
@@ -397,7 +397,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                 <FloatingSummary
                     totalDuration={totalDuration}
                     totalPrice={totalPrice}
-                    onButtonClick={handleNextStep}
+                    onButtonClick={step === 'clientInfo' ? handleConfirmBooking : handleNextStep}
                     buttonText={step === 'clientInfo' ? t.confirmBooking : t.nextStep}
                     buttonDisabled={buttonDisabled()}
                     isConfirming={isConfirming}
@@ -418,7 +418,16 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                                         <span className="font-bold">{formula.name}</span>
                                         <span className="font-semibold text-brand-blue">+ {formula.additionalPrice}€</span>
                                     </div>
-                                    <p className="text-sm text-brand-gray mt-1">{formula.description}</p>
+                                     {formula.description && (
+                                        <ul className="mt-2 text-sm text-brand-gray space-y-1 text-left">
+                                            {formula.description.split('\n').map((item, index) => (
+                                                item.trim() && <li key={index} className="flex items-start gap-2">
+                                                    <CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                    <span>{item.trim()}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </button>
                             ))}
                         </div>
