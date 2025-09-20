@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, PlusIcon, TrashIcon, SaveIcon } from '../Icons';
@@ -74,7 +73,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
     const file = e.target.files[0];
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `${shopId}/${fileName}`;
 
     // Optimistic UI update with local file
@@ -89,7 +88,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
-      setAlertInfo({ isOpen: true, title: "Image Upload Failed", message: `Error: ${uploadError.message}. Make sure you have created a public 'service-images' bucket in Supabase Storage.` });
+      setAlertInfo({ 
+        isOpen: true, 
+        title: "Image Upload Failed", 
+        message: `Error: ${uploadError.message}.\n\nPlease ensure you have created a public bucket named 'service-images' in your Supabase project's Storage section.` 
+      });
       handleInputChange('imageUrl', serviceToEdit?.imageUrl || ''); // Revert on failure
       return;
     }
@@ -105,107 +108,87 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
 
   const handleSaveClick = async () => {
+    if (!shopId) {
+        setAlertInfo({ isOpen: true, title: "Error", message: "Shop ID is missing. Cannot save." });
+        return;
+    }
     setIsSaving(true);
     try {
-      const servicePayload: any = {
-        shop_id: shopId,
-        name: formData.name,
-        description: formData.description,
-        status: formData.status,
-        category: formData.category,
-        base_price: formData.basePrice,
-        base_duration: formData.baseDuration,
-        image_url: formData.imageUrl,
-      };
+        // 1. Upsert Service
+        const servicePayload = {
+            shop_id: shopId,
+            name: formData.name,
+            description: formData.description,
+            status: formData.status,
+            category: formData.category,
+            base_price: formData.basePrice,
+            base_duration: formData.baseDuration,
+            image_url: formData.imageUrl,
+            ...(formData.id && { id: formData.id }),
+        };
 
-      let serviceId = formData.id;
-      if (isEditing) {
-        servicePayload.id = serviceId;
-      }
+        const { data: savedService, error: serviceError } = await supabase
+            .from('services')
+            .upsert(servicePayload)
+            .select()
+            .single();
+        
+        if (serviceError) throw serviceError;
+        const serviceId = savedService.id;
 
-      const { data: savedService, error: serviceError } = await supabase
-        .from('services')
-        .upsert(servicePayload)
-        .select()
-        .single();
-      
-      if (serviceError) throw serviceError;
-      serviceId = savedService.id;
+        // 2. Handle Formulas (Robustly)
+        const existingFormulas = formulas.filter(f => f.id);
+        const newFormulas = formulas.filter(f => !f.id);
+        const formulaIdsToKeep = new Set(existingFormulas.map(f => f.id));
+        const formulasToDelete = formulasForService.filter(f => !formulaIdsToKeep.has(f.id));
 
-      if (!isEditing && formulas.length === 0) {
-          await supabase.from('formulas').insert({
-              service_id: serviceId,
-              name: 'Basique',
-              description: '',
-              additional_price: 0,
-              additional_duration: 0,
-          });
-      } else {
-        const incomingFormulaIds = new Set(formulas.map(f => f.id).filter(Boolean));
-        const formulasToDelete = formulasForService.filter(f => !incomingFormulaIds.has(f.id));
         if (formulasToDelete.length > 0) {
             await supabase.from('formulas').delete().in('id', formulasToDelete.map(f => f.id!));
         }
-      }
-
-      if (formulas.length > 0) {
-        const formulaPayloads = formulas.map(f => {
-            const payload: any = {
-                service_id: serviceId,
-                name: f.name,
-                description: f.description,
-                additional_price: f.additionalPrice,
-                additional_duration: f.additionalDuration,
-            };
-            if (f.id) { // Only include ID for existing formulas
-                payload.id = f.id;
-            }
-            return payload;
-        });
-        const { error: formulasError } = await supabase.from('formulas').upsert(formulaPayloads);
-        if (formulasError) throw formulasError;
-      }
-      
-      const supplementPayloads = supportedVehicleSizes.map(size => {
-        const existing = supplements.find(s => s.size === size);
-        return {
-            id: existing?.id,
-            service_id: serviceId,
-            size: size,
-            additional_price: existing?.additionalPrice || 0,
-            additional_duration: existing?.additionalDuration || 0,
+        if (existingFormulas.length > 0) {
+            await supabase.from('formulas').upsert(existingFormulas.map(f => ({ ...f, service_id: serviceId })));
         }
-      }).filter(s => s.additional_price! > 0 || s.additional_duration! > 0 || s.id);
-       if (supplementPayloads.length > 0) {
-        const { error: supplementsError } = await supabase.from('service_vehicle_size_supplements').upsert(supplementPayloads);
-        if (supplementsError) throw supplementsError;
-       }
+        if (newFormulas.length > 0) {
+            await supabase.from('formulas').insert(newFormulas.map(f => ({ ...f, service_id: serviceId })));
+        }
+        
+        if (!isEditing && formulas.length === 0) {
+          await supabase.from('formulas').insert({ service_id: serviceId, name: t.formulas, description: '', additional_price: 0, additional_duration: 0 });
+        }
       
-      const incomingAddonIds = new Set(specificAddOns.map(a => a.id).filter(Boolean));
-      const addOnsToDelete = addOnsForService.filter(a => !incomingAddonIds.has(a.id));
-      if (addOnsToDelete.length > 0) {
-        await supabase.from('add_ons').delete().in('id', addOnsToDelete.map(a => a.id!));
-      }
-
-      if (specificAddOns.length > 0) {
-        const addOnPayloads = specificAddOns.map(a => {
-            const payload: any = {
-                name: a.name,
-                price: a.price,
-                duration: a.duration,
-                shop_id: shopId,
-                service_id: serviceId
+        // 3. Handle Supplements
+        const supplementPayloads = supportedVehicleSizes.map(size => {
+            const existing = supplements.find(s => s.size === size);
+            return {
+                id: existing?.id,
+                service_id: serviceId,
+                size: size,
+                additional_price: existing?.additionalPrice || 0,
+                additional_duration: existing?.additionalDuration || 0,
             };
-            if (a.id) { // Only include ID for existing add-ons
-                payload.id = a.id;
-            }
-            return payload;
-        });
-        const { error: addOnsError } = await supabase.from('add_ons').upsert(addOnPayloads);
-        if (addOnsError) throw addOnsError;
-      }
-      
-      onSave();
+        }).filter(s => s.additional_price || s.additional_duration || s.id);
+
+        if (supplementPayloads.length > 0) {
+            await supabase.from('service_vehicle_size_supplements').upsert(supplementPayloads);
+        }
+
+        // 4. Handle Specific Add-Ons (Robustly)
+        const existingAddOns = specificAddOns.filter(a => a.id);
+        const newAddOns = specificAddOns.filter(a => !a.id);
+        const addOnIdsToKeep = new Set(existingAddOns.map(a => a.id));
+        const addOnsToDelete = addOnsForService.filter(a => !addOnIdsToKeep.has(a.id));
+
+        if (addOnsToDelete.length > 0) {
+            await supabase.from('add_ons').delete().in('id', addOnsToDelete.map(a => a.id!));
+        }
+        if (existingAddOns.length > 0) {
+            await supabase.from('add_ons').upsert(existingAddOns.map(a => ({ ...a, shop_id: shopId, service_id: serviceId })));
+        }
+        if (newAddOns.length > 0) {
+            await supabase.from('add_ons').insert(newAddOns.map(a => ({ ...a, shop_id: shopId, service_id: serviceId })));
+        }
+        
+        await onSave();
 
     } catch (error: any) {
         console.error("Save error:", error);
@@ -324,7 +307,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                         </div>
                         <div className="md:col-span-2 flex items-center gap-2">
                           <div className="flex-grow">
-                             <label className="block text-xs font-medium text-gray-500 mb-1">{t.durationMIN}</label>
+                             <label className="block text-xs font-medium text-gray-500 mb-1">{t.additionalDuration} (min)</label>
                              <input type="number" step="15" value={formula.additionalDuration || ''} onChange={e => updateFormula(index, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                           </div>
                            <button type="button" onClick={() => removeFormula(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6"/></button>
