@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, memo } from 'react';
 import { Service } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -25,18 +26,11 @@ const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSele
         return () => clearTimeout(timer);
     }, [index]);
 
+    // FIX: Replaced obsolete price calculation logic with one based on the current Service data model.
     const getStartingPriceDisplay = (service: Service) => {
-        if (!service.varies) {
-            const price = service.singlePrice?.price && !isNaN(parseInt(service.singlePrice.price)) ? `€${service.singlePrice.price}` : 'N/A';
-            return { price, duration: formatDuration(parseSafeInt(service.singlePrice?.duration)) };
-        }
-        const prices = Object.values(service.pricing || {}).filter(p => p.enabled && p.price).map(p => parseInt(p.price!));
-        if (prices.length > 0) {
-            const minPrice = Math.min(...prices);
-            const minPriceDuration = Object.values(service.pricing || {}).find(p => p.enabled && parseInt(p.price!) === minPrice)?.duration;
-            return { price: t.fromPrice.replace('{price}', minPrice.toString()), duration: formatDuration(parseSafeInt(minPriceDuration)) };
-        }
-        return { price: 'N/A', duration: ''};
+        const price = service.basePrice ? t.fromPrice.replace('{price}', service.basePrice.toString()) : 'N/A';
+        const duration = formatDuration(service.baseDuration);
+        return { price, duration };
     }
 
     const { price, duration } = getStartingPriceDisplay(service);

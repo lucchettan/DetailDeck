@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Service, Shop, AddOn } from './Dashboard';
+// FIX: Import new types required for the updated data model.
+import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from './Dashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, MapPinIcon, PhoneIcon } from './Icons';
 import { supabase } from '../lib/supabaseClient';
@@ -7,15 +9,22 @@ import Calendar from './booking/Calendar';
 import TimeSlotPicker from './booking/TimeSlotPicker';
 import FloatingSummary from './booking/FloatingSummary';
 import { toCamelCase, parseSafeInt } from '../lib/utils';
-import BookingForm from './booking/BookingForm';
 import StepClientInfo from './booking/StepClientInfo';
 import BookingPageSkeleton from './booking/BookingPageSkeleton';
+// FIX: Import the correct service card component.
+import BookingServiceCard from './booking/BookingServiceCard';
 
 interface BookingPageProps {
   shopId: string;
 }
 
-type FullShopData = Shop & { services: Service[], addOns: AddOn[] };
+// FIX: Update FullShopData to include formulas and supplements needed for price calculation.
+type FullShopData = Shop & { 
+    services: Service[], 
+    addOns: AddOn[],
+    formulas: Formula[],
+    supplements: VehicleSizeSupplement[],
+};
 
 type BookingStep = 'selection' | 'datetime' | 'clientInfo' | 'confirmed';
 export type VehicleSize = 'S' | 'M' | 'L' | 'XL';
@@ -83,27 +92,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                     throw new Error(t.shopNotFound);
                 }
 
-                // 2. Fetch services
-                const { data: services, error: servicesError } = await supabase
-                    .from('services')
-                    .select('*')
-                    .eq('shop_id', shop.id);
-                
-                if (servicesError) throw servicesError;
+                // FIX: Fetch all required data including formulas and supplements.
+                const [servicesRes, addOnsRes, formulasRes, supplementsRes] = await Promise.all([
+                    supabase.from('services').select('*').eq('shop_id', shop.id),
+                    supabase.from('add_ons').select('*').eq('shop_id', shop.id),
+                    supabase.from('formulas').select('*, services(shop_id)').eq('services.shop_id', shop.id),
+                    supabase.from('service_vehicle_size_supplements').select('*, services(shop_id)').eq('services.shop_id', shop.id)
+                ]);
 
-                // 3. Fetch add-ons
-                const { data: addOns, error: addOnsError } = await supabase
-                    .from('add_ons')
-                    .select('*')
-                    .eq('shop_id', shop.id);
-                
-                if (addOnsError) throw addOnsError;
+                if (servicesRes.error) throw servicesRes.error;
+                if (addOnsRes.error) throw addOnsRes.error;
+                if (formulasRes.error) throw formulasRes.error;
+                if (supplementsRes.error) throw supplementsRes.error;
                 
                 // 4. Combine and set state
                 const fullShopData: FullShopData = {
                     ...(toCamelCase(shop) as Shop),
-                    services: toCamelCase(services) as Service[],
-                    addOns: toCamelCase(addOns) as AddOn[],
+                    services: toCamelCase(servicesRes.data) as Service[],
+                    addOns: toCamelCase(addOnsRes.data) as AddOn[],
+                    formulas: toCamelCase(formulasRes.data) as Formula[],
+                    supplements: toCamelCase(supplementsRes.data) as VehicleSizeSupplement[],
                 };
 
                 setShopData(fullShopData);
@@ -136,20 +144,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
     }, [selectedService, shopData]);
 
 
+    // FIX: Refactored price calculation logic to use the new data model (basePrice, supplements, formulas).
     const { totalDuration, totalPrice } = useMemo(() => {
-        if (!selectedService) return { totalDuration: 0, totalPrice: 0 };
-        
-        let duration = 0;
-        let price = 0;
+        if (!selectedService || !shopData) return { totalDuration: 0, totalPrice: 0 };
 
-        if (selectedService.varies) {
-            if (selectedVehicleSize) {
-                duration = parseSafeInt(selectedService.pricing[selectedVehicleSize]?.duration);
-                price = parseSafeInt(selectedService.pricing[selectedVehicleSize]?.price);
+        const serviceFormulas = shopData.formulas.filter(f => f.serviceId === selectedService.id);
+        let baseFormula = serviceFormulas.find(f => f.name.toLowerCase() === 'basique');
+        if (!baseFormula && serviceFormulas.length > 0) {
+            baseFormula = serviceFormulas[0];
+        }
+        
+        let duration = selectedService.baseDuration + (baseFormula?.additionalDuration || 0);
+        let price = selectedService.basePrice + (baseFormula?.additionalPrice || 0);
+
+        if (selectedVehicleSize && shopData.supplements) {
+            const supplement = shopData.supplements.find(s => s.serviceId === selectedService.id && s.size === selectedVehicleSize);
+            if (supplement) {
+                duration += supplement.additionalDuration;
+                price += supplement.additionalPrice;
             }
-        } else {
-            duration = parseSafeInt(selectedService.singlePrice?.duration);
-            price = parseSafeInt(selectedService.singlePrice?.price);
         }
 
         const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
@@ -162,7 +175,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
         });
         
         return { totalDuration: duration, totalPrice: price };
-    }, [selectedService, selectedVehicleSize, selectedAddOns, availableAddOns]);
+    }, [selectedService, selectedVehicleSize, selectedAddOns, availableAddOns, shopData]);
 
     const toggleAddOn = (addOnId: string) => {
         setSelectedAddOns(prev => {
@@ -388,24 +401,73 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             )
         }
 
+        // FIX: Replaced obsolete BookingForm component with a new service selection UI.
         return (
             <div className="max-w-4xl mx-auto">
-                <BookingForm
-                    services={activeServices}
-                    availableAddOns={availableAddOns}
-                    selectedService={selectedService}
-                    onSelectService={handleSelectService}
-                    selectedVehicleSize={selectedVehicleSize}
-                    onSelectVehicleSize={setSelectedVehicleSize}
-                    selectedAddOns={selectedAddOns}
-                    onToggleAddOn={toggleAddOn}
-                />
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-bold text-brand-dark mb-4">{t.chooseMainService}</h2>
+                    {activeServices.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {activeServices.map((service, index) => (
+                                <BookingServiceCard
+                                    key={service.id}
+                                    service={service}
+                                    isSelected={selectedService?.id === service.id}
+                                    onSelect={() => handleSelectService(service)}
+                                    index={index}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-brand-gray">{t.noServicesAvailable}</p>
+                    )}
+
+                    {selectedService && (shopData.supportedVehicleSizes?.length || 0) > 1 && (
+                        <div className="mt-6 pt-6 border-t">
+                            <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectVehicleSize}</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {shopData.supportedVehicleSizes.map(size => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedVehicleSize(size as VehicleSize)}
+                                        className={`p-4 rounded-lg border-2 text-center transition-all ${selectedVehicleSize === size ? 'border-brand-blue bg-blue-50' : 'bg-white hover:border-brand-blue/50'}`}
+                                    >
+                                        <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedService && availableAddOns.length > 0 && (
+                        <div className="mt-6 pt-6 border-t">
+                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectAddOns}</h3>
+                             <div className="space-y-3">
+                                {availableAddOns.map(addOn => (
+                                    <label key={addOn.id} className="flex items-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedAddOns.has(addOn.id)}
+                                            onChange={() => toggleAddOn(addOn.id)}
+                                            className="h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                                        />
+                                        <div className="ml-4 flex justify-between w-full">
+                                            <span className="font-semibold text-brand-dark">{addOn.name}</span>
+                                            <span className="text-brand-gray">+€{addOn.price}</span>
+                                        </div>
+                                    </label>
+                                ))}
+                             </div>
+                        </div>
+                    )}
+                </div>
             </div>
         )
     }
 
+    // FIX: Replaced 'varies' property check with logic based on the new data model.
     const buttonDisabled = () => {
-        if (step === 'selection' && (!selectedService || (selectedService.varies && !selectedVehicleSize))) return true;
+        if (step === 'selection' && (!selectedService || ((shopData.supportedVehicleSizes?.length || 0) > 1 && !selectedVehicleSize))) return true;
         if (step === 'datetime' && !selectedTime) return true;
         if (step === 'clientInfo' && isConfirming) return true;
         return false;
@@ -419,6 +481,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
             default: return '';
         }
     };
+    
+    // FIX: Construct full address from individual fields to avoid error.
+    const fullAddress = [shopData.addressLine1, shopData.addressCity, shopData.addressPostalCode, shopData.addressCountry].filter(Boolean).join(', ');
 
     return (
         <div className="bg-brand-light min-h-screen font-sans">
@@ -437,10 +502,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
                         <h1 className="text-3xl font-bold" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{shopData.name}</h1>
                     </div>
                     <div className="mt-2 space-y-1 pl-2" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>
-                        {shopData.address && (
+                        {fullAddress && (
                             <p className="flex items-center gap-2 text-sm">
                                 <MapPinIcon className="w-4 h-4 flex-shrink-0" />
-                                <span>{shopData.address}</span>
+                                <span>{fullAddress}</span>
                             </p>
                         )}
                         {shopData.phone && (

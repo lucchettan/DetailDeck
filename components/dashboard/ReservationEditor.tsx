@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, SaveIcon, TrashIcon, PencilIcon } from '../Icons';
@@ -14,7 +15,6 @@ interface ReservationEditorProps {
     onDelete: (id: string) => Promise<void>;
     reservationToEdit: Reservation | null;
     services: Service[];
-    addOns: AddOn[];
     shopSchedule: any;
     shopId: string;
     minBookingNotice: string;
@@ -28,92 +28,44 @@ const getInitialFormData = (reservation: Reservation | null): Partial<Reservatio
         clientName: '',
         clientEmail: '',
         clientPhone: '',
-        serviceId: '',
         date: toYYYYMMDD(new Date()),
         startTime: '',
         status: 'upcoming',
         paymentStatus: 'on_site',
-        serviceDetails: { name: '' , addOns: [] },
+        serviceDetails: { vehicleSize: 'M', services: [] },
         price: 0,
         duration: 0,
     };
 };
 
+const initialSchedule = {
+  monday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
+  tuesday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
+  wednesday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
+  thursday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
+  friday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
+  saturday: { isOpen: false, timeframes: [] },
+  sunday: { isOpen: false, timeframes: [] },
+};
+
+
 const ReservationEditor: React.FC<ReservationEditorProps> = ({
-    isOpen, onClose, onSave, onDelete, reservationToEdit, services, addOns, shopSchedule, shopId, minBookingNotice, maxBookingHorizon
+    isOpen, onClose, onSave, onDelete, reservationToEdit, services, shopSchedule, shopId, minBookingNotice, maxBookingHorizon
 }) => {
     const { t } = useLanguage();
     const isEditing = !!reservationToEdit;
 
     const [formData, setFormData] = useState<Partial<Reservation>>(getInitialFormData(reservationToEdit));
-    const [selectedService, setSelectedService] = useState<Service | null>(null);
-    const [selectedAddOnIds, setSelectedAddOnIds] = useState<Set<string>>(new Set());
     const [isEditingDateTime, setIsEditingDateTime] = useState(!isEditing);
 
     useEffect(() => {
         setFormData(getInitialFormData(reservationToEdit));
         setIsEditingDateTime(!reservationToEdit);
-        if (reservationToEdit?.serviceId) {
-            const service = services.find(s => s.id === reservationToEdit.serviceId) || null;
-            setSelectedService(service);
-            const initialAddOnIds = reservationToEdit.serviceDetails?.addOns?.map((a: any) => a.id).filter(Boolean) || [];
-            setSelectedAddOnIds(new Set(initialAddOnIds));
-        } else {
-            setSelectedService(null);
-            setSelectedAddOnIds(new Set());
-        }
-    }, [reservationToEdit, services]);
+    }, [reservationToEdit]);
     
-    const availableAddOns = useMemo(() => {
-        if (!selectedService || !addOns) return [];
-        const global = addOns.filter(a => !a.serviceId);
-        const specific = addOns.filter(a => a.serviceId === selectedService.id);
-        return [...specific, ...global];
-    }, [selectedService, addOns]);
-    
-    useEffect(() => {
-        if (!selectedService) return;
-
-        // Note: Admin editor currently only supports single-price services.
-        let basePrice = parseInt(selectedService.singlePrice?.price || '0', 10);
-        let baseDuration = parseInt(selectedService.singlePrice?.duration || '0', 10);
-        
-        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
-        selectedAddOnIds.forEach(id => {
-            const addOn = addOnMap.get(id);
-            if (addOn) {
-                basePrice += parseInt(addOn.price || '0', 10);
-                baseDuration += parseInt(addOn.duration || '0', 10);
-            }
-        });
-        
-        setFormData(prev => ({ ...prev, price: basePrice, duration: baseDuration }));
-
-    }, [selectedService, selectedAddOnIds, availableAddOns]);
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleServiceChange = (serviceId: string) => {
-        const service = services.find(s => s.id === serviceId) || null;
-        setSelectedService(service);
-        setSelectedAddOnIds(new Set()); // Reset add-ons when service changes
-        setFormData(prev => ({
-            ...prev,
-            serviceId: serviceId,
-            serviceDetails: { name: service?.name || '', addOns: [] },
-            startTime: '',
-        }));
-    };
-    
-    const handleToggleAddOn = (addOnId: string) => {
-        setSelectedAddOnIds(prev => {
-            const newSet = new Set(prev);
-            newSet.has(addOnId) ? newSet.delete(addOnId) : newSet.add(addOnId);
-            return newSet;
-        });
     };
 
     const handleDateSelect = (date: Date) => {
@@ -126,18 +78,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const addOnMap = new Map(availableAddOns.map(a => [a.id, a]));
-        const confirmedAddOns = Array.from(selectedAddOnIds).map(id => {
-            const addOn = addOnMap.get(id);
-            return { id: addOn?.id, name: addOn?.name, price: addOn?.price, duration: addOn?.duration };
-        }).filter(a => a.name);
-
-        const dataToSave = { ...formData };
-        dataToSave.serviceDetails = {
-            ...(dataToSave.serviceDetails || { name: selectedService?.name || '' }),
-            addOns: confirmedAddOns,
-        };
-        onSave(dataToSave as Reservation);
+        onSave(formData as Reservation);
     };
     
     const handleDelete = () => {
@@ -151,6 +92,14 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     const formattedDateForDisplay = formData.date 
         ? new Date(formData.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
         : 'No date selected';
+    
+    const servicesSummary = useMemo(() => {
+        if (!formData.serviceDetails?.services || formData.serviceDetails.services.length === 0) {
+            return "Aucun service sélectionné.";
+        }
+        return formData.serviceDetails.services.map(s => `${s.serviceName} (${s.formulaName})`).join(', ');
+    }, [formData.serviceDetails]);
+
 
     return (
         <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4">
@@ -174,101 +123,69 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                     
                     <div>
                         <h3 className="font-bold text-brand-dark mb-2">{t.reservationDetails}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium mb-1">{t.selectService}</label>
-                                <select value={formData.serviceId} onChange={(e) => handleServiceChange(e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required>
-                                    <option value="" disabled>-- Select a service --</option>
-                                    {services.filter(s => s.status === 'active').map(s => (
-                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                {selectedService && availableAddOns.length > 0 && (
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">{t.addOns}</label>
-                                        <div className="space-y-2 p-3 bg-gray-50 rounded-lg border max-h-32 overflow-y-auto">
-                                            {availableAddOns.map(addOn => (
-                                                <label key={addOn.id} className="flex items-center justify-between cursor-pointer p-1">
-                                                    <div className="flex items-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedAddOnIds.has(addOn.id)}
-                                                            onChange={() => handleToggleAddOn(addOn.id)}
-                                                            className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                                                        />
-                                                        <span className="ml-3 text-sm text-brand-dark">{addOn.name}</span>
-                                                    </div>
-                                                    <span className="text-sm font-semibold text-brand-gray">+€{addOn.price}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <p className="font-semibold text-brand-dark">Services</p>
+                            <p className="text-sm text-brand-gray">{servicesSummary}</p>
+                            {/* Note: Editing services from this modal is complex. For now, we only display them. */}
                         </div>
-
-                        {selectedService && (
-                            <div className="mt-4">
-                                {isEditingDateTime ? (
-                                    <>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
-                                                <Calendar
+                        <div className="mt-4">
+                            {isEditingDateTime ? (
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
+                                            <Calendar
+                                                shopId={shopId}
+                                                schedule={shopSchedule || initialSchedule}
+                                                serviceDuration={formData.duration || 0}
+                                                selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
+                                                onSelectDate={handleDateSelect}
+                                                minBookingNotice={minBookingNotice}
+                                                maxBookingHorizon={maxBookingHorizon}
+                                                disableBounds={true}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
+                                            {formData.date && (
+                                                <TimeSlotPicker 
                                                     shopId={shopId}
-                                                    schedule={shopSchedule}
+                                                    schedule={shopSchedule || initialSchedule}
                                                     serviceDuration={formData.duration || 0}
-                                                    selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
-                                                    onSelectDate={handleDateSelect}
-                                                    minBookingNotice={minBookingNotice}
-                                                    maxBookingHorizon={maxBookingHorizon}
-                                                    disableBounds={true}
+                                                    selectedDate={new Date(formData.date + 'T00:00:00')}
+                                                    selectedTime={formData.startTime || null}
+                                                    onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                                    editingReservationId={reservationToEdit?.id}
                                                 />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
-                                                {formData.date && (
-                                                    <TimeSlotPicker 
-                                                        shopId={shopId}
-                                                        schedule={shopSchedule}
-                                                        serviceDuration={formData.duration || 0}
-                                                        selectedDate={new Date(formData.date + 'T00:00:00')}
-                                                        selectedTime={formData.startTime || null}
-                                                        onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
-                                                        editingReservationId={reservationToEdit?.id}
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 text-right">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsEditingDateTime(false)}
-                                                disabled={!formData.startTime}
-                                                className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                {t.confirm}
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="font-semibold text-brand-dark">{formattedDateForDisplay}</p>
-                                                <p className="text-2xl font-bold text-brand-blue mt-1">{formData.startTime}</p>
-                                            </div>
-                                            <button type="button" onClick={() => setIsEditingDateTime(true)} className="flex items-center gap-2 bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
-                                                <PencilIcon />
-                                                <span>{t.edit}</span>
-                                            </button>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                    <div className="mt-4 text-right">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditingDateTime(false)}
+                                            disabled={!formData.startTime}
+                                            className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {t.confirm}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold text-brand-dark">{formattedDateForDisplay}</p>
+                                            <p className="text-2xl font-bold text-brand-blue mt-1">{formData.startTime}</p>
+                                        </div>
+                                        <button type="button" onClick={() => setIsEditingDateTime(true)} className="flex items-center gap-2 bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                                            <PencilIcon />
+                                            <span>{t.edit}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     
                     <div>
@@ -297,14 +214,14 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                 <footer className="flex justify-between items-center p-4 border-t mt-auto">
                     <div>
                         {isEditing && (
-                            <button onClick={handleDelete} className="text-red-600 font-semibold hover:underline flex items-center gap-2">
+                            <button type="button" onClick={handleDelete} className="text-red-600 font-semibold hover:underline flex items-center gap-2">
                                 <TrashIcon className="w-5 h-5"/> {t.deleteReservation}
                             </button>
                         )}
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={onClose} className="bg-gray-200 text-brand-dark font-bold py-2 px-4 rounded-lg hover:bg-gray-300">{t.cancel}</button>
-                        <button onClick={handleSubmit} className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 flex items-center gap-2">
+                        <button type="button" onClick={onClose} className="bg-gray-200 text-brand-dark font-bold py-2 px-4 rounded-lg hover:bg-gray-300">{t.cancel}</button>
+                        <button type="submit" onClick={handleSubmit} className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 flex items-center gap-2">
                             <SaveIcon className="w-5 h-5" />
                             {isEditing ? t.saveChanges : t.createReservation}
                         </button>

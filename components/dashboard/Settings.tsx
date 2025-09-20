@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon, MapPinIcon } from '../Icons';
+import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon, MapPinIcon, CarIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
 import { Shop } from '../Dashboard';
 
@@ -29,6 +29,7 @@ const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
         businessType: 'local',
         minBookingNotice: '4h',
         maxBookingHorizon: '12w',
+        supportedVehicleSizes: ['S', 'M', 'L', 'XL'],
         ...shopData,
         schedule: shopData?.schedule || initialSchedule,
     }
@@ -62,6 +63,13 @@ interface SettingsProps {
     onSave: (updatedData: any) => Promise<void>;
     initialStep?: number;
 }
+
+const allVehicleSizes = [
+    { id: 'S', labelKey: 'size_S' },
+    { id: 'M', labelKey: 'size_M' },
+    { id: 'L', labelKey: 'size_L' },
+    { id: 'XL', labelKey: 'size_XL' },
+];
 
 const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) => {
   const { t } = useLanguage();
@@ -169,6 +177,14 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
     }
   };
 
+   const handleVehicleSizeToggle = (sizeId: string) => {
+    const currentSizes = formData.supportedVehicleSizes || [];
+    const newSizes = currentSizes.includes(sizeId)
+      ? currentSizes.filter(id => id !== sizeId)
+      : [...currentSizes, sizeId];
+    handleInputChange('supportedVehicleSizes', newSizes);
+  };
+
   const handleSaveClick = async () => {
     setIsSaving(true);
     let updateData = { ...formData };
@@ -264,7 +280,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
       <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.settings}</h2>
       <p className="text-brand-gray mb-6">{t.settingsSubtitle}</p>
       
-      {/* Tabs as Buttons */}
       <div className="flex items-center gap-4 w-full mb-8 flex-wrap">
         {steps.map((step) => {
             const isCompleted = step.isComplete(formData);
@@ -296,7 +311,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         })}
       </div>
 
-      {/* Tab Content */}
       <div className="bg-white p-8 rounded-lg shadow-md">
         {activeStep === 1 && (
           <div>
@@ -304,96 +318,91 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
               <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><StorefrontIcon className="w-6 h-6 text-brand-blue" /> {t.businessDetails}</h3>
               <TopSaveButton />
             </div>
-            <div className="mt-6 mb-8">
-              <label className="block text-sm font-bold text-brand-dark mb-2">{t.shopImage}</label>
-              {formData.shopImageUrl ? (
-                  <div className="mt-2 relative group w-full max-w-xs h-40 rounded-lg overflow-hidden shadow-sm">
-                      <img src={formData.shopImageUrl} alt={t.shopName} className="w-full h-full object-cover" />
-                      <label htmlFor="shop-image-upload" className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                          <div className="text-white text-center">
-                              <ImageIcon className="w-8 h-8 mx-auto mb-1" />
-                              <span className="font-semibold">{t.changeImage}</span>
-                          </div>
-                      </label>
-                      <input id="shop-image-upload" name="shop-image-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
-                  </div>
-              ) : (
-                  <label htmlFor="shop-image-upload" className="mt-2 relative flex justify-center w-full max-w-xs h-40 px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-brand-blue group transition-colors">
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-2 text-gray-400 group-hover:text-brand-blue transition-colors">
-                          <ImageIcon className="h-10 w-10" />
-                          <div className="flex items-center text-sm font-semibold text-brand-dark">
-                              <PlusIcon className="w-5 h-5 mr-1" />
-                              <span>{t.uploadImage}</span>
-                          </div>
-                      </div>
-                      <input id="shop-image-upload" name="shop-image-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
-                  </label>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                {/* Image Upload */}
+                 <div>
+                    <label className="block text-sm font-bold text-brand-dark mb-2">{t.shopImage}</label>
+                    <div className="flex items-center gap-4">
+                         <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
+                            {formData.shopImageUrl ? <img src={formData.shopImageUrl} alt="Shop" className="w-full h-full object-cover" /> : <ImageIcon className="w-8 h-8 text-gray-400" />}
+                        </div>
+                        <input type="file" id="shopImageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
+                        <label htmlFor="shopImageUpload" className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.uploadImage}</label>
+                    </div>
+                 </div>
+                 {/* Empty div for layout */}
+                 <div></div>
+
+                 {/* Shop Name */}
+                 <div>
+                    <label htmlFor="shopName" className="block text-sm font-bold text-brand-dark mb-1">{t.shopName}</label>
+                    <input type="text" id="shopName" value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                 </div>
+                 {/* Phone Number */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-1">{t.phoneNumber}</label>
+                    <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label htmlFor="shopName" className="block text-sm font-bold text-brand-dark mb-2">{t.shopName}</label>
-                  <input type="text" id="shopName" value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
-              </div>
+
+            <div className="border-t pt-6 mt-6">
+                 <label className="block text-sm font-bold text-brand-dark mb-2">{t.businessType}</label>
+                 <div className="flex gap-4">
+                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.businessType === 'local' ? 'border-brand-blue bg-blue-50' : 'bg-white'}`}>
+                        <input type="radio" name="businessType" value="local" checked={formData.businessType === 'local'} onChange={(e) => handleInputChange('businessType', e.target.value)} className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue" />
+                        <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><BuildingOffice2Icon className="w-5 h-5"/> {t.localBusiness}</span>
+                    </label>
+                     <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.businessType === 'mobile' ? 'border-brand-blue bg-blue-50' : 'bg-white'}`}>
+                        <input type="radio" name="businessType" value="mobile" checked={formData.businessType === 'mobile'} onChange={(e) => handleInputChange('businessType', e.target.value)} className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue" />
+                        <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><TruckIcon className="w-5 h-5" /> {t.mobileBusiness}</span>
+                    </label>
+                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                  <label htmlFor="email" className="block text-sm font-bold text-brand-dark mb-2">{t.emailAddress}</label>
-                  <input type="email" id="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
-              </div>
-              <div>
-                  <label htmlFor="phone" className="block text-sm font-bold text-brand-dark mb-2">{t.phoneNumber}</label>
-                  <input type="tel" id="phone" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
-              </div>
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-bold text-brand-dark mb-4">{t.businessType}</label>
-              <div className="space-y-4">
-                  <div className={`p-4 border-2 rounded-lg transition-all ${formData.businessType === 'local' ? 'border-brand-blue bg-blue-50' : 'bg-white'}`}>
-                      <button type="button" onClick={() => handleInputChange('businessType', 'local')} className="w-full flex items-center text-left">
-                        <BuildingOffice2Icon className="w-8 h-8 mr-4 text-brand-blue" />
+
+            {formData.businessType === 'local' && (
+                 <div className="border-t pt-6 mt-6">
+                     <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2"><MapPinIcon className="w-5 h-5"/> {t.address}</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <input value={formData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2" />
+                         <input value={formData.addressCity || ''} onChange={(e) => handleInputChange('addressCity', e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
+                         <input value={formData.addressPostalCode || ''} onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} placeholder="Code Postal" className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
+                     </div>
+                </div>
+            )}
+             {formData.businessType === 'mobile' && (
+                 <div className="border-t pt-6 mt-6">
+                     <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2"><MapPinIcon className="w-5 h-5"/> Zone de service</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <p className="font-bold text-brand-dark">{t.localBusiness}</p>
+                             <label className="block text-sm font-medium text-brand-dark mb-1">{t.operatingCity}</label>
+                             <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
                         </div>
-                      </button>
-                      {formData.businessType === 'local' && (
-                        <div className="mt-4 pt-4 border-t space-y-4">
-                            <label className="block text-sm font-bold text-brand-dark">{t.address}</label>
-                            <input type="text" value={formData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} placeholder="Address Line 1" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                               <input type="text" value={formData.addressCity || ''} onChange={(e) => handleInputChange('addressCity', e.target.value)} placeholder="City" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
-                               <input type="text" value={formData.addressPostalCode || ''} onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} placeholder="Postal Code" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
-                               <input type="text" value={formData.addressCountry || ''} onChange={(e) => handleInputChange('addressCountry', e.target.value)} placeholder="Country" className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
-                            </div>
-                        </div>
-                      )}
-                  </div>
-                  <div className={`p-4 border-2 rounded-lg transition-all ${formData.businessType === 'mobile' ? 'border-brand-blue bg-blue-50' : 'bg-white'}`}>
-                       <button type="button" onClick={() => handleInputChange('businessType', 'mobile')} className="w-full flex items-center text-left">
-                        <TruckIcon className="w-8 h-8 mr-4 text-brand-blue" />
                         <div>
-                            <p className="font-bold text-brand-dark">{t.mobileBusiness}</p>
+                            <label className="block text-sm font-medium text-brand-dark mb-1">{t.serviceRadius}</label>
+                            <select value={radius} onChange={(e) => setRadius(e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white">
+                                {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
                         </div>
-                      </button>
-                      {formData.businessType === 'mobile' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t items-end">
-                            <div>
-                            <label htmlFor="city" className="block text-sm font-bold text-brand-dark mb-2">{t.operatingCity}</label>
-                            <input type="text" id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"/>
-                            </div>
-                            <div>
-                            <label className="block text-sm font-bold text-brand-dark">{t.serviceRadius}</label>
-                            <p className="text-xs text-brand-gray mb-2">{t.serviceRadiusSubtitle}</p>
-                            <CustomSelect
-                                value={radius}
-                                onChange={setRadius}
-                                options={radiusOptions}
+                     </div>
+                </div>
+            )}
+
+            <div className="border-t pt-6 mt-6">
+                <label className="block text-sm font-bold text-brand-dark mb-2 flex items-center gap-2"><CarIcon /> {t.supportedVehicleSizes}</label>
+                <p className="text-xs text-brand-gray mb-4">{t.supportedVehicleSizesSubtitle}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {allVehicleSizes.map(size => (
+                        <label key={size.id} className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.supportedVehicleSizes?.includes(size.id) ? 'border-brand-blue bg-blue-50' : 'bg-white hover:border-gray-300'}`}>
+                            <input
+                                type="checkbox"
+                                className="h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                                checked={formData.supportedVehicleSizes?.includes(size.id) || false}
+                                onChange={() => handleVehicleSizeToggle(size.id)}
                             />
-                            </div>
-                        </div>
-                      )}
-                  </div>
-              </div>
+                            <span className="ml-3 font-semibold text-brand-dark">{t[size.labelKey as keyof typeof t]}</span>
+                        </label>
+                    ))}
+                </div>
             </div>
           </div>
         )}

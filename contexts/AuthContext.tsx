@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 // Fix: Removed unused and non-exported types from '@supabase/supabase-js'.
@@ -117,7 +118,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setSession(data.session);
       setUser(data.session.user);
     }
-    return { session: data.session, error };
+    // FIX: Use optional chaining (`data?.session`) to prevent a crash when `data` is null on login error.
+    return { session: data?.session || null, error };
   };
 
   const logOut = async () => {

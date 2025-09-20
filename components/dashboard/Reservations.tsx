@@ -19,7 +19,6 @@ const getStatusBadgeStyle = (status: Reservation['status']) => {
   }
 }
 
-// Fix: Use 'paymentStatus' property from Reservation type.
 const getPaymentStatusBadgeStyle = (status: Reservation['paymentStatus']) => {
   switch (status) {
     case 'paid': return 'bg-green-100 text-green-800';
@@ -28,9 +27,8 @@ const getPaymentStatusBadgeStyle = (status: Reservation['paymentStatus']) => {
   }
 }
 
-const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; services: {name: string, id: string}[] }> = ({ reservation, onEdit }) => {
+const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; }> = ({ reservation, onEdit }) => {
   const { t } = useLanguage();
-  // Destructure 'duration' to calculate end time.
   const { startTime, duration, clientName, serviceDetails, status, paymentStatus } = reservation;
   
   const calculateEndTime = (startTimeStr: string, durationMins: number): string => {
@@ -41,7 +39,6 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
     const totalStartMinutes = hours * 60 + minutes;
     const totalEndMinutes = totalStartMinutes + durationMins;
     
-    // Handle cases crossing midnight
     const endHours = Math.floor(totalEndMinutes / 60) % 24;
     const endMinutes = totalEndMinutes % 60;
     
@@ -49,21 +46,32 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
   };
 
   const endTime = calculateEndTime(startTime, duration);
+  
+  const serviceDisplayName = useMemo(() => {
+    if (!serviceDetails?.services || serviceDetails.services.length === 0) {
+        return 'Service non spécifié';
+    }
+    const mainService = serviceDetails.services[0];
+    let displayName = `${mainService.serviceName} (${mainService.formulaName})`;
+    if (serviceDetails.services.length > 1) {
+        displayName += ` + ${serviceDetails.services.length - 1} autre(s)`;
+    }
+    return displayName;
+  }, [serviceDetails]);
+
 
   return (
     <button onClick={() => onEdit(reservation)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center">
-        {/* Time information on the left */}
         <div className="mt-2 sm:mt-0">
           <p className="font-semibold text-brand-dark flex items-baseline gap-2">
             <span className="text-lg">{startTime}</span>
             {endTime && <span className="text-sm text-brand-gray">&ndash; {endTime}</span>}
           </p>
         </div>
-        {/* Client information on the right */}
         <div className="sm:text-right">
           <p className="font-bold text-brand-dark">{clientName}</p>
-          <p className="text-sm text-brand-gray">{serviceDetails?.name || 'Service not found'}</p>
+          <p className="text-sm text-brand-gray">{serviceDisplayName}</p>
         </div>
       </div>
       <div className="mt-4 pt-2 border-t flex flex-wrap items-center gap-2 text-xs">
@@ -85,10 +93,10 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
 
   const { upcoming, past } = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    today.setHours(0, 0, 0, 0);
 
     return reservations.reduce<{ upcoming: Reservation[], past: Reservation[] }>((acc, res) => {
-        const resDate = new Date(res.date + 'T00:00:00'); // Ensure date is parsed in local timezone
+        const resDate = new Date(res.date + 'T00:00:00');
         if (resDate >= today) {
             acc.upcoming.push(res);
         } else {
@@ -110,7 +118,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
   };
   
   const upcomingGrouped = groupReservationsByDate(upcoming.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-  const pastGrouped = groupReservationsByDate(past); // Already sorted descending by Dashboard
+  const pastGrouped = groupReservationsByDate(past);
 
   const renderGroup = (groupedData: Record<string, Reservation[]>) => {
       const today = new Date().toISOString().split('T')[0];
@@ -125,7 +133,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
             <div key={date}>
               <h3 className="font-bold text-brand-dark mt-6 mb-2">{dateLabel} ({resList.length})</h3>
               <div className="space-y-3">
-                {resList.map(res => <ReservationCard key={res.id} reservation={res} onEdit={onEdit} services={[]} />)}
+                {resList.map(res => <ReservationCard key={res.id} reservation={res} onEdit={onEdit} />)}
               </div>
             </div>
           );
