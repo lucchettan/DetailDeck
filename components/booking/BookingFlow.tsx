@@ -488,17 +488,15 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg">
                         <div className="container mx-auto px-4 py-4">
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                                <div className="flex justify-between items-center w-full sm:w-auto">
-                                    <p className="text-2xl font-extrabold text-brand-dark">€{totalPrice}</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm text-brand-gray">{formatDuration(totalDuration)}</p>
-                                        {selectedServices.length > 0 && (
-                                             <button onClick={() => setIsSummaryDetailsOpen(!isSummaryDetailsOpen)} className="text-sm text-brand-blue font-semibold flex items-center gap-1">
-                                                <span>{t.details}</span>
-                                                <ChevronUpIcon className={`w-4 h-4 transition-transform ${isSummaryDetailsOpen ? 'rotate-180' : ''}`} />
-                                            </button>
-                                        )}
-                                    </div>
+                                <div className="flex items-baseline gap-3 sm:gap-4">
+                                    <span className="text-4xl font-black text-brand-dark">€{totalPrice}</span>
+                                    <span className="text-lg font-semibold text-brand-gray">{formatDuration(totalDuration)}</span>
+                                    {selectedServices.length > 0 && (
+                                        <button onClick={() => setIsSummaryDetailsOpen(!isSummaryDetailsOpen)} className="text-lg text-brand-blue font-bold flex items-center gap-1">
+                                            <span>{t.details}</span>
+                                            <ChevronUpIcon className={`w-5 h-5 transition-transform ${isSummaryDetailsOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 w-full sm:w-auto">
                                     <button onClick={() => setIsLeadModalOpen(true)} disabled={selectedServices.length === 0} className="flex-1 sm:w-auto bg-gray-200 text-brand-dark font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.requestCallback}</button>
@@ -515,7 +513,10 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg z-30">
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex justify-between items-center gap-4">
-                            <div className="text-left"><p className="text-2xl font-extrabold text-brand-dark">€{totalPrice}</p><p className="text-sm text-brand-gray">{formatDuration(totalDuration)}</p></div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-black text-brand-dark">€{totalPrice}</span>
+                                <span className="text-lg font-semibold text-brand-gray">{formatDuration(totalDuration)}</span>
+                            </div>
                             <button onClick={step === 'clientInfo' ? handleConfirmBooking : () => setStep('clientInfo')} disabled={(step === 'datetime' && !selectedTime) || isConfirming} className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px] flex justify-center">{isConfirming ? <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> : (step === 'clientInfo' ? t.confirmBooking : t.nextStep)}</button>
                         </div>
                     </div>
