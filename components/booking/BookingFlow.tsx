@@ -470,8 +470,8 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     </div>
                     <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg">
                         <div className="container mx-auto px-4 py-4">
-                            <div className="flex justify-between items-center gap-4">
-                                <div className="text-left">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                                <div className="flex justify-between items-center w-full sm:w-auto">
                                     <p className="text-2xl font-extrabold text-brand-dark">€{totalPrice}</p>
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm text-brand-gray">{formatDuration(totalDuration)}</p>
@@ -483,9 +483,9 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setIsLeadModalOpen(true)} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-4 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.requestCallback}</button>
-                                    <button onClick={() => setStep('datetime')} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.bookNow}</button>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <button onClick={() => setIsLeadModalOpen(true)} disabled={selectedServices.length === 0} className="flex-1 sm:w-auto bg-gray-200 text-brand-dark font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.requestCallback}</button>
+                                    <button onClick={() => setStep('datetime')} disabled={selectedServices.length === 0} className="flex-1 sm:w-auto bg-brand-blue text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.bookNow}</button>
                                 </div>
                             </div>
                         </div>
