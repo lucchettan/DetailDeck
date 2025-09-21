@@ -217,7 +217,7 @@ const Dashboard: React.FC = () => {
         setAlertInfo({ 
             isOpen: true, 
             title: 'Data Fetch Error', 
-            message: `Error fetching shop data: ${error.message}` 
+            message: `Error fetching shop data: ${error.message || error}` 
         });
     } finally {
         setLoadingShopData(false);
@@ -307,45 +307,6 @@ const Dashboard: React.FC = () => {
     { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
   ];
   
-  const renderContent = () => {
-      if (!shopData) {
-        return <Settings shopData={null} onSave={handleSaveShop} initialStep={1} />;
-      }
-
-      if (currentView.page === 'catalog' && currentView.id) {
-          let editorInitialData = null;
-          if (IS_MOCK_MODE && currentView.id !== 'new') {
-              editorInitialData = mockServices.find(s => s.id === currentView.id) || null;
-          }
-
-          return (
-              <ServiceEditor 
-                  serviceId={currentView.id}
-                  shopId={shopData.id}
-                  supportedVehicleSizes={shopData.supportedVehicleSizes || []}
-                  onBack={() => navigate('/dashboard/catalog')} 
-                  onSave={() => navigate('/dashboard/catalog')}
-                  onDelete={() => navigate('/dashboard/catalog')}
-                  initialData={IS_MOCK_MODE ? editorInitialData : undefined}
-              />
-          );
-      }
-      
-      switch (currentView.page) {
-          case 'home':
-              return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />;
-          case 'leads':
-              return <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} />;
-          case 'catalog':
-              return <Catalog shopId={shopData.id} onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)} onAddNewService={() => navigate('/dashboard/catalog/new')} initialServices={IS_MOCK_MODE ? mockServices : undefined} />;
-          case 'reservations':
-              return <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} />;
-          case 'settings':
-              return <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />;
-          default:
-              return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />;
-      }
-  };
 
   if (authLoading || loadingShopData) {
     return (
@@ -355,6 +316,10 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  if (!shopData) {
+    return <Settings shopData={null} onSave={handleSaveShop} initialStep={1} />;
+  }
+  
   return (
     <>
         <div className="min-h-screen bg-brand-light md:flex">
@@ -394,7 +359,34 @@ const Dashboard: React.FC = () => {
             </div>
             </header>
             <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-              {renderContent()}
+              <div className={currentView.page === 'home' ? '' : 'hidden'}>
+                <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />
+              </div>
+              <div className={currentView.page === 'leads' ? '' : 'hidden'}>
+                <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} />
+              </div>
+              <div className={currentView.page === 'catalog' && !currentView.id ? '' : 'hidden'}>
+                  <Catalog shopId={shopData.id} onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)} onAddNewService={() => navigate('/dashboard/catalog/new')} initialServices={IS_MOCK_MODE ? mockServices : undefined} />
+              </div>
+              
+              {currentView.page === 'catalog' && currentView.id && (
+                  <ServiceEditor 
+                      serviceId={currentView.id}
+                      shopId={shopData.id}
+                      supportedVehicleSizes={shopData.supportedVehicleSizes || []}
+                      onBack={() => navigate('/dashboard/catalog')} 
+                      onSave={() => navigate('/dashboard/catalog')}
+                      onDelete={() => navigate('/dashboard/catalog')}
+                      initialData={IS_MOCK_MODE ? (mockServices.find(s => s.id === currentView.id) || null) : undefined}
+                  />
+              )}
+
+              <div className={currentView.page === 'reservations' ? '' : 'hidden'}>
+                <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} />
+              </div>
+              <div className={currentView.page === 'settings' ? '' : 'hidden'}>
+                <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />
+              </div>
             </main>
             
             {isReservationEditorOpen && shopData && (

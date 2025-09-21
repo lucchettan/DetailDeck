@@ -61,7 +61,7 @@ const AlertModal: React.FC<AlertModalProps> = ({ isOpen, onClose, title, message
           <h2 id="alert-modal-title" className="text-xl font-bold text-brand-dark mb-4">
             {title}
           </h2>
-          <p className="text-brand-gray whitespace-pre-wrap">{message}</p>
+          <p className="text-brand-gray whitespace-pre-wrap">{typeof message === 'object' ? JSON.stringify(message, null, 2) : message}</p>
           <div className="mt-6 flex justify-end">
             <button
               onClick={onClose}
