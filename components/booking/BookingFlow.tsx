@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CarIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SeatIcon, SparklesIcon, ChevronUpIcon, SedanIcon, SuvIcon, LargeSuvIcon, VanIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -324,16 +324,16 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     };
     
     const serviceCategories = [
-        { id: 'exterior', label: t.exteriorServices, icon: <CarIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
-        { id: 'interior', label: t.interiorServices, icon: <SeatIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
+        { id: 'exterior', label: t.exteriorServices, icon: <img src="/assets/lavado.png" alt={t.exteriorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
+        { id: 'interior', label: t.interiorServices, icon: <img src="/assets/asiento.png" alt={t.interiorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
         { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
     const sizeIcons = {
-        S: <SedanIcon className="w-16 h-16 text-brand-dark mb-2"/>,
-        M: <SuvIcon className="w-16 h-16 text-brand-dark mb-2"/>,
-        L: <LargeSuvIcon className="w-16 h-16 text-brand-dark mb-2"/>,
-        XL: <VanIcon className="w-16 h-16 text-brand-dark mb-2"/>,
+        S: '/assets/auto.png',
+        M: '/assets/wagon.png',
+        L: '/assets/minivan.png',
+        XL: '/assets/monovolum.png',
     };
 
     const renderContent = () => {
@@ -344,7 +344,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                         {shopData.supportedVehicleSizes.map(size => (
                             <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
                                 className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center h-40 bg-white hover:border-brand-blue hover:shadow-lg">
-                                {sizeIcons[size as keyof typeof sizeIcons]}
+                                <img src={sizeIcons[size as keyof typeof sizeIcons]} alt={t[`size_${size as 'S'|'M'|'L'|'XL'}`]} className="w-24 h-16 object-contain mb-2" />
                                 <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
                             </button>
                         ))}

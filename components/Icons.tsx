@@ -272,46 +272,6 @@ export const SparklesIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...re
     </svg>
 );
 
-export const SeatIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
-        <path d="M2 12h4l3 7h6l3-7h4M17 12V6.5C17 4 15.5 2 12 2s-5 2-5 4.5V12m-2 7.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm14 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
-    </svg>
-);
-
-export const CarIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
-        <path d="M19.2 13.4a1 1 0 00-1-1.4H5.8a1 1 0 00-1 1.4L4 16h16l-.8-2.6zM22 16H2M2.9 12l1.4-4.4A2 2 0 016.1 6h11.8a2 2 0 011.8 1.6L21.1 12M6.5 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm11 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM7 3l1 2m7-2l-1 2" />
-    </svg>
-);
-
-
-// --- Vehicle Size Icons ---
-export const SedanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 13.5H22m-3.5-7l-1.5 7h-11l-1.5-7h14zM4.5 13.5H2m3.5 4a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm11 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
-    </svg>
-);
-
-export const SuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M22 13.5h-1.5m-16 0H3m16.5 4a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm-11 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM20.5 13.5l-1.5-7h-15l-1.5 7h18zM5.5 6.5l2-3h9l2 3" />
-    </svg>
-);
-
-export const LargeSuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.5H3m16.5 4a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm-11 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM21 13.5V8.2c0-.7-.6-1.2-1.3-1.2H10L7.5 3.5h-3c-.7 0-1.3.6-1.3 1.3v8.7H21z" />
-    </svg>
-);
-
-export const VanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5h18M6.5 17.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zm11 0a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM21 13.5V6.3c0-.7-.6-1.3-1.3-1.3H9.2c-.5 0-1 .3-1.2.7l-2 3.3H3" />
-    </svg>
-);
-// --- End Vehicle Size Icons ---
-
-
 // FIX: Pass through ...rest props to the underlying SVG element.
 export const PhoneIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
@@ -361,6 +321,15 @@ export const KeyIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest })
 export const BuildingOffice2Icon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m-3-1l-3-1m-3 1l-3 1m3-1V7.5M6.75 21v-2.25m0 0v-2.25m0 2.25h3m-3-2.25h3" />
+    </svg>
+);
+
+// FIX: Add the missing CarIcon component that is imported in Settings.tsx.
+export const CarIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 17a2 2 0 10-4 0 2 2 0 004 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17a2 2 0 10-4 0 2 2 0 004 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 012 2v4h-2m-4 0H9m-6-6h15M9 12V7" />
     </svg>
 );
 
