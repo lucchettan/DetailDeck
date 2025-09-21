@@ -403,7 +403,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                             <h4 className="font-bold text-brand-dark mb-3">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</h4>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.additionalPrice}</label>
+                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.priceEUR}</label>
                                     <input 
                                         type="number" 
                                         value={supplement?.additionalPrice ?? ''} 
@@ -413,7 +413,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.additionalDuration}</label>
+                                    <label className="block text-xs font-medium text-brand-gray mb-1">{t.durationMIN}</label>
                                     <input 
                                         type="number" 
                                         step="15" 
