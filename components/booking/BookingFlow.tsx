@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon, VehicleSizeSIcon, VehicleSizeMIcon, VehicleSizeLIcon, VehicleSizeXLIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -330,28 +330,30 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
-    const sizeIcons = ASSET_URLS.vehicle;
+    const sizeIcons = {
+        S: <VehicleSizeSIcon className="w-24 h-16 text-brand-dark" />,
+        M: <VehicleSizeMIcon className="w-24 h-16 text-brand-dark" />,
+        L: <VehicleSizeLIcon className="w-24 h-16 text-brand-dark" />,
+        XL: <VehicleSizeXLIcon className="w-24 h-16 text-brand-dark" />,
+    };
 
     const renderContent = () => {
         switch(step) {
             case 'vehicleSize':
                 return (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {shopData.supportedVehicleSizes.map(size => {
                             const fullLabel = t[`size_${size as 'S'|'M'|'L'|'XL'}`];
-                            const match = fullLabel.match(/(.*?)\s*(\(.*\))/);
+                            const match = fullLabel.match(/(.*?)\s*\((.*)\)/);
                             const title = match ? match[1] : fullLabel;
-                            const examples = match ? match[2] : '';
+                            const examples = match ? `(${match[2]})` : '';
 
                             return (
                                 <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
-                                    className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-between items-center h-48 bg-white hover:border-brand-blue hover:shadow-lg">
-                                    <div className="flex flex-col items-center">
-                                        <img src={sizeIcons[size as keyof typeof sizeIcons]} alt={title} className="w-24 h-16 object-contain mb-2" />
-                                        <p className="text-brand-dark">{title}</p>
-                                        <p className="text-sm text-brand-gray">{examples}</p>
-                                    </div>
-                                    <p className="font-bold text-brand-dark mt-2">{fullLabel}</p>
+                                    className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center min-h-[220px] bg-white hover:border-brand-blue hover:shadow-lg">
+                                    {sizeIcons[size as keyof typeof sizeIcons]}
+                                    <p className="font-semibold text-brand-dark mt-4">{title}</p>
+                                    <p className="text-sm text-brand-gray">{examples}</p>
                                 </button>
                             )
                         })}
@@ -522,12 +524,12 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
                             {(shopData.formulas.filter(f => f.serviceId === currentServiceForModal.id)).map(formula => (
                                 <label key={formula.id} className={`w-full text-left p-4 border-2 rounded-lg block cursor-pointer ${modalFormulaSelection === formula.id ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold flex items-center">
-                                            <input type="radio" name="formula" value={formula.id} checked={modalFormulaSelection === formula.id} onChange={() => setModalFormulaSelection(formula.id)} className="w-4 h-4 mr-3 text-brand-blue focus:ring-brand-blue"/>
+                                    <div className="flex justify-between items-start">
+                                        <span className="font-bold flex items-start flex-1 pr-2">
+                                            <input type="radio" name="formula" value={formula.id} checked={modalFormulaSelection === formula.id} onChange={() => setModalFormulaSelection(formula.id)} className="w-4 h-4 mr-3 text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0"/>
                                             {formula.name}
                                         </span>
-                                        <span className="font-semibold text-brand-blue">+ {formula.additionalPrice}€</span>
+                                        <span className="font-semibold text-brand-blue whitespace-nowrap">+ {formula.additionalPrice}€</span>
                                     </div>
                                      {formula.description && (
                                         <ul className="mt-2 text-sm text-brand-gray space-y-1 text-left pl-7">
@@ -542,12 +544,12 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                                     <h3 className="text-base font-bold text-brand-dark mb-2">{t.selectAddOns}</h3>
                                     <div className="space-y-2">
                                     {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).map(addOn => (
-                                        <label key={addOn.id} className={`w-full text-left p-3 border-2 rounded-lg flex items-center justify-between cursor-pointer ${modalAddOnSelection.has(addOn.id) ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
-                                            <div className="flex items-center">
-                                                <input type="checkbox" checked={modalAddOnSelection.has(addOn.id)} onChange={() => handleToggleAddOn(addOn.id)} className="w-4 h-4 mr-3 rounded text-brand-blue focus:ring-brand-blue"/>
-                                                <span className="font-semibold">{addOn.name}</span>
+                                        <label key={addOn.id} className={`w-full text-left p-3 border-2 rounded-lg flex items-start justify-between cursor-pointer ${modalAddOnSelection.has(addOn.id) ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
+                                            <div className="flex items-start flex-1 pr-4">
+                                                <input type="checkbox" checked={modalAddOnSelection.has(addOn.id)} onChange={() => handleToggleAddOn(addOn.id)} className="w-4 h-4 mr-3 rounded text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0"/>
+                                                <span>{addOn.name}</span>
                                             </div>
-                                            <span className="text-sm font-semibold text-brand-blue">+ {addOn.price}€</span>
+                                            <span className="text-sm font-semibold text-brand-blue whitespace-nowrap">+ {addOn.price}€</span>
                                         </label>
                                     ))}
                                     </div>
