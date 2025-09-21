@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon, VehicleSizeSIcon, VehicleSizeMIcon, VehicleSizeLIcon, VehicleSizeXLIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -330,13 +330,6 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
-    const sizeIcons = {
-        S: <VehicleSizeSIcon className="w-24 h-16 text-brand-dark" />,
-        M: <VehicleSizeMIcon className="w-24 h-16 text-brand-dark" />,
-        L: <VehicleSizeLIcon className="w-24 h-16 text-brand-dark" />,
-        XL: <VehicleSizeXLIcon className="w-24 h-16 text-brand-dark" />,
-    };
-
     const renderContent = () => {
         switch(step) {
             case 'vehicleSize':
@@ -351,7 +344,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                             return (
                                 <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
                                     className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center min-h-[220px] bg-white hover:border-brand-blue hover:shadow-lg">
-                                    {sizeIcons[size as keyof typeof sizeIcons]}
+                                    <img src={ASSET_URLS.vehicle[size as keyof typeof ASSET_URLS.vehicle]} alt={title} className="w-24 h-16 object-contain" />
                                     <p className="font-semibold text-brand-dark mt-4">{title}</p>
                                     <p className="text-sm text-brand-gray">{examples}</p>
                                 </button>

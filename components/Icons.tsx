@@ -7,30 +7,6 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
     className?: string;
 }
 
-export const VehicleSizeSIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="2" {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14 42h-4a2 2 0 01-2-2v-6a2 2 0 012-2h2.5m29 0H50a2 2 0 012 2v6a2 2 0 01-2 2h-4M22 42a4 4 0 10-8 0 4 4 0 008 0zM50 42a4 4 0 10-8 0 4 4 0 008 0zM14 42h28M16.5 34L22 24h16l5.5 10h-27zM24 24l4-6h8l4 6" />
-    </svg>
-);
-
-export const VehicleSizeMIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="2" {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 44h-2a2 2 0 01-2-2V32a2 2 0 012-2h4m32 0h4a2 2 0 012 2v10a2 2 0 01-2 2h-2M20 44a4 4 0 10-8 0 4 4 0 008 0zM52 44a4 4 0 10-8 0 4 4 0 008 0zM12 44h36M14 30h32v-8a2 2 0 00-2-2H16a2 2 0 00-2 2v8zM14 30v14M46 30v14M22 20h16" />
-    </svg>
-);
-
-export const VehicleSizeLIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="2" {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 44h-2a2 2 0 01-2-2V28a2 2 0 012-2h5m30 0h5a2 2 0 012 2v14a2 2 0 01-2 2h-2M20 44a4 4 0 10-8 0 4 4 0 008 0zM52 44a4 4 0 10-8 0 4 4 0 008 0zM12 44h36M15 26l6-8h18l6 8v18H15V26zM25 26v18M37 26v18M15 34h30" />
-    </svg>
-);
-
-export const VehicleSizeXLIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="2" {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 44h-2a2 2 0 01-2-2V24a2 2 0 012-2h4m34 0h4a2 2 0 012 2v18a2 2 0 01-2 2h-2M22 44a4 4 0 10-8 0 4 4 0 008 0zM54 44a4 4 0 10-8 0 4 4 0 008 0zM14 44h36M14 22v22h36V22H14zM28 22v22M14 32h36" />
-    </svg>
-);
-
 // FIX: Pass through ...rest props to the underlying SVG element.
 export const CarWashIcon: React.FC<IconProps> = ({ className = 'w-8 h-8', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" {...rest}>
