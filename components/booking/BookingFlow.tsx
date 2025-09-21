@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CarIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SeatIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CarIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SeatIcon, SparklesIcon, ChevronUpIcon, SedanIcon, SuvIcon, LargeSuvIcon, VanIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -42,6 +42,16 @@ export interface ClientInfoErrors {
     vehicle?: string;
 }
 
+interface DetailsBreakdownItem {
+    serviceName: string;
+    formulaName: string;
+    vehicleSizeLabel: string;
+    price: number;
+    duration: number;
+    addOns: { name: string; price: number }[];
+}
+
+
 const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
     
@@ -56,8 +66,10 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const [selectedVehicleSize, setSelectedVehicleSize] = useState<string | null>(null);
     const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
 
-    const [currentServiceForFormula, setCurrentServiceForFormula] = useState<Service | null>(null);
-    const [showFormulaModal, setShowFormulaModal] = useState(false);
+    const [currentServiceForModal, setCurrentServiceForModal] = useState<Service | null>(null);
+    const [isEditingSelection, setIsEditingSelection] = useState(false);
+    const [modalFormulaSelection, setModalFormulaSelection] = useState<string | null>(null);
+    const [modalAddOnSelection, setModalAddOnSelection] = useState<Set<string>>(new Set());
     
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -115,7 +127,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
 
     useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [step, viewingCategory]);
 
-    const { totalDuration, totalPrice, detailsBreakdown } = useMemo(() => {
+    const { totalDuration, totalPrice, detailsBreakdown } = useMemo((): { totalDuration: number; totalPrice: number; detailsBreakdown: DetailsBreakdownItem[] } => {
         let duration = 0;
         let price = 0;
         if (!shopData || !selectedVehicleSize) return { totalDuration: 0, totalPrice: 0, detailsBreakdown: [] };
@@ -123,6 +135,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
         const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
         const supplementMap = new Map(shopData.supplements.map(s => [`${s.serviceId}-${s.size}`, s]));
+        const addOnMap = new Map(shopData.addOns.map(a => [a.id, a]));
         
         const breakdown = selectedServices.map(sel => {
             const service = serviceMap.get(sel.serviceId);
@@ -137,44 +150,71 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 itemPrice += supplement.additionalPrice;
                 itemDuration += supplement.additionalDuration;
             }
+            
+            const selectedAddOns = sel.addOnIds.map(id => addOnMap.get(id)).filter(Boolean) as AddOn[];
+            const addOnsPrice = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+            const addOnsDuration = selectedAddOns.reduce((sum, addon) => sum + addon.duration, 0);
 
-            price += itemPrice;
-            duration += itemDuration;
+            price += itemPrice + addOnsPrice;
+            duration += itemDuration + addOnsDuration;
             
             const vehicleSizeLabel = t[`size_${selectedVehicleSize as 'S'|'M'|'L'|'XL'}`].split(' (')[0];
 
             return {
-                name: `${service.name} - ${formula.name} - ${vehicleSizeLabel}`,
+                serviceName: service.name,
+                formulaName: formula.name,
+                vehicleSizeLabel,
                 price: itemPrice,
-                duration: itemDuration
+                duration: itemDuration,
+                addOns: selectedAddOns.map(a => ({ name: a.name, price: a.price }))
             };
-        }).filter(Boolean) as { name: string, price: number, duration: number }[];
+        }).filter(Boolean) as DetailsBreakdownItem[];
 
         return { totalDuration: duration, totalPrice: price, detailsBreakdown: breakdown };
     }, [selectedServices, selectedVehicleSize, shopData, t]);
 
     const handleServiceClick = (service: Service) => {
         const formulas = shopData?.formulas.filter(f => f.serviceId === service.id) || [];
-        if (formulas.length > 1) {
-            setCurrentServiceForFormula(service);
-            setShowFormulaModal(true);
-        } else if (formulas.length === 1) {
-            setSelectedServices(prev => {
-                const isSelected = prev.some(s => s.serviceId === service.id);
-                if(isSelected) return prev.filter(s => s.serviceId !== service.id);
-                return [...prev, { serviceId: service.id, formulaId: formulas[0].id, addOnIds: [] }];
-            });
+        const existingSelection = selectedServices.find(s => s.serviceId === service.id);
+
+        setCurrentServiceForModal(service);
+        if (existingSelection) {
+            setIsEditingSelection(true);
+            setModalFormulaSelection(existingSelection.formulaId);
+            setModalAddOnSelection(new Set(existingSelection.addOnIds));
+        } else {
+            setIsEditingSelection(false);
+            setModalFormulaSelection(formulas[0]?.id || null);
+            setModalAddOnSelection(new Set());
         }
+        document.body.style.overflow = 'hidden';
     };
     
-    const handleFormulaSelect = (formulaId: string) => {
-        if (!currentServiceForFormula) return;
-        setSelectedServices(prev => {
-            const others = prev.filter(s => s.serviceId !== currentServiceForFormula.id);
-            return [...others, { serviceId: currentServiceForFormula.id, formulaId, addOnIds: [] }];
+    const handleConfirmSelection = () => {
+        if (!currentServiceForModal || !modalFormulaSelection) return;
+        const newSelection = { serviceId: currentServiceForModal.id, formulaId: modalFormulaSelection, addOnIds: Array.from(modalAddOnSelection) };
+        setSelectedServices(prev => [...prev.filter(s => s.serviceId !== currentServiceForModal.id), newSelection]);
+        closeFormulaModal();
+    }
+
+    const handleRemoveFromSelection = () => {
+        if (!currentServiceForModal) return;
+        setSelectedServices(prev => prev.filter(s => s.serviceId !== currentServiceForModal.id));
+        closeFormulaModal();
+    }
+
+    const handleToggleAddOn = (addOnId: string) => {
+        setModalAddOnSelection(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(addOnId)) newSet.delete(addOnId);
+            else newSet.add(addOnId);
+            return newSet;
         });
-        setShowFormulaModal(false);
-        setCurrentServiceForFormula(null);
+    }
+    
+    const closeFormulaModal = () => {
+        setCurrentServiceForModal(null);
+        document.body.style.overflow = 'unset';
     }
     
     const handlePrevStep = () => {
@@ -289,6 +329,13 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
+    const sizeIcons = {
+        S: <SedanIcon className="w-16 h-16 text-brand-dark mb-2"/>,
+        M: <SuvIcon className="w-16 h-16 text-brand-dark mb-2"/>,
+        L: <LargeSuvIcon className="w-16 h-16 text-brand-dark mb-2"/>,
+        XL: <VanIcon className="w-16 h-16 text-brand-dark mb-2"/>,
+    };
+
     const renderContent = () => {
         switch(step) {
             case 'vehicleSize':
@@ -296,8 +343,8 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     <div className="grid grid-cols-2 gap-4">
                         {shopData.supportedVehicleSizes.map(size => (
                             <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
-                                className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center h-32 bg-white hover:border-brand-blue hover:shadow-lg">
-                                <CarIcon className="w-10 h-10 text-brand-dark mb-2"/>
+                                className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center h-40 bg-white hover:border-brand-blue hover:shadow-lg">
+                                {sizeIcons[size as keyof typeof sizeIcons]}
                                 <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
                             </button>
                         ))}
@@ -394,11 +441,27 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                          <div className="container mx-auto px-4">
                             <div className="bg-white p-4 rounded-t-lg shadow-lg border-x border-t">
                                 <h4 className="font-bold text-brand-dark mb-2">{t.yourSelection}</h4>
-                                <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                                <ul className="space-y-3 text-sm max-h-48 overflow-y-auto">
                                     {detailsBreakdown.map((item, index) => (
-                                        <li key={index} className="flex justify-between items-center text-brand-gray">
-                                            <span className="flex-1 pr-2">{item.name}</span>
-                                            <span className="font-semibold text-brand-dark whitespace-nowrap">{formatDuration(item.duration)} - €{item.price}</span>
+                                        <li key={index} className="text-brand-gray border-b last:border-b-0 pb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1 pr-2">
+                                                    <p className="font-bold text-brand-dark">{item.serviceName}</p>
+                                                    <p>{item.formulaName}</p>
+                                                    <p className="text-xs text-gray-500">Taille: {item.vehicleSizeLabel}</p>
+                                                </div>
+                                                <span className="font-semibold text-brand-dark whitespace-nowrap">€{item.price}</span>
+                                            </div>
+                                            {item.addOns.length > 0 && (
+                                                <ul className="pl-4 mt-1 space-y-1">
+                                                    {item.addOns.map((addOn, idx) => (
+                                                        <li key={idx} className="flex justify-between text-xs">
+                                                            <span>+ {addOn.name}</span>
+                                                            <span>€{addOn.price}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
@@ -442,22 +505,55 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 </div>
             )}
 
-            {showFormulaModal && currentServiceForFormula && (
-                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                        <header className="flex justify-between items-center p-4 border-b"><h2 className="text-lg font-bold text-brand-dark">{t.chooseFormula}</h2><button onClick={() => setShowFormulaModal(false)}><CloseIcon/></button></header>
+            {currentServiceForModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={closeFormulaModal}>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                        <header className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-lg font-bold text-brand-dark">{currentServiceForModal.name}</h2>
+                            <button onClick={closeFormulaModal}><CloseIcon/></button>
+                        </header>
                         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-                            {(shopData.formulas.filter(f => f.serviceId === currentServiceForFormula.id)).map(formula => (
-                                <button key={formula.id} onClick={() => handleFormulaSelect(formula.id)} className="w-full text-left p-4 border rounded-lg hover:bg-blue-50 hover:border-brand-blue">
-                                    <div className="flex justify-between"><span className="font-bold">{formula.name}</span><span className="font-semibold text-brand-blue">+ {formula.additionalPrice}€</span></div>
+                            {(shopData.formulas.filter(f => f.serviceId === currentServiceForModal.id)).map(formula => (
+                                <label key={formula.id} className={`w-full text-left p-4 border-2 rounded-lg block cursor-pointer ${modalFormulaSelection === formula.id ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold flex items-center">
+                                            <input type="radio" name="formula" value={formula.id} checked={modalFormulaSelection === formula.id} onChange={() => setModalFormulaSelection(formula.id)} className="w-4 h-4 mr-3 text-brand-blue focus:ring-brand-blue"/>
+                                            {formula.name}
+                                        </span>
+                                        <span className="font-semibold text-brand-blue">+ {formula.additionalPrice}€</span>
+                                    </div>
                                      {formula.description && (
-                                        <ul className="mt-2 text-sm text-brand-gray space-y-1 text-left">
+                                        <ul className="mt-2 text-sm text-brand-gray space-y-1 text-left pl-7">
                                             {formula.description.split('\n').map((item, index) => (item.trim() && <li key={index} className="flex items-start gap-2"><CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" /><span>{item.trim()}</span></li>))}
                                         </ul>
                                     )}
-                                </button>
+                                </label>
                             ))}
+                            
+                             {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).length > 0 && (
+                                <div className="pt-4 mt-4 border-t">
+                                    <h3 className="text-base font-bold text-brand-dark mb-2">{t.selectAddOns}</h3>
+                                    <div className="space-y-2">
+                                    {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).map(addOn => (
+                                        <label key={addOn.id} className={`w-full text-left p-3 border-2 rounded-lg flex items-center justify-between cursor-pointer ${modalAddOnSelection.has(addOn.id) ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
+                                            <div className="flex items-center">
+                                                <input type="checkbox" checked={modalAddOnSelection.has(addOn.id)} onChange={() => handleToggleAddOn(addOn.id)} className="w-4 h-4 mr-3 rounded text-brand-blue focus:ring-brand-blue"/>
+                                                <span className="font-semibold">{addOn.name}</span>
+                                            </div>
+                                            <span className="text-sm font-semibold text-brand-blue">+ {addOn.price}€</span>
+                                        </label>
+                                    ))}
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
+                        <footer className="p-4 bg-gray-50 border-t flex items-center justify-between">
+                            {isEditingSelection ? (
+                                <button onClick={handleRemoveFromSelection} type="button" className="text-red-600 font-semibold hover:underline">{t.removeFromSelection}</button>
+                            ) : (<div></div>)}
+                            <button onClick={handleConfirmSelection} type="button" className="bg-brand-blue text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600">{t.select}</button>
+                        </footer>
                     </div>
                 </div>
             )}

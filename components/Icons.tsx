@@ -293,6 +293,40 @@ export const CarIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest })
     </svg>
 );
 
+// --- Vehicle Size Icons ---
+export const SedanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 14.25l1.5-4.5 3 4.5m-3-4.5H15m-5.5 0H6.5m10.5 0H21m-15.75 0L3 11.25" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 18.75h16.5c.621 0 1.125-.504 1.125-1.125V11.25c0-1.036-.84-1.875-1.875-1.875H5.625c-1.036 0-1.875.84-1.875 1.875v6.375c0 .621.504 1.125 1.125 1.125zM6.75 18.75v-1.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 18.75v-1.5" />
+    </svg>
+);
+
+export const SuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 15.5h12m-12 0v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V15.5m-3 0h3m9 0v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V15.5m-3 0h3" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 15.5V11.25c0-.92.75-1.665 1.665-1.665h13.17c.915 0 1.665.745 1.665 1.665V15.5H3.75z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9.75L10.5 8.25l3 1.5" />
+    </svg>
+);
+
+export const LargeSuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 16.5h12m-12 0v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V16.5m-3 0h3m9 0v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V16.5m-3 0h3" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 16.5V9.75c0-1.036.84-1.875 1.875-1.875h12.75c1.035 0 1.875.84 1.875 1.875V16.5H3.75z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9.75h7.5" />
+    </svg>
+);
+
+export const VanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V9.75a2.25 2.25 0 00-2.25-2.25H3.375c-.621 0-1.125.504-1.125 1.125v1.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75v-4.5a2.25 2.25 0 00-2.25-2.25H6.375a2.25 2.25 0 00-2.25 2.25v4.5" />
+    </svg>
+);
+// --- End Vehicle Size Icons ---
+
+
 // FIX: Pass through ...rest props to the underlying SVG element.
 export const PhoneIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>

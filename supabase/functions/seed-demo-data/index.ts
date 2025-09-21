@@ -1,4 +1,5 @@
 
+
 // @ts-ignore: Deno types are not available in this environment
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 // @ts-ignore: Deno types are not available in this environment
@@ -99,7 +100,7 @@ serve(async (req: Request) => {
     if(supplementsError) throw supplementsError;
     
     const { error: addonsError } = await supabaseClient.from('add_ons').insert([
-      { shop_id, service_id: service_int_1_id, name: 'Traitement Anti-Odeurs', price: 40, duration: 30 }
+      { shop_id, service_id: service_int_1_id, name: 'Extra: Présence de poil de chien', price: 20, duration: 30 }
     ]);
     if(addonsError) throw addonsError;
 
