@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon, XCircleIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -44,6 +44,7 @@ export interface ClientInfoErrors {
 }
 
 interface DetailsBreakdownItem {
+    serviceId: string;
     serviceName: string;
     formulaName: string;
     vehicleSizeLabel: string;
@@ -162,6 +163,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
             const vehicleSizeLabel = t[`size_${selectedVehicleSize as 'S'|'M'|'L'|'XL'}`].split(' (')[0];
 
             return {
+                serviceId: sel.serviceId,
                 serviceName: service.name,
                 formulaName: formula.name,
                 vehicleSizeLabel,
@@ -197,6 +199,10 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         setSelectedServices(prev => [...prev.filter(s => s.serviceId !== currentServiceForModal.id), newSelection]);
         closeFormulaModal();
     }
+    
+    const handleRemoveServiceFromCart = (serviceIdToRemove: string) => {
+        setSelectedServices(prev => prev.filter(s => s.serviceId !== serviceIdToRemove));
+    };
 
     const handleRemoveFromSelection = () => {
         if (!currentServiceForModal) return;
@@ -445,25 +451,34 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                                 <h4 className="font-bold text-brand-dark mb-2">{t.yourSelection}</h4>
                                 <ul className="space-y-3 text-sm max-h-48 overflow-y-auto">
                                     {detailsBreakdown.map((item, index) => (
-                                        <li key={index} className="text-brand-gray border-b last:border-b-0 pb-2">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 pr-2">
-                                                    <p className="font-bold text-brand-dark">{item.serviceName}</p>
-                                                    <p>{item.formulaName}</p>
-                                                    <p className="text-xs text-gray-500">Taille: {item.vehicleSizeLabel}</p>
+                                        <li key={index} className="flex items-start text-brand-gray border-b last:border-b-0 pb-2 pt-2">
+                                            <button 
+                                                onClick={() => handleRemoveServiceFromCart(item.serviceId)}
+                                                className="mr-3 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                                                aria-label={`Remove ${item.serviceName}`}
+                                            >
+                                                <XCircleIcon className="w-5 h-5" />
+                                            </button>
+                                            <div className="flex-grow">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1 pr-2">
+                                                        <p className="font-bold text-brand-dark">{item.serviceName}</p>
+                                                        <p>{item.formulaName}</p>
+                                                        <p className="text-xs text-gray-500">Taille: {item.vehicleSizeLabel}</p>
+                                                    </div>
+                                                    <span className="font-semibold text-brand-dark whitespace-nowrap">€{item.price}</span>
                                                 </div>
-                                                <span className="font-semibold text-brand-dark whitespace-nowrap">€{item.price}</span>
+                                                {item.addOns.length > 0 && (
+                                                    <ul className="pl-4 mt-1 space-y-1">
+                                                        {item.addOns.map((addOn, idx) => (
+                                                            <li key={idx} className="flex justify-between text-xs">
+                                                                <span>+ {addOn.name}</span>
+                                                                <span>€{addOn.price}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
                                             </div>
-                                            {item.addOns.length > 0 && (
-                                                <ul className="pl-4 mt-1 space-y-1">
-                                                    {item.addOns.map((addOn, idx) => (
-                                                        <li key={idx} className="flex justify-between text-xs">
-                                                            <span>+ {addOn.name}</span>
-                                                            <span>€{addOn.price}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
                                         </li>
                                     ))}
                                 </ul>
