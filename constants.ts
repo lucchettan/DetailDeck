@@ -265,3 +265,16 @@ export const FAQ_ITEMS = {
     },
   ]
 };
+
+export const ASSET_URLS = {
+  vehicle: {
+    S: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/auto%20(1).png',
+    M: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/wagon.png',
+    L: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/minivan.png',
+    XL: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/monovolumen.png',
+  },
+  category: {
+    interior: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/asiento-de-coche.png',
+    exterior: 'https://jtusofarsnwcfxnrvgus.supabase.co/storage/v1/object/public/public-assets/lavado-de-autos%20(1).png',
+  }
+};

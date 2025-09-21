@@ -9,6 +9,7 @@ import { toCamelCase, parseSafeInt, formatDuration } from '../../lib/utils';
 import StepClientInfo from './StepClientInfo';
 import BookingPageSkeleton from './BookingPageSkeleton';
 import BookingServiceCard from './BookingServiceCard';
+import { ASSET_URLS } from '../../constants';
 
 interface BookingPageProps {
   shopId: string;
@@ -324,30 +325,36 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     };
     
     const serviceCategories = [
-        { id: 'exterior', label: t.exteriorServices, icon: <img src="/assets/lavado.png" alt={t.exteriorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
-        { id: 'interior', label: t.interiorServices, icon: <img src="/assets/asiento.png" alt={t.interiorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
+        { id: 'exterior', label: t.exteriorServices, icon: <img src={ASSET_URLS.category.exterior} alt={t.exteriorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
+        { id: 'interior', label: t.interiorServices, icon: <img src={ASSET_URLS.category.interior} alt={t.interiorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
         { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
-    const sizeIcons = {
-        S: '/assets/auto.png',
-        M: '/assets/wagon.png',
-        L: '/assets/minivan.png',
-        XL: '/assets/monovolum.png',
-    };
+    const sizeIcons = ASSET_URLS.vehicle;
 
     const renderContent = () => {
         switch(step) {
             case 'vehicleSize':
                 return (
                     <div className="grid grid-cols-2 gap-4">
-                        {shopData.supportedVehicleSizes.map(size => (
-                            <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
-                                className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center h-40 bg-white hover:border-brand-blue hover:shadow-lg">
-                                <img src={sizeIcons[size as keyof typeof sizeIcons]} alt={t[`size_${size as 'S'|'M'|'L'|'XL'}`]} className="w-24 h-16 object-contain mb-2" />
-                                <p className="font-bold text-brand-dark">{t[`size_${size as 'S'|'M'|'L'|'XL'}`]}</p>
-                            </button>
-                        ))}
+                        {shopData.supportedVehicleSizes.map(size => {
+                            const fullLabel = t[`size_${size as 'S'|'M'|'L'|'XL'}`];
+                            const match = fullLabel.match(/(.*?)\s*(\(.*\))/);
+                            const title = match ? match[1] : fullLabel;
+                            const examples = match ? match[2] : '';
+
+                            return (
+                                <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
+                                    className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-between items-center h-48 bg-white hover:border-brand-blue hover:shadow-lg">
+                                    <div className="flex flex-col items-center">
+                                        <img src={sizeIcons[size as keyof typeof sizeIcons]} alt={title} className="w-24 h-16 object-contain mb-2" />
+                                        <p className="text-brand-dark">{title}</p>
+                                        <p className="text-sm text-brand-gray">{examples}</p>
+                                    </div>
+                                    <p className="font-bold text-brand-dark mt-2">{fullLabel}</p>
+                                </button>
+                            )
+                        })}
                     </div>
                 );
             case 'categorySelection':
