@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { CloseIcon } from '../Icons';
 
 const SignInPage: React.FC = () => {
   const { t } = useLanguage();
@@ -105,6 +106,13 @@ const SignInPage: React.FC = () => {
             </h1>
         </a>
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
+            <a 
+              href="/" 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close and return to homepage"
+            >
+              <CloseIcon className="w-6 h-6" />
+            </a>
             <div className="text-center">
             <h2 id="modal-title" className="text-2xl font-bold text-brand-dark mb-2">
                 {title}
