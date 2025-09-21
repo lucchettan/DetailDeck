@@ -149,114 +149,52 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
         
-        // 3. Sync all related data (Formulas, Supplements, Add-ons) SEQUENTIALLY
-
-        // --- Formulas Sync ---
-        const originalFormulaIds = new Set(formulasForService.map(f => f.id));
-        const currentFormulaIds = new Set(formulas.map(f => f.id).filter(Boolean));
-        const formulaIdsToDelete = [...originalFormulaIds].filter(id => !currentFormulaIds.has(id));
-
-        if (formulaIdsToDelete.length > 0) {
-            const { error } = await supabase.from('formulas').delete().in('id', formulaIdsToDelete);
-            if (error) throw error;
+        // --- DELETION PHASE ---
+        if (isEditing) {
+            const { error: deleteFormulasError } = await supabase.from('formulas').delete().eq('service_id', serviceId);
+            if (deleteFormulasError) throw deleteFormulasError;
+            const { error: deleteSupplementsError } = await supabase.from('service_vehicle_size_supplements').delete().eq('service_id', serviceId);
+            if (deleteSupplementsError) throw deleteSupplementsError;
+            const { error: deleteAddonsError } = await supabase.from('add_ons').delete().eq('service_id', serviceId);
+            if (deleteAddonsError) throw deleteAddonsError;
         }
 
-        const formulasToInsert = formulas.filter(f => !f.id).map(f => ({
+        // --- RE-INSERTION PHASE ---
+        const formulasToInsert = formulas.map(f => ({
             service_id: serviceId,
             name: f.name || 'Nouvelle Formule',
             description: f.includedItems.join('\n').trim(),
             additional_price: f.additionalPrice || 0,
             additional_duration: f.additionalDuration || 0,
         }));
-        
-        const formulasToUpdate = formulas.filter(f => f.id).map(f => ({
-            id: f.id,
-            service_id: serviceId,
-            name: f.name || 'Nouvelle Formule',
-            description: f.includedItems.join('\n').trim(),
-            additional_price: f.additionalPrice || 0,
-            additional_duration: f.additionalDuration || 0,
-        }));
-        
         if (formulasToInsert.length > 0) {
             const { error } = await supabase.from('formulas').insert(formulasToInsert);
             if (error) throw error;
         }
-        if (formulasToUpdate.length > 0) {
-            const { error } = await supabase.from('formulas').upsert(formulasToUpdate);
-            if (error) throw error;
-        }
         
-        // --- Supplements Sync ---
-        const originalSupplementIds = new Set(supplementsForService.map(s => s.id));
-        const currentSupplementIds = new Set(supplements.map(s => s.id).filter(Boolean));
-        const supplementIdsToDelete = [...originalSupplementIds].filter(id => !currentSupplementIds.has(id));
-
-        if (supplementIdsToDelete.length > 0) {
-            const { error } = await supabase.from('service_vehicle_size_supplements').delete().in('id', supplementIdsToDelete);
-            if (error) throw error;
-        }
-        
-        const supplementsToInsert = supplements.filter(s => s.size && !s.id).map(s => ({
+        const supplementsToInsert = supplements.filter(s => s.size).map(s => ({
             service_id: serviceId,
             size: s.size,
             additional_price: s.additionalPrice || 0,
             additional_duration: s.additionalDuration || 0,
         }));
-
-        const supplementsToUpdate = supplements.filter(s => s.size && s.id).map(s => ({
-            id: s.id,
-            service_id: serviceId,
-            size: s.size,
-            additional_price: s.additionalPrice || 0,
-            additional_duration: s.additionalDuration || 0,
-        }));
-
         if (supplementsToInsert.length > 0) {
             const { error } = await supabase.from('service_vehicle_size_supplements').insert(supplementsToInsert);
             if (error) throw error;
         }
-        if (supplementsToUpdate.length > 0) {
-            const { error } = await supabase.from('service_vehicle_size_supplements').upsert(supplementsToUpdate);
-            if (error) throw error;
-        }
-        
-        // --- Specific Add-ons Sync ---
-        const originalAddOnIds = new Set(addOnsForService.map(a => a.id));
-        const currentAddOnIds = new Set(specificAddOns.map(a => a.id).filter(Boolean));
-        const addOnIdsToDelete = [...originalAddOnIds].filter(id => !currentAddOnIds.has(id));
 
-        if (addOnIdsToDelete.length > 0) {
-            const { error } = await supabase.from('add_ons').delete().in('id', addOnIdsToDelete);
-            if (error) throw error;
-        }
-
-        const addOnsToInsert = specificAddOns.filter(a => !a.id).map(a => ({
+        const addOnsToInsert = specificAddOns.map(a => ({
             service_id: serviceId,
             shop_id: shopId,
             name: a.name || 'Nouvelle Option',
             price: a.price || 0,
             duration: a.duration || 0,
         }));
-        
-        const addOnsToUpdate = specificAddOns.filter(a => a.id).map(a => ({
-            id: a.id,
-            service_id: serviceId,
-            shop_id: shopId,
-            name: a.name || 'Nouvelle Option',
-            price: a.price || 0,
-            duration: a.duration || 0,
-        }));
-
         if (addOnsToInsert.length > 0) {
             const { error } = await supabase.from('add_ons').insert(addOnsToInsert);
             if (error) throw error;
         }
-        if (addOnsToUpdate.length > 0) {
-            const { error } = await supabase.from('add_ons').upsert(addOnsToUpdate);
-            if (error) throw error;
-        }
-
+        
         await onSave();
 
     } catch (error: any) {

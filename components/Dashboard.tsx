@@ -16,7 +16,10 @@ import AlertModal from './AlertModal';
 import BookingPreviewModal from './booking/BookingPreviewModal';
 import Leads from './dashboard/Leads';
 
-type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'leads';
+type ViewType = {
+  page: 'home' | 'settings' | 'catalog' | 'reservations' | 'leads';
+  id?: string | 'new';
+};
 
 export interface Formula {
   id: string;
@@ -122,44 +125,35 @@ export interface Lead {
   notes?: string;
 }
 
+const parsePath = (path: string): ViewType => {
+  const pathParts = path.split('/dashboard')[1]?.split('/').filter(Boolean) || [];
+  const [page, action, id] = pathParts;
+
+  if (page === 'catalog') {
+    if (action === 'edit' && id) {
+      return { page: 'catalog', id };
+    }
+    if (action === 'new') {
+      return { page: 'catalog', id: 'new' };
+    }
+    return { page: 'catalog' };
+  }
+
+  if (['home', 'settings', 'reservations', 'leads'].includes(page)) {
+    return { page: page as ViewType['page'] };
+  }
+
+  return { page: 'home' };
+};
+
 
 const Dashboard: React.FC = () => {
   const { user, logOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   
-  const [activeView, setActiveViewInternal] = useState<ViewType>('home');
-  
-  useEffect(() => {
-    const path = window.location.pathname.split('/dashboard/')[1] || 'home';
-    const validViews = ['home', 'catalog', 'reservations', 'settings', 'leads'];
-    if (validViews.includes(path)) {
-      setActiveViewInternal(path as ViewType);
-    }
-
-    const onPopState = () => {
-      const path = window.location.pathname.split('/dashboard/')[1] || 'home';
-      if (validViews.includes(path)) {
-        setActiveViewInternal(path as ViewType);
-      } else {
-        setActiveViewInternal('home');
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  const setActiveView = (view: ViewType) => {
-    setActiveViewInternal(view);
-    if (view !== 'serviceEditor') {
-        const path = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
-        if (window.location.pathname !== path) {
-            window.history.pushState(null, '', path);
-        }
-    }
-  };
+  const [currentView, setCurrentView] = useState<ViewType>(parsePath(window.location.pathname));
   
   const [settingsTargetStep, setSettingsTargetStep] = useState(1);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [newServiceCategory, setNewServiceCategory] = useState<'interior' | 'exterior' | 'complementary'>('interior');
   const [services, setServices] = useState<Service[]>([]);
   const [addOns, setAddOns] = useState<AddOn[]>([]);
@@ -175,6 +169,19 @@ const Dashboard: React.FC = () => {
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  
+  const navigate = (path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentView(parsePath(path));
+  };
+  
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentView(parsePath(window.location.pathname));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
 
   const fetchData = useCallback(async () => {
@@ -278,7 +285,7 @@ const Dashboard: React.FC = () => {
 
   const handleSaveService = async () => {
     await fetchData();
-    setActiveView('catalog');
+    navigate('/dashboard/catalog');
     return true;
   };
 
@@ -290,7 +297,7 @@ const Dashboard: React.FC = () => {
       return;
     }
     await fetchData(); // Refresh data
-    setActiveView('catalog');
+    navigate('/dashboard/catalog');
   };
 
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
@@ -339,14 +346,13 @@ const Dashboard: React.FC = () => {
     setEditingReservation(null);
   }
 
-  const navigateToServiceEditor = (serviceId: string | null) => {
-    setEditingServiceId(serviceId);
-    setActiveView('serviceEditor');
+  const navigateToServiceEditor = (serviceId: string) => {
+    navigate(`/dashboard/catalog/edit/${serviceId}`);
   };
 
   const handleAddNewService = (category: 'interior' | 'exterior' | 'complementary') => {
     setNewServiceCategory(category);
-    navigateToServiceEditor(null);
+    navigate('/dashboard/catalog/new');
   };
 
   const openReservationEditor = (reservation: Reservation | null) => {
@@ -362,10 +368,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleNavigation = (nav: { view: string; step?: number }) => {
-    const newView = nav.view === 'shop' ? 'settings' : nav.view;
-    setActiveView(newView as ViewType);
-    if (newView === 'settings' && nav.step) {
+  const handleGetStartedNavigation = (nav: { view: string; step?: number }) => {
+    const page = nav.view === 'shop' ? 'settings' : nav.view;
+    navigate(`/dashboard/${page}`);
+    if (page === 'settings' && nav.step) {
       setSettingsTargetStep(nav.step);
     }
   };
@@ -377,6 +383,40 @@ const Dashboard: React.FC = () => {
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
   ];
+  
+  const renderContent = () => {
+      if (currentView.page === 'catalog' && currentView.id) {
+          return (
+              <ServiceEditor 
+                  serviceToEdit={currentView.id !== 'new' ? services.find(s => s.id === currentView.id) : null}
+                  initialCategory={newServiceCategory}
+                  formulasForService={currentView.id !== 'new' ? formulas.filter(f => f.serviceId === currentView.id) : []}
+                  supplementsForService={currentView.id !== 'new' ? supplements.filter(s => s.serviceId === currentView.id) : []}
+                  addOnsForService={currentView.id !== 'new' ? addOns.filter(a => a.serviceId === currentView.id) : []}
+                  shopId={shopData?.id || ''}
+                  supportedVehicleSizes={shopData?.supportedVehicleSizes || []}
+                  onBack={() => navigate('/dashboard/catalog')} 
+                  onSave={handleSaveService}
+                  onDelete={handleDeleteService}
+              />
+          );
+      }
+      
+      switch (currentView.page) {
+          case 'home':
+              return <DashboardHome onNavigate={handleGetStartedNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
+          case 'leads':
+              return <Leads leads={leads} onUpdateLead={handleUpdateLead} />;
+          case 'catalog':
+              return <Catalog services={services} onEditService={navigateToServiceEditor} onAddNewService={handleAddNewService} />;
+          case 'reservations':
+              return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
+          case 'settings':
+              return <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />;
+          default:
+              return <DashboardHome onNavigate={handleGetStartedNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
+      }
+  };
 
   if (authLoading || loading) {
     return (
@@ -399,8 +439,8 @@ const Dashboard: React.FC = () => {
             {navigationItems.map(item => (
                 <button
                 key={item.id}
-                onClick={() => setActiveView(item.id as ViewType)}
-                className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${activeView === item.id ? 'bg-blue-50 text-brand-blue border-r-4 border-brand-blue' : 'text-brand-gray hover:bg-gray-100'}`}
+                onClick={() => navigate(item.id === 'home' ? '/dashboard' : `/dashboard/${item.id}`)}
+                className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${currentView.page === item.id ? 'bg-blue-50 text-brand-blue border-r-4 border-brand-blue' : 'text-brand-gray hover:bg-gray-100'}`}
                 >
                 {item.icon}
                 <span className="ml-4 font-semibold">{item.label}</span>
@@ -425,42 +465,7 @@ const Dashboard: React.FC = () => {
             </div>
             </header>
             <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-              {activeView === 'serviceEditor' ? (
-                 <ServiceEditor 
-                    serviceToEdit={editingServiceId ? services.find(s => s.id === editingServiceId) : null}
-                    initialCategory={newServiceCategory}
-                    formulasForService={editingServiceId ? formulas.filter(f => f.serviceId === editingServiceId) : []}
-                    supplementsForService={editingServiceId ? supplements.filter(s => s.serviceId === editingServiceId) : []}
-                    addOnsForService={editingServiceId ? addOns.filter(a => a.serviceId === editingServiceId) : []}
-                    shopId={shopData?.id || ''}
-                    supportedVehicleSizes={shopData?.supportedVehicleSizes || []}
-                    onBack={() => setActiveView('catalog')} 
-                    onSave={handleSaveService}
-                    onDelete={handleDeleteService}
-                  />
-              ) : (
-                <>
-                  <div style={{ display: activeView === 'home' ? 'block' : 'none' }}>
-                    <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />
-                  </div>
-                  <div style={{ display: activeView === 'leads' ? 'block' : 'none' }}>
-                    <Leads leads={leads} onUpdateLead={handleUpdateLead} />
-                  </div>
-                  <div style={{ display: activeView === 'catalog' ? 'block' : 'none' }}>
-                     <Catalog 
-                        services={services}
-                        onEditService={navigateToServiceEditor}
-                        onAddNewService={handleAddNewService}
-                      />
-                  </div>
-                   <div style={{ display: activeView === 'reservations' ? 'block' : 'none' }}>
-                    <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />
-                  </div>
-                  <div style={{ display: activeView === 'settings' ? 'block' : 'none' }}>
-                    <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />
-                  </div>
-                </>
-              )}
+              {renderContent()}
             </main>
             
             {isReservationEditorOpen && shopData && (
@@ -486,8 +491,8 @@ const Dashboard: React.FC = () => {
                     {navigationItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={() => setActiveView(item.id as ViewType)}
-                            className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${activeView === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
+                            onClick={() => navigate(item.id === 'home' ? '/dashboard' : `/dashboard/${item.id}`)}
+                            className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${currentView.page === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
                             style={{ flexBasis: '0' }}
                         >
                             {item.icon}
