@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,12 +13,15 @@ import { toCamelCase } from '../lib/utils';
 import AlertModal from './AlertModal';
 import BookingPreviewModal from './booking/BookingPreviewModal';
 import Leads from './dashboard/Leads';
+import { IS_MOCK_MODE } from '../lib/env';
+import { mockShop, mockServices, mockLeads, mockReservations } from '../lib/mockData';
 
 type ViewType = {
   page: 'home' | 'settings' | 'catalog' | 'reservations' | 'leads';
   id?: string | 'new';
 };
 
+// Type definitions remain here as they are shared across multiple dashboard components
 export interface Formula {
   id: string;
   serviceId: string;
@@ -154,24 +155,21 @@ const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>(parsePath(window.location.pathname));
   
   const [settingsTargetStep, setSettingsTargetStep] = useState(1);
-  const [newServiceCategory, setNewServiceCategory] = useState<'interior' | 'exterior' | 'complementary'>('interior');
-  const [services, setServices] = useState<Service[]>([]);
-  const [addOns, setAddOns] = useState<AddOn[]>([]);
-  const [formulas, setFormulas] = useState<Formula[]>([]);
-  const [supplements, setSupplements] = useState<VehicleSizeSupplement[]>([]);
   const [shopData, setShopData] = useState<Shop | null>(null);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingShopData, setLoadingShopData] = useState(true);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
-  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+  const [editingReservationId, setEditingReservationId] = useState<string | null>(null);
+  const [hasServices, setHasServices] = useState(false);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   
   const navigate = (path: string) => {
-    window.history.pushState({}, '', path);
+    const isPreviewEnvironment = window.location.origin.includes('scf.usercontent.goog');
+    if (!isPreviewEnvironment) {
+        window.history.pushState({}, '', path);
+    }
     setCurrentView(parsePath(path));
   };
   
@@ -184,9 +182,15 @@ const Dashboard: React.FC = () => {
   }, []);
 
 
-  const fetchData = useCallback(async () => {
+  const fetchShopData = useCallback(async () => {
+    if (IS_MOCK_MODE) {
+        setShopData(mockShop);
+        setHasServices(mockServices.length > 0);
+        setLoadingShopData(false);
+        return;
+    }
     if (!user) return;
-    setLoading(true);
+    setLoadingShopData(true);
 
     try {
         const { data: shop, error: shopError } = await supabase
@@ -196,109 +200,35 @@ const Dashboard: React.FC = () => {
             .single();
 
         if (shopError && shopError.code !== 'PGRST116') throw shopError;
-        if (!shop) {
-          setLoading(false);
-          return;
-        };
-
-        const camelCasedShop = toCamelCase(shop) as Shop;
-        setShopData(camelCasedShop);
-    
-        const [
-            servicesRes,
-            addOnsRes,
-            formulasRes,
-            supplementsRes,
-            reservationsRes,
-            leadsRes
-        ] = await Promise.all([
-            supabase.from('services').select('*').eq('shop_id', shop.id),
-            supabase.from('add_ons').select('*').eq('shop_id', shop.id),
-            supabase.from('formulas').select('*, services(shop_id)').eq('services.shop_id', shop.id),
-            supabase.from('service_vehicle_size_supplements').select('*, services(shop_id)').eq('services.shop_id', shop.id),
-            supabase.from('reservations').select('*').eq('shop_id', shop.id).order('date', { ascending: false }).order('start_time', { ascending: true }),
-            supabase.from('leads').select('*').eq('shop_id', shop.id).order('created_at', { ascending: false })
-        ]);
-
-        if (servicesRes.error) throw servicesRes.error;
-        setServices(toCamelCase(servicesRes.data) as Service[]);
         
-        if (addOnsRes.error) throw addOnsRes.error;
-        setAddOns(toCamelCase(addOnsRes.data) as AddOn[]);
+        if (shop) {
+            const camelCasedShop = toCamelCase(shop) as Shop;
+            setShopData(camelCasedShop);
 
-        if (formulasRes.error) throw formulasRes.error;
-        setFormulas(toCamelCase(formulasRes.data) as Formula[]);
-
-        if (supplementsRes.error) throw supplementsRes.error;
-        setSupplements(toCamelCase(supplementsRes.data) as VehicleSizeSupplement[]);
-        
-        if (reservationsRes.error) throw reservationsRes.error;
-        setReservations(toCamelCase(reservationsRes.data) as Reservation[]);
-        
-        if (leadsRes.error) throw leadsRes.error;
-        setLeads(toCamelCase(leadsRes.data) as Lead[]);
-        
+            const { count, error: servicesError } = await supabase
+                .from('services')
+                .select('*', { count: 'exact', head: true })
+                .eq('shop_id', shop.id);
+            if (servicesError) throw servicesError;
+            setHasServices((count || 0) > 0);
+        }
     } catch (error: any) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Error fetching shop data:", error);
         setAlertInfo({ 
             isOpen: true, 
             title: 'Data Fetch Error', 
-            message: `Error fetching dashboard data: ${error.message}` 
+            message: `Error fetching shop data: ${error.message}` 
         });
     } finally {
-        setLoading(false);
+        setLoadingShopData(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchData();
-    } else if (!authLoading && !user) {
-      setLoading(false);
+    if (!authLoading) {
+      fetchShopData();
     }
-  }, [user, authLoading, fetchData]);
-  
-  const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .update(toCamelCase(updates))
-      .eq('id', leadId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating lead:', error);
-      setAlertInfo({ isOpen: true, title: 'Update Error', message: `Failed to update lead: ${error.message}` });
-      return;
-    }
-    
-    if (data) {
-      setLeads(prevLeads => prevLeads.map(lead => lead.id === leadId ? toCamelCase(data) as Lead : lead));
-    }
-  };
-
-  const setupStatus = {
-    shopInfo: !!shopData?.name,
-    availability: !!shopData?.schedule, 
-    catalog: services.length > 0,
-  };
-
-  const handleSaveService = async () => {
-    await fetchData();
-    navigate('/dashboard/catalog');
-    return true;
-  };
-
-  const handleDeleteService = async (serviceId: string) => {
-    const { error } = await supabase.from('services').delete().eq('id', serviceId);
-    if (error) {
-      console.error("Error deleting service:", error);
-      setAlertInfo({ isOpen: true, title: "Delete Error", message: `Error deleting service: ${error.message}` });
-      return;
-    }
-    await fetchData(); // Refresh data
-    navigate('/dashboard/catalog');
-  };
+  }, [user, authLoading, fetchShopData]);
 
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
      if (!user) return;
@@ -327,38 +257,31 @@ const Dashboard: React.FC = () => {
         if (data) setShopData(toCamelCase(data) as Shop);
      }
   };
-  
-  const handleSaveReservation = async (reservationToSave: any) => {
-    await fetchData();
-    setIsReservationEditorOpen(false);
-    setEditingReservation(null);
-  };
-  
-  const handleDeleteReservation = async (reservationId: string) => {
-    const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
-    if (error) {
-      console.error("Error deleting reservation:", error);
-      setAlertInfo({isOpen: true, title: "Delete Error", message: `Error deleting reservation: ${error.message}`});
-      return;
-    }
-    setReservations(prev => prev.filter(r => r.id !== reservationId));
-    setIsReservationEditorOpen(false);
-    setEditingReservation(null);
-  }
 
-  const navigateToServiceEditor = (serviceId: string) => {
-    navigate(`/dashboard/catalog/edit/${serviceId}`);
-  };
-
-  const handleAddNewService = (category: 'interior' | 'exterior' | 'complementary') => {
-    setNewServiceCategory(category);
-    navigate('/dashboard/catalog/new');
-  };
-
-  const openReservationEditor = (reservation: Reservation | null) => {
-    setEditingReservation(reservation);
+  const openReservationEditor = (reservationId: string | null) => {
+    setEditingReservationId(reservationId);
     setIsReservationEditorOpen(true);
   };
+  
+  const handleSaveReservation = async (reservationData: Omit<Reservation, 'id'> & { id?: string }) => {
+    const { error } = await supabase.from('reservations').upsert(toCamelCase(reservationData));
+    if (error) {
+        console.error("Error saving reservation", error);
+        setAlertInfo({ isOpen: true, title: "Save Error", message: `Could not save reservation: ${error.message}` });
+    } else {
+        setIsReservationEditorOpen(false);
+    }
+  };
+
+  const handleDeleteReservation = async (reservationId: string) => {
+    const { error } = await supabase.from('reservations').delete().eq('id', reservationId);
+     if (error) {
+        console.error("Error deleting reservation", error);
+        setAlertInfo({ isOpen: true, title: "Delete Error", message: `Could not delete reservation: ${error.message}` });
+    } else {
+        setIsReservationEditorOpen(false);
+    }
+  }
 
   const handlePreviewClick = () => {
     if (shopData?.id) {
@@ -385,40 +308,46 @@ const Dashboard: React.FC = () => {
   ];
   
   const renderContent = () => {
+      if (!shopData) {
+        return <Settings shopData={null} onSave={handleSaveShop} initialStep={1} />;
+      }
+
       if (currentView.page === 'catalog' && currentView.id) {
+          let editorInitialData = null;
+          if (IS_MOCK_MODE && currentView.id !== 'new') {
+              editorInitialData = mockServices.find(s => s.id === currentView.id) || null;
+          }
+
           return (
               <ServiceEditor 
-                  serviceToEdit={currentView.id !== 'new' ? services.find(s => s.id === currentView.id) : null}
-                  initialCategory={newServiceCategory}
-                  formulasForService={currentView.id !== 'new' ? formulas.filter(f => f.serviceId === currentView.id) : []}
-                  supplementsForService={currentView.id !== 'new' ? supplements.filter(s => s.serviceId === currentView.id) : []}
-                  addOnsForService={currentView.id !== 'new' ? addOns.filter(a => a.serviceId === currentView.id) : []}
-                  shopId={shopData?.id || ''}
-                  supportedVehicleSizes={shopData?.supportedVehicleSizes || []}
+                  serviceId={currentView.id}
+                  shopId={shopData.id}
+                  supportedVehicleSizes={shopData.supportedVehicleSizes || []}
                   onBack={() => navigate('/dashboard/catalog')} 
-                  onSave={handleSaveService}
-                  onDelete={handleDeleteService}
+                  onSave={() => navigate('/dashboard/catalog')}
+                  onDelete={() => navigate('/dashboard/catalog')}
+                  initialData={IS_MOCK_MODE ? editorInitialData : undefined}
               />
           );
       }
       
       switch (currentView.page) {
           case 'home':
-              return <DashboardHome onNavigate={handleGetStartedNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
+              return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />;
           case 'leads':
-              return <Leads leads={leads} onUpdateLead={handleUpdateLead} />;
+              return <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} />;
           case 'catalog':
-              return <Catalog services={services} onEditService={navigateToServiceEditor} onAddNewService={handleAddNewService} />;
+              return <Catalog shopId={shopData.id} onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)} onAddNewService={() => navigate('/dashboard/catalog/new')} initialServices={IS_MOCK_MODE ? mockServices : undefined} />;
           case 'reservations':
-              return <Reservations reservations={reservations} onAdd={() => openReservationEditor(null)} onEdit={openReservationEditor} />;
+              return <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} />;
           case 'settings':
               return <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />;
           default:
-              return <DashboardHome onNavigate={handleGetStartedNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />;
+              return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />;
       }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loadingShopData) {
     return (
       <div className="flex-1 flex items-center justify-center h-full flex-col">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
@@ -469,21 +398,17 @@ const Dashboard: React.FC = () => {
             </main>
             
             {isReservationEditorOpen && shopData && (
-            <ReservationEditor
-                isOpen={isReservationEditorOpen}
-                onClose={() => {
-                setIsReservationEditorOpen(false);
-                setEditingReservation(null);
-                }}
-                onSave={handleSaveReservation}
-                onDelete={handleDeleteReservation}
-                reservationToEdit={editingReservation}
-                services={services}
-                shopSchedule={shopData.schedule}
-                shopId={shopData.id}
-                minBookingNotice={shopData.minBookingNotice}
-                maxBookingHorizon={shopData.maxBookingHorizon}
-            />
+              <ReservationEditor
+                  isOpen={isReservationEditorOpen}
+                  onClose={() => {
+                      setIsReservationEditorOpen(false);
+                      setEditingReservationId(null);
+                  }}
+                  reservationId={editingReservationId}
+                  shopData={shopData}
+                  onSave={handleSaveReservation}
+                  onDelete={handleDeleteReservation}
+              />
             )}
             
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">

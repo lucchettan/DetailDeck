@@ -2,22 +2,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, SaveIcon, TrashIcon, PencilIcon } from '../Icons';
-import { Reservation, Service } from '../Dashboard';
+import { Reservation, Service, Shop } from '../Dashboard';
 import Calendar from '../booking/Calendar';
 import TimeSlotPicker from '../booking/TimeSlotPicker';
-import { toYYYYMMDD } from '../../lib/utils';
+import { toYYYYMMDD, toCamelCase } from '../../lib/utils';
+import { supabase } from '../../lib/supabaseClient';
 
 interface ReservationEditorProps {
     isOpen: boolean;
     onClose: () => void;
+    // FIX: Changed props to be self-contained. The component now fetches its own data using the ID.
+    reservationId: string | null;
+    shopData: Shop;
     onSave: (reservation: Omit<Reservation, 'id'> & { id?: string }) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
-    reservationToEdit: Reservation | null;
-    services: Service[];
-    shopSchedule: any;
-    shopId: string;
-    minBookingNotice: string;
-    maxBookingHorizon: string;
 }
 
 const getInitialFormData = (reservation: Reservation | null): Partial<Reservation> => {
@@ -37,30 +35,36 @@ const getInitialFormData = (reservation: Reservation | null): Partial<Reservatio
     };
 };
 
-const initialSchedule = {
-  monday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
-  tuesday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
-  wednesday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
-  thursday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
-  friday: { isOpen: true, timeframes: [{ from: '09:00', to: '17:00' }] },
-  saturday: { isOpen: false, timeframes: [] },
-  sunday: { isOpen: false, timeframes: [] },
-};
-
 
 const ReservationEditor: React.FC<ReservationEditorProps> = ({
-    isOpen, onClose, onSave, onDelete, reservationToEdit, services, shopSchedule, shopId, minBookingNotice, maxBookingHorizon
+    isOpen, onClose, onSave, onDelete, reservationId, shopData
 }) => {
     const { t } = useLanguage();
-    const isEditing = !!reservationToEdit;
+    const isEditing = !!reservationId;
 
-    const [formData, setFormData] = useState<Partial<Reservation>>(getInitialFormData(reservationToEdit));
+    const [formData, setFormData] = useState<Partial<Reservation>>(getInitialFormData(null));
     const [isEditingDateTime, setIsEditingDateTime] = useState(!isEditing);
 
     useEffect(() => {
-        setFormData(getInitialFormData(reservationToEdit));
-        setIsEditingDateTime(!reservationToEdit);
-    }, [reservationToEdit]);
+        const fetchReservation = async () => {
+            if (reservationId) {
+                const { data, error } = await supabase.from('reservations').select('*').eq('id', reservationId).single();
+                if (error) {
+                    console.error("Failed to fetch reservation for editing", error);
+                    onClose(); // Close if we can't fetch data
+                } else {
+                    setFormData(toCamelCase(data) as Reservation);
+                    setIsEditingDateTime(false);
+                }
+            } else {
+                setFormData(getInitialFormData(null));
+                setIsEditingDateTime(true);
+            }
+        }
+        if (isOpen) {
+            fetchReservation();
+        }
+    }, [reservationId, isOpen, onClose]);
     
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -82,7 +86,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     
     const handleDelete = () => {
         if (isEditing && window.confirm(t.deleteReservationConfirmation)) {
-            onDelete(reservationToEdit.id);
+            onDelete(reservationId);
         }
     }
 
@@ -133,13 +137,13 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                         <div>
                                             <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
                                             <Calendar
-                                                shopId={shopId}
-                                                schedule={shopSchedule || initialSchedule}
+                                                shopId={shopData.id}
+                                                schedule={shopData.schedule}
                                                 serviceDuration={formData.duration || 0}
                                                 selectedDate={formData.date ? new Date(formData.date + 'T00:00:00') : null}
                                                 onSelectDate={handleDateSelect}
-                                                minBookingNotice={minBookingNotice}
-                                                maxBookingHorizon={maxBookingHorizon}
+                                                minBookingNotice={shopData.minBookingNotice}
+                                                maxBookingHorizon={shopData.maxBookingHorizon}
                                                 disableBounds={true}
                                             />
                                         </div>
@@ -147,15 +151,14 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                             <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
                                             {formData.date && (
                                                 <TimeSlotPicker 
-                                                    shopId={shopId}
-                                                    schedule={shopSchedule || initialSchedule}
+                                                    shopId={shopData.id}
+                                                    schedule={shopData.schedule}
                                                     serviceDuration={formData.duration || 0}
                                                     selectedDate={new Date(formData.date + 'T00:00:00')}
                                                     selectedTime={formData.startTime || null}
                                                     onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
-                                                    editingReservationId={reservationToEdit?.id}
-                                                    // FIX: The 'minBookingNotice' prop was missing and is required by TimeSlotPicker.
-                                                    minBookingNotice={minBookingNotice}
+                                                    editingReservationId={reservationId || undefined}
+                                                    minBookingNotice={shopData.minBookingNotice}
                                                 />
                                             )}
                                         </div>

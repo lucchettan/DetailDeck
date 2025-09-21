@@ -13,7 +13,11 @@ import PaymentSuccess from './PaymentSuccess';
 import { useAuth } from '../contexts/AuthContext';
 import Benefits from './Benefits';
 
-const LandingPage: React.FC = () => {
+interface LandingPageProps {
+  navigate: (path: string) => void;
+}
+
+const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
   const { accessDemo } = useAuth();
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
@@ -23,9 +27,9 @@ const LandingPage: React.FC = () => {
     setIsDemoLoading(true);
     const { error } = await accessDemo();
     if (!error) {
-      // The auth context will update and the App router will handle the redirect.
-      // For immediate feedback, we can also push the navigation.
-      window.location.href = '/dashboard';
+      // Use the navigate function passed from the App component,
+      // which safely handles routing in the preview environment.
+      navigate('/dashboard');
     } else {
       console.error('Demo access failed:', error);
       alert(`Demo access failed: ${error.message}. Please try again.`);

@@ -1,13 +1,15 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Reservation } from '../Dashboard';
 import { CalendarPlusIcon } from '../Icons';
+import { supabase } from '../../lib/supabaseClient';
+import { toCamelCase } from '../../lib/utils';
 
 interface ReservationsProps {
-  reservations: Reservation[];
+  shopId: string;
   onAdd: () => void;
-  onEdit: (reservation: Reservation) => void;
+  onEdit: (reservationId: string) => void;
+  initialReservations?: Reservation[];
 }
 
 const getStatusBadgeStyle = (status: Reservation['status']) => {
@@ -26,9 +28,9 @@ const getPaymentStatusBadgeStyle = (status: Reservation['paymentStatus']) => {
   }
 }
 
-const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reservation) => void; }> = ({ reservation, onEdit }) => {
+const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (id: string) => void; }> = ({ reservation, onEdit }) => {
   const { t } = useLanguage();
-  const { startTime, duration, clientName, serviceDetails, status, paymentStatus } = reservation;
+  const { id, startTime, duration, clientName, serviceDetails, status, paymentStatus } = reservation;
   
   const calculateEndTime = (startTimeStr: string, durationMins: number): string => {
     if (!startTimeStr || !startTimeStr.includes(':') || durationMins === undefined) {
@@ -60,7 +62,7 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
 
 
   return (
-    <button onClick={() => onEdit(reservation)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
+    <button onClick={() => onEdit(id)} className="w-full text-left bg-white p-4 rounded-lg shadow-md border hover:border-brand-blue transition-all">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center">
         <div className="mt-2 sm:mt-0">
           <p className="font-semibold text-brand-dark flex items-baseline gap-2">
@@ -87,8 +89,33 @@ const ReservationCard: React.FC<{ reservation: Reservation; onEdit: (res: Reserv
 };
 
 
-const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit }) => {
+const Reservations: React.FC<ReservationsProps> = ({ shopId, onAdd, onEdit, initialReservations }) => {
   const { t } = useLanguage();
+  const [reservations, setReservations] = useState<Reservation[]>(initialReservations || []);
+  const [loading, setLoading] = useState(!initialReservations);
+
+  const fetchReservations = useCallback(async () => {
+    if (initialReservations) return;
+    if (!shopId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('date', { ascending: false })
+      .order('start_time', { ascending: true });
+      
+    if (error) {
+        console.error("Error fetching reservations:", error);
+    } else if (data) {
+        setReservations(toCamelCase(data) as Reservation[]);
+    }
+    setLoading(false);
+  }, [shopId, initialReservations]);
+
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]);
 
   const { upcoming, past } = useMemo(() => {
     const today = new Date();
@@ -137,6 +164,14 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAdd, onEdit
             </div>
           );
       });
+  }
+  
+  if (loading) {
+      return (
+          <div className="flex-1 flex items-center justify-center h-full flex-col">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+          </div>
+      );
   }
 
   return (

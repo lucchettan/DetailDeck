@@ -1,62 +1,42 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckCircleIcon, Bars3Icon } from '../Icons';
 import { Service, Formula, VehicleSizeSupplement, AddOn } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
-import { toSnakeCase } from '../../lib/utils';
+import { toSnakeCase, toCamelCase } from '../../lib/utils';
+import { IS_MOCK_MODE } from '../../lib/env';
 
 type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
 
 interface ServiceEditorProps {
-  serviceToEdit: Service | null;
-  initialCategory: 'interior' | 'exterior' | 'complementary';
-  formulasForService: Formula[];
-  supplementsForService: VehicleSizeSupplement[];
-  addOnsForService: AddOn[];
+  serviceId: string | 'new';
   shopId: string;
   supportedVehicleSizes: string[];
   onBack: () => void;
-  onSave: () => Promise<boolean | void>;
-  onDelete: (serviceId: string) => void;
+  onSave: () => void;
+  onDelete: () => void;
+  initialData?: (Service & { formulas: Formula[], supplements: VehicleSizeSupplement[], specificAddOns: AddOn[] }) | null;
 }
 
-const getInitialFormData = (service: Service | null, initialCategory: 'interior' | 'exterior' | 'complementary'): Partial<Service> => {
-  if (service) return { ...service };
-
-  return {
-    name: '',
-    description: '',
-    status: 'active',
-    category: initialCategory,
-    basePrice: 50,
-    baseDuration: 60,
-    imageUrl: '',
-  };
-};
-
 const ServiceEditor: React.FC<ServiceEditorProps> = ({
-  serviceToEdit,
-  initialCategory,
-  formulasForService,
-  supplementsForService,
-  addOnsForService,
+  serviceId,
   shopId,
   supportedVehicleSizes,
   onBack,
   onSave,
-  onDelete
+  onDelete,
+  initialData
 }) => {
   const { t } = useLanguage();
-  const isEditing = serviceToEdit !== null;
+  const isEditing = serviceId !== 'new';
 
-  const [formData, setFormData] = useState<Partial<Service>>(getInitialFormData(serviceToEdit, initialCategory));
+  const [formData, setFormData] = useState<Partial<Service>>({});
   const [formulas, setFormulas] = useState<FormulaWithIncluded[]>([]);
   const [supplements, setSupplements] = useState<Partial<VehicleSizeSupplement>[]>([]);
   const [specificAddOns, setSpecificAddOns] = useState<Partial<AddOn>[]>([]);
   
+  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
@@ -67,20 +47,70 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
-
   useEffect(() => {
-    setFormData(getInitialFormData(serviceToEdit, initialCategory));
-    const initialFormulas = (formulasForService.length > 0 ? formulasForService : [{ name: 'Basique', description: '', additionalPrice: 0, additionalDuration: 0 }]).map(f => ({
-        ...f,
-        includedItems: f.description ? f.description.split('\n').filter(line => line.trim() !== '') : []
-    }));
-    setFormulas(initialFormulas);
-    setSupplements(supplementsForService);
-    setSpecificAddOns(addOnsForService);
-    setImagePreviewUrl(serviceToEdit?.imageUrl || null);
-    setImageFile(null);
-    setImageToDelete(null);
-  }, [serviceToEdit, initialCategory, formulasForService, supplementsForService, addOnsForService]);
+    const initializeState = async () => {
+      setLoading(true);
+
+      const setupNewService = () => {
+        setFormData({ name: '', description: '', status: 'active', category: 'interior', basePrice: 50, baseDuration: 60 });
+        setFormulas([{ name: 'Basique', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
+        setSupplements([]);
+        setSpecificAddOns([]);
+        setLoading(false);
+      };
+
+      if (serviceId === 'new') {
+        setupNewService();
+        return;
+      }
+      
+      if (IS_MOCK_MODE) {
+        if (initialData) {
+          const { formulas: initialFormulas, supplements: initialSupplements, specificAddOns: initialAddOns, ...serviceData } = initialData;
+          setFormData(serviceData);
+          setImagePreviewUrl(serviceData.imageUrl || null);
+          setFormulas(initialFormulas.map(f => ({ ...f, includedItems: f.description ? f.description.split('\n').filter(Boolean) : [] })));
+          setSupplements(initialSupplements);
+          setSpecificAddOns(initialAddOns);
+        }
+        setLoading(false);
+      } else {
+        // Real mode fetch for editing
+        try {
+            const { data: service, error: serviceError } = await supabase.from('services').select('*').eq('id', serviceId).single();
+            if (serviceError) throw serviceError;
+            
+            const [formulasRes, supplementsRes, addOnsRes] = await Promise.all([
+                supabase.from('formulas').select('*').eq('service_id', serviceId),
+                supabase.from('service_vehicle_size_supplements').select('*').eq('service_id', serviceId),
+                supabase.from('add_ons').select('*').eq('service_id', serviceId)
+            ]);
+            
+            if (formulasRes.error || supplementsRes.error || addOnsRes.error) throw new Error("Failed to fetch service details");
+
+            setFormData(toCamelCase(service) as Service);
+            setImagePreviewUrl(service.image_url || null);
+            
+            const fetchedFormulas = toCamelCase(formulasRes.data) as Formula[];
+            setFormulas((fetchedFormulas.length > 0 ? fetchedFormulas : [{ name: 'Basique', description: '', additionalPrice: 0, additionalDuration: 0 }]).map(f => ({
+                ...f,
+                includedItems: f.description ? f.description.split('\n').filter(line => line.trim() !== '') : []
+            })));
+            
+            setSupplements(toCamelCase(supplementsRes.data) as VehicleSizeSupplement[]);
+            setSpecificAddOns(toCamelCase(addOnsRes.data) as AddOn[]);
+        } catch (error: any) {
+            console.error("Error fetching service data:", error);
+            setAlertInfo({ isOpen: true, title: "Fetch Error", message: `Failed to load service data: ${error.message}` });
+            onBack();
+        } finally {
+            setLoading(false);
+        }
+      }
+    };
+
+    initializeState();
+  }, [serviceId, initialData, onBack]);
 
   const handleInputChange = (field: keyof Service, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -88,7 +118,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   
   const handleRemoveImage = () => {
     if (imagePreviewUrl) {
-      if (serviceToEdit?.imageUrl === imagePreviewUrl) {
+      if (formData.imageUrl === imagePreviewUrl) {
         setImageToDelete(imagePreviewUrl);
       }
       setImagePreviewUrl(null);
@@ -104,6 +134,17 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
 
   const handleSaveClick = async () => {
+    if (IS_MOCK_MODE) {
+      console.log('%c[MOCK MODE]%c Simulating save for service.', 'color: purple; font-weight: bold;', 'color: inherit;');
+      setIsSaving(true);
+      setTimeout(() => {
+        setIsSaving(false);
+        setAlertInfo({ isOpen: true, title: 'Démo', message: 'La sauvegarde est simulée en mode démo.' });
+        onSave();
+      }, 1000);
+      return;
+    }
+
     if (!shopId) {
         setAlertInfo({ isOpen: true, title: "Error", message: "Shop ID is missing. Cannot save." });
         return;
@@ -112,7 +153,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     let finalImageUrl = formData.imageUrl;
 
     try {
-        // 1. Handle Image Upload/Delete
         if (imageToDelete) {
             const oldImagePath = imageToDelete.split('/service-images/')[1];
             if (oldImagePath) {
@@ -122,8 +162,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }
 
         if (imageFile) {
-            if (serviceToEdit?.imageUrl && serviceToEdit.imageUrl !== imageToDelete) {
-                const oldImagePath = serviceToEdit.imageUrl.split('/service-images/')[1];
+            if (formData.imageUrl && formData.imageUrl !== imageToDelete) {
+                const oldImagePath = formData.imageUrl.split('/service-images/')[1];
                 if (oldImagePath) await supabase.storage.from('service-images').remove([oldImagePath]);
             }
         
@@ -136,8 +176,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             finalImageUrl = data.publicUrl;
         }
         
-        // 2. Upsert the main service to get its ID
         const servicePayload: any = { ...formData, shopId, imageUrl: finalImageUrl };
+        if (!isEditing) delete servicePayload.id;
         delete servicePayload.createdAt;
 
         const { data: savedService, error: serviceError } = await supabase
@@ -147,21 +187,21 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             .single();
         
         if (serviceError) throw serviceError;
-        const serviceId = savedService.id;
+        const currentServiceId = savedService.id;
         
         // --- DELETION PHASE ---
         if (isEditing) {
-            const { error: deleteFormulasError } = await supabase.from('formulas').delete().eq('service_id', serviceId);
+            const { error: deleteFormulasError } = await supabase.from('formulas').delete().eq('service_id', currentServiceId);
             if (deleteFormulasError) throw deleteFormulasError;
-            const { error: deleteSupplementsError } = await supabase.from('service_vehicle_size_supplements').delete().eq('service_id', serviceId);
+            const { error: deleteSupplementsError } = await supabase.from('service_vehicle_size_supplements').delete().eq('service_id', currentServiceId);
             if (deleteSupplementsError) throw deleteSupplementsError;
-            const { error: deleteAddonsError } = await supabase.from('add_ons').delete().eq('service_id', serviceId);
+            const { error: deleteAddonsError } = await supabase.from('add_ons').delete().eq('service_id', currentServiceId);
             if (deleteAddonsError) throw deleteAddonsError;
         }
 
         // --- RE-INSERTION PHASE ---
         const formulasToInsert = formulas.map(f => ({
-            service_id: serviceId,
+            service_id: currentServiceId,
             name: f.name || 'Nouvelle Formule',
             description: f.includedItems.join('\n').trim(),
             additional_price: f.additionalPrice || 0,
@@ -173,7 +213,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }
         
         const supplementsToInsert = supplements.filter(s => s.size).map(s => ({
-            service_id: serviceId,
+            service_id: currentServiceId,
             size: s.size,
             additional_price: s.additionalPrice || 0,
             additional_duration: s.additionalDuration || 0,
@@ -184,7 +224,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }
 
         const addOnsToInsert = specificAddOns.map(a => ({
-            service_id: serviceId,
+            service_id: currentServiceId,
             shop_id: shopId,
             name: a.name || 'Nouvelle Option',
             price: a.price || 0,
@@ -195,7 +235,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             if (error) throw error;
         }
         
-        await onSave();
+        onSave();
 
     } catch (error: any) {
         console.error("Save error:", error);
@@ -205,9 +245,23 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
   };
 
-  const handleDeleteClick = () => {
-      if (serviceToEdit && window.confirm(t.deleteServiceConfirmation)) {
-          onDelete(serviceToEdit.id);
+  const handleDeleteClick = async () => {
+      if (IS_MOCK_MODE) {
+        if (window.confirm(t.deleteServiceConfirmation)) {
+          console.log('%c[MOCK MODE]%c Simulating delete for service.', 'color: purple; font-weight: bold;', 'color: inherit;');
+          setAlertInfo({ isOpen: true, title: 'Démo', message: 'La suppression est simulée en mode démo.' });
+          onDelete();
+        }
+        return;
+      }
+      if (isEditing && window.confirm(t.deleteServiceConfirmation)) {
+          const { error } = await supabase.from('services').delete().eq('id', serviceId);
+          if (error) {
+            console.error("Error deleting service:", error);
+            setAlertInfo({ isOpen: true, title: "Delete Error", message: `Error deleting service: ${error.message}` });
+            return;
+          }
+          onDelete();
       }
   }
 
@@ -277,6 +331,14 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }
     });
   };
+  
+  if (loading) {
+    return (
+        <div className="flex-1 flex items-center justify-center h-full flex-col">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+        </div>
+    );
+  }
 
   return (
     <div>
@@ -292,12 +354,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                        <input value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} placeholder={t.serviceNamePlaceholder} className="w-full p-2 text-lg font-bold border-gray-200 border rounded-lg" />
                        <textarea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} placeholder={t.serviceDescriptionPlaceholder} rows={4} className="w-full p-2 border-gray-200 border rounded-lg" />
                        <div className="grid grid-cols-2 gap-4">
-                           <select value={formData.category || initialCategory} onChange={(e) => handleInputChange('category', e.target.value)} className="w-full p-2 border-gray-200 border bg-white rounded-lg">
+                           <select value={formData.category} onChange={(e) => handleInputChange('category', e.target.value)} className="w-full p-2 border-gray-200 border bg-white rounded-lg">
                                <option value="interior">{t.interior}</option>
                                <option value="exterior">{t.exterior}</option>
                                <option value="complementary">{t.complementary}</option>
                            </select>
-                           <select value={formData.status || 'active'} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full p-2 border-gray-200 border bg-white rounded-lg">
+                           <select value={formData.status} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full p-2 border-gray-200 border bg-white rounded-lg">
                                <option value="active">{t.active}</option>
                                <option value="inactive">{t.inactive}</option>
                            </select>

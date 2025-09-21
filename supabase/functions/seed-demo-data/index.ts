@@ -1,5 +1,3 @@
-
-
 // @ts-ignore: Deno types are not available in this environment
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 // @ts-ignore: Deno types are not available in this environment
@@ -50,7 +48,9 @@ serve(async (req: Request) => {
             "saturday": {"isOpen": true, "timeframes": [{"from": "09:00", "to": "13:00"}]},
             "sunday": {"isOpen": false, "timeframes": []}
         },
-        supported_vehicle_sizes: ['S', 'M', 'L', 'XL']
+        supported_vehicle_sizes: ['S', 'M', 'L', 'XL'],
+        min_booking_notice: '4h',
+        max_booking_horizon: '12w',
       })
       .select()
       .single()

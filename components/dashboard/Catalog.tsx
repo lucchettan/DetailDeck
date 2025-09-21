@@ -1,17 +1,43 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
 import { PlusIcon, ImageIcon, MoneyIcon } from '../Icons';
+import { supabase } from '../../lib/supabaseClient';
+import { toCamelCase } from '../../lib/utils';
 
 interface CatalogProps {
-  services: Service[];
-  onEditService: (serviceId: string | null) => void;
-  onAddNewService: (category: 'interior' | 'exterior' | 'complementary') => void;
+  shopId: string;
+  onEditService: (serviceId: string) => void;
+  onAddNewService: () => void;
+  initialServices?: Service[];
 }
 
-const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewService }) => {
+const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewService, initialServices }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'interior' | 'exterior' | 'complementary'>('interior');
+  const [services, setServices] = useState<Service[]>(initialServices || []);
+  const [loading, setLoading] = useState(!initialServices);
+
+  const fetchServices = useCallback(async () => {
+    if (initialServices) return;
+    if (!shopId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('shop_id', shopId);
+    
+    if (error) {
+      console.error("Error fetching services:", error);
+    } else if (data) {
+      setServices(toCamelCase(data) as Service[]);
+    }
+    setLoading(false);
+  }, [shopId, initialServices]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const { interiorServices, exteriorServices, complementaryServices } = useMemo(() => {
     return services.reduce((acc, service) => {
@@ -86,6 +112,14 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewServ
       ))}
     </div>
   );
+  
+  if (loading) {
+      return (
+          <div className="flex-1 flex items-center justify-center h-full flex-col">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+          </div>
+      );
+  }
 
   return (
     <div>
@@ -126,7 +160,7 @@ const Catalog: React.FC<CatalogProps> = ({ services, onEditService, onAddNewServ
           <div>
               <ServiceList 
                 serviceList={serviceCategories[activeTab].list}
-                onAdd={() => onAddNewService(activeTab)}
+                onAdd={() => onAddNewService()}
                 addText={serviceCategories[activeTab].addText}
               />
           </div>

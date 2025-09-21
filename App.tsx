@@ -37,8 +37,19 @@ const AppContent: React.FC = () => {
   
   // Custom navigation function to update state and history
   const navigate = (newPath: string) => {
-    window.history.pushState({}, '', newPath);
-    window.dispatchEvent(new Event('pushstate'));
+    // This check is a workaround for the preview environment's security restrictions.
+    // In a sandboxed iframe, pushState can fail if the path is interpreted as cross-origin.
+    const isPreviewEnvironment = window.location.origin.includes('scf.usercontent.goog');
+
+    if (isPreviewEnvironment) {
+        // In preview, directly update the state to change the view without altering browser history.
+        // This avoids the cross-origin error but sacrifices back/forward button functionality in the preview.
+        setPath(newPath);
+    } else {
+        // In a standard environment, update the browser history as usual.
+        window.history.pushState({}, '', newPath);
+        window.dispatchEvent(new Event('pushstate'));
+    }
   };
 
   if (loading) {
@@ -77,7 +88,7 @@ const AppContent: React.FC = () => {
   }
   
   // Default to Landing Page
-  return <LandingPage />;
+  return <LandingPage navigate={navigate} />;
 }
 
 

@@ -1,26 +1,26 @@
+
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorefrontIcon, ClockIcon, ListBulletIcon, CheckIcon, LinkIcon, ShareIcon, EyeIcon } from '../Icons';
+import { Shop } from '../Dashboard';
 
 interface DashboardHomeProps {
   onNavigate: (nav: { view: string; step?: number }) => void;
-  setupStatus: {
-    shopInfo: boolean;
-    availability: boolean;
-    catalog: boolean;
-  };
-  shopId?: string;
+  // FIX: Changed props from `setupStatus` and `shopId` to `shopData` and `hasServices`
+  // to make the component more self-contained and simplify the parent's logic.
+  shopData: Shop;
+  hasServices: boolean;
   onPreview: () => void;
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, shopId, onPreview }) => {
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, shopData, hasServices, onPreview }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Use the real shop ID if available, otherwise fallback for safety.
-  const bookingUrl = `${window.location.origin}/reservation/${shopId || 'no-shop-found'}`;
+  const bookingUrl = `${window.location.origin}/reservation/${shopData.id || 'no-shop-found'}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(bookingUrl);
@@ -28,6 +28,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, setupStatus, 
     setTimeout(() => setLinkCopied(false), 2000);
   };
   
+  const setupStatus = {
+    shopInfo: !!shopData.name && !!shopData.phone,
+    availability: !!shopData.schedule,
+    catalog: hasServices
+  };
+
   const steps = [
     { 
       id: 'settings',
