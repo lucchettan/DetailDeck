@@ -273,71 +273,79 @@ export const SparklesIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...re
 );
 
 export const SeatIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...rest}>
-      <path d="M20 18v-1a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v1"/>
-      <path d="M4 15V9a2 2 0 0 1 2-2h1.5a2 2 0 0 1 2 2v3"/>
-      <path d="M18 15V9a2 2 0 0 0-2-2h-1.5a2 2 0 0 0-2 2v3"/>
-      <path d="M7 18h10"/>
-      <path d="M10.5 9.5 12 4l1.5 5.5"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
+      <path d="M4 18v-4.78a2 2 0 0 1 1.29-1.87L16 6.42a2 2 0 0 1 2.58 1.87V11" />
+      <path d="M10 6h2" />
+      <path d="M6 11v5" />
+      <path d="M20 12.5v1.31a2 2 0 0 1-1.17 1.85L14 18.22a2 2 0 0 1-2 0l-4.83-2.56a2 2 0 0 1-1.17-1.85V13.8" />
+      <path d="M4 18h16" />
     </svg>
 );
 
 export const CarIcon: React.FC<IconProps> = ({ className = 'w-6 h-6', ...rest }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-      {/* Original Car Icon Path */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 15.5V11.25c0-1.84 1.485-3.375 3.375-3.375h9.75c1.89 0 3.375 1.535 3.375 3.375V15.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.5h19.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 15.5v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V15.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 15.5v2.25a1.5 1.5 0 001.5 1.5h.75a1.5 1.5 0 001.5-1.5V15.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 11.25L10.5 9l3 2.25" />
-      {/* Shine marks */}
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 8l-1.5 -1.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14 8l1.5 -1.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5l-1 -1" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
+      <path d="M2 17s.6-2.2 2.1-2.2c1.4 0 1.9.9 1.9.9m12-2.2c1.5 0 2.1 2.2 2.1 2.2s-.5-.9-1.9-.9c-1.5 0-2.1 2.2-2.1 2.2" />
+      <path d="M5 14h14" />
+      <path d="M3.8 12.6c-.8 1-1.1 2.2-.8 3.4h18c.3-1.2 0-2.4-.8-3.4" />
+      <path d="M9.4 3.6c0 1.1.9 2 2 2s2-.9 2-2" />
+      <path d="M12 12.6V3.6" />
+      <path d="M14.5 12.6h-5L8 7.1c.6-.2 1.3-.3 2-.3s1.4.1 2 .3Z" />
     </svg>
 );
+
 
 // --- Vehicle Size Icons ---
 // Replaced with new icons based on user-provided image for better visual distinction.
 export const SedanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15V9.75c0-1.036.84-1.875 1.875-1.875h1.597a1.875 1.875 0 011.662.97l1.191 2.552a.375.375 0 00.574.148h3.102a.375.375 0 00.574-.148l1.19-2.552a1.875 1.875 0 011.663-.97h1.597c1.035 0 1.875.84 1.875 1.875V15" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15h19.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 18h2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 18h9.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 18h.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.7 15.3l1.8-4.9A1 1 0 015.4 10h14.2a1 1 0 01.9.5l1.2 2.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.3 10l2.1-4.9A1 1 0 019.3 4h6.4a1 1 0 01.9 1.1L15.4 10" />
     </svg>
 );
 
 export const SuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15V9.75c0-1.036.84-1.875 1.875-1.875h15.75c1.035 0 1.875.84 1.875 1.875V15" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15h19.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15V9.75" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 15V9.75" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 18h2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 18h9.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 18h.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.7 11.4l.8-2.3A1 1 0 015.4 8h14.2a1 1 0 01.9.5l1.2 2.9H3.7z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.1 15.1L4.5 18" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.5 18l-.6-2.9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.3 8l2.7-4.9A1 1 0 0110 2h5a1 1 0 01.9 1.1L14.7 8" />
     </svg>
 );
 
 export const LargeSuvIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15h19.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 15V9.75c0-1.036.84-1.875 1.875-1.875H9.75v10.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 7.875h10.125c1.035 0 1.875.84 1.875 1.875V15" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 12h12" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 18h2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 18h9.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 18h.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.3V18" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21.5 18v-5.4a1 1 0 00-.5-.9L14.5 8H5.4a1 1 0 00-.9.5L3.3 10" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 8l-1.8-5.3A1 1 0 018.6 1h6.8a1 1 0 01.9 1.7L14.5 8" />
     </svg>
 );
 
 export const VanIcon: React.FC<IconProps> = ({ className = 'w-16 h-16', ...rest }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} {...rest}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.75a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15h19.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 15V7.875c0-1.036.84-1.875 1.875-1.875h8.25c1.035 0 1.875.84 1.875 1.875V15" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15v-1.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 15v-4.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 21a1.5 1.5 0 000-3 1.5 1.5 0 000 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 18h2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 18h9.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 18h.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 18V6.5A1.5 1.5 0 014.5 5h10A1.5 1.5 0 0116 6.5V18" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 12h5.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 8h5.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 14h6" />
     </svg>
 );
 // --- End Vehicle Size Icons ---
