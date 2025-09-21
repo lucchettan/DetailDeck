@@ -95,7 +95,7 @@ const Reservations: React.FC<ReservationsProps> = ({ shopId, onAdd, onEdit, init
   const { t } = useLanguage();
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations || []);
   const [loading, setLoading] = useState(!initialReservations);
-  const [lastFetched, setLastFetched] = useState<number | null>(null);
+  const [lastFetched, setLastFetched] = useState<number | null>(initialReservations ? Date.now() : null);
 
   const fetchReservations = useCallback(async (force = false) => {
     if (initialReservations) return;
@@ -103,7 +103,7 @@ const Reservations: React.FC<ReservationsProps> = ({ shopId, onAdd, onEdit, init
 
     const now = Date.now();
     if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
-        return; // Use cached data
+        return; // Use cached data, do not trigger loading state.
     }
 
     setLoading(true);

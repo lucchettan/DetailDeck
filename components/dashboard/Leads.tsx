@@ -24,7 +24,7 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
   const { t } = useLanguage();
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
   const [loading, setLoading] = useState(!initialLeads);
-  const [lastFetched, setLastFetched] = useState<number | null>(null);
+  const [lastFetched, setLastFetched] = useState<number | null>(initialLeads ? Date.now() : null);
 
   const fetchLeads = useCallback(async (force = false) => {
     if (initialLeads) return;
@@ -32,7 +32,7 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
 
     const now = Date.now();
     if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
-        return; // Use cached data
+        return; // Use cached data, do not trigger loading state.
     }
 
     setLoading(true);

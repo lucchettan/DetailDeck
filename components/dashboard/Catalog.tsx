@@ -19,7 +19,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
   const [activeTab, setActiveTab] = useState<'interior' | 'exterior' | 'complementary'>('interior');
   const [services, setServices] = useState<Service[]>(initialServices || []);
   const [loading, setLoading] = useState(!initialServices);
-  const [lastFetched, setLastFetched] = useState<number | null>(null);
+  const [lastFetched, setLastFetched] = useState<number | null>(initialServices ? Date.now() : null);
 
   const fetchServices = useCallback(async (force = false) => {
     if (initialServices) return;
@@ -27,7 +27,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
 
     const now = Date.now();
     if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
-      return; // Use cached data
+      return; // Use cached data, do not trigger loading state.
     }
     
     setLoading(true);
