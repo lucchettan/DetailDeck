@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { HomeIcon, BookOpenIcon, CalendarDaysIcon, CogIcon as SettingsIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, CalendarDaysIcon, CogIcon as SettingsIcon, PhoneArrowUpRightIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
@@ -14,8 +14,9 @@ import ReservationEditor from './dashboard/ReservationEditor';
 import { toCamelCase } from '../lib/utils';
 import AlertModal from './AlertModal';
 import BookingPreviewModal from './booking/BookingPreviewModal';
+import Leads from './dashboard/Leads';
 
-type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations';
+type ViewType = 'home' | 'settings' | 'catalog' | 'serviceEditor' | 'reservations' | 'leads';
 
 export interface Formula {
   id: string;
@@ -105,6 +106,22 @@ export interface Reservation {
     createdAt?: string;
 }
 
+export interface Lead {
+  id: string;
+  shopId: string;
+  createdAt: string;
+  clientPhone: string;
+  selectedServices: {
+      vehicleSize: string;
+      services: {
+          serviceName: string;
+          formulaName: string;
+      }[];
+  };
+  status: 'to_call' | 'contacted' | 'converted' | 'lost';
+  notes?: string;
+}
+
 
 const Dashboard: React.FC = () => {
   const { user, logOut, loading: authLoading } = useAuth();
@@ -114,7 +131,7 @@ const Dashboard: React.FC = () => {
   
   useEffect(() => {
     const path = window.location.pathname.split('/dashboard/')[1] || 'home';
-    const validViews = ['home', 'catalog', 'reservations', 'settings'];
+    const validViews = ['home', 'catalog', 'reservations', 'settings', 'leads'];
     if (validViews.includes(path)) {
       setActiveViewInternal(path as ViewType);
     }
@@ -150,6 +167,7 @@ const Dashboard: React.FC = () => {
   const [supplements, setSupplements] = useState<VehicleSizeSupplement[]>([]);
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   
@@ -184,13 +202,15 @@ const Dashboard: React.FC = () => {
             addOnsRes,
             formulasRes,
             supplementsRes,
-            reservationsRes
+            reservationsRes,
+            leadsRes
         ] = await Promise.all([
             supabase.from('services').select('*').eq('shop_id', shop.id),
             supabase.from('add_ons').select('*').eq('shop_id', shop.id),
             supabase.from('formulas').select('*, services(shop_id)').eq('services.shop_id', shop.id),
             supabase.from('service_vehicle_size_supplements').select('*, services(shop_id)').eq('services.shop_id', shop.id),
-            supabase.from('reservations').select('*').eq('shop_id', shop.id).order('date', { ascending: false }).order('start_time', { ascending: true })
+            supabase.from('reservations').select('*').eq('shop_id', shop.id).order('date', { ascending: false }).order('start_time', { ascending: true }),
+            supabase.from('leads').select('*').eq('shop_id', shop.id).order('created_at', { ascending: false })
         ]);
 
         if (servicesRes.error) throw servicesRes.error;
@@ -207,6 +227,9 @@ const Dashboard: React.FC = () => {
         
         if (reservationsRes.error) throw reservationsRes.error;
         setReservations(toCamelCase(reservationsRes.data) as Reservation[]);
+        
+        if (leadsRes.error) throw leadsRes.error;
+        setLeads(toCamelCase(leadsRes.data) as Lead[]);
         
     } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
@@ -227,6 +250,25 @@ const Dashboard: React.FC = () => {
       setLoading(false);
     }
   }, [user, authLoading, fetchData]);
+  
+  const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
+    const { data, error } = await supabase
+      .from('leads')
+      .update(toCamelCase(updates))
+      .eq('id', leadId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating lead:', error);
+      setAlertInfo({ isOpen: true, title: 'Update Error', message: `Failed to update lead: ${error.message}` });
+      return;
+    }
+    
+    if (data) {
+      setLeads(prevLeads => prevLeads.map(lead => lead.id === leadId ? toCamelCase(data) as Lead : lead));
+    }
+  };
 
   const setupStatus = {
     shopInfo: !!shopData?.name,
@@ -330,6 +372,7 @@ const Dashboard: React.FC = () => {
 
   const navigationItems = [
     { id: 'home', label: t.dashboardHome, icon: <HomeIcon className="w-6 h-6" /> },
+    { id: 'leads', label: t.hotLeads, icon: <PhoneArrowUpRightIcon className="w-6 h-6" /> },
     { id: 'catalog', label: t.catalog, icon: <BookOpenIcon className="w-6 h-6" /> },
     { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
     { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
@@ -399,6 +442,9 @@ const Dashboard: React.FC = () => {
                 <>
                   <div style={{ display: activeView === 'home' ? 'block' : 'none' }}>
                     <DashboardHome onNavigate={handleNavigation} setupStatus={setupStatus} shopId={shopData?.id} onPreview={handlePreviewClick} />
+                  </div>
+                  <div style={{ display: activeView === 'leads' ? 'block' : 'none' }}>
+                    <Leads leads={leads} onUpdateLead={handleUpdateLead} />
                   </div>
                   <div style={{ display: activeView === 'catalog' ? 'block' : 'none' }}>
                      <Catalog 

@@ -112,6 +112,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     let finalImageUrl = formData.imageUrl;
 
     try {
+        // 1. Handle Image Upload/Delete
         if (imageToDelete) {
             const oldImagePath = imageToDelete.split('/service-images/')[1];
             if (oldImagePath) {
@@ -134,7 +135,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             const { data } = supabase.storage.from('service-images').getPublicUrl(filePath);
             finalImageUrl = data.publicUrl;
         }
-
+        
+        // 2. Upsert the main service to get its ID
         const servicePayload: any = { ...formData, shopId, imageUrl: finalImageUrl };
         delete servicePayload.createdAt;
 
@@ -146,16 +148,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
+        
+        // 3. Sync all related data (Formulas, Supplements, Add-ons)
+        const dbPromises: Promise<{ error: any }>[] = [];
 
-        const createUpsertPayload = (item: any, basePayload: any) => {
-            const payload = { ...basePayload };
-            if (item.id) {
-                payload.id = item.id;
-            }
-            return payload;
-        };
+        // --- Formulas Sync ---
+        const originalFormulaIds = new Set(formulasForService.map(f => f.id));
+        const currentFormulaIds = new Set(formulas.map(f => f.id).filter(Boolean));
+        const formulaIdsToDelete = [...originalFormulaIds].filter(id => !currentFormulaIds.has(id));
 
-        const formulasToSave = formulas.map(f => createUpsertPayload(f, {
+        if (formulaIdsToDelete.length > 0) {
+            dbPromises.push(supabase.from('formulas').delete().in('id', formulaIdsToDelete));
+        }
+
+        const formulasToInsert = formulas.filter(f => !f.id).map(f => ({
             service_id: serviceId,
             name: f.name || 'Nouvelle Formule',
             description: f.includedItems.join('\n').trim(),
@@ -163,16 +169,72 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             additional_duration: f.additionalDuration || 0,
         }));
         
-        const supplementsToSave = supplements
-            .filter(s => s.size)
-            .map(s => createUpsertPayload(s, {
-                service_id: serviceId,
-                size: s.size,
-                additional_price: s.additionalPrice || 0,
-                additional_duration: s.additionalDuration || 0,
+        const formulasToUpdate = formulas.filter(f => f.id).map(f => ({
+            id: f.id,
+            service_id: serviceId,
+            name: f.name || 'Nouvelle Formule',
+            description: f.includedItems.join('\n').trim(),
+            additional_price: f.additionalPrice || 0,
+            additional_duration: f.additionalDuration || 0,
+        }));
+        
+        if (formulasToInsert.length > 0) {
+            dbPromises.push(supabase.from('formulas').insert(formulasToInsert));
+        }
+        if (formulasToUpdate.length > 0) {
+            dbPromises.push(supabase.from('formulas').upsert(formulasToUpdate));
+        }
+        
+        // --- Supplements Sync ---
+        const originalSupplementIds = new Set(supplementsForService.map(s => s.id));
+        const currentSupplementIds = new Set(supplements.map(s => s.id).filter(Boolean));
+        const supplementIdsToDelete = [...originalSupplementIds].filter(id => !currentSupplementIds.has(id));
+
+        if (supplementIdsToDelete.length > 0) {
+            dbPromises.push(supabase.from('service_vehicle_size_supplements').delete().in('id', supplementIdsToDelete));
+        }
+        
+        const supplementsToInsert = supplements.filter(s => s.size && !s.id).map(s => ({
+            service_id: serviceId,
+            size: s.size,
+            additional_price: s.additionalPrice || 0,
+            additional_duration: s.additionalDuration || 0,
         }));
 
-        const addOnsToSave = specificAddOns.map(a => createUpsertPayload(a, {
+        const supplementsToUpdate = supplements.filter(s => s.size && s.id).map(s => ({
+            id: s.id,
+            service_id: serviceId,
+            size: s.size,
+            additional_price: s.additionalPrice || 0,
+            additional_duration: s.additionalDuration || 0,
+        }));
+
+        if (supplementsToInsert.length > 0) {
+            dbPromises.push(supabase.from('service_vehicle_size_supplements').insert(supplementsToInsert));
+        }
+        if (supplementsToUpdate.length > 0) {
+            dbPromises.push(supabase.from('service_vehicle_size_supplements').upsert(supplementsToUpdate));
+        }
+        
+        // --- Specific Add-ons Sync ---
+        const originalAddOnIds = new Set(addOnsForService.map(a => a.id));
+        const currentAddOnIds = new Set(specificAddOns.map(a => a.id).filter(Boolean));
+        const addOnIdsToDelete = [...originalAddOnIds].filter(id => !currentAddOnIds.has(id));
+
+        if (addOnIdsToDelete.length > 0) {
+            dbPromises.push(supabase.from('add_ons').delete().in('id', addOnIdsToDelete));
+        }
+
+        const addOnsToInsert = specificAddOns.filter(a => !a.id).map(a => ({
+            service_id: serviceId,
+            shop_id: shopId,
+            name: a.name || 'Nouvelle Option',
+            price: a.price || 0,
+            duration: a.duration || 0,
+        }));
+        
+        const addOnsToUpdate = specificAddOns.filter(a => a.id).map(a => ({
+            id: a.id,
             service_id: serviceId,
             shop_id: shopId,
             name: a.name || 'Nouvelle Option',
@@ -180,36 +242,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             duration: a.duration || 0,
         }));
 
-        const upsertRelated = async (tableName: string, items: any[]) => {
-            if (items.length === 0) return;
-            const { error } = await supabase.from(tableName).upsert(items);
-            if (error) throw error;
-        };
+        if (addOnsToInsert.length > 0) {
+            dbPromises.push(supabase.from('add_ons').insert(addOnsToInsert));
+        }
+        if (addOnsToUpdate.length > 0) {
+            dbPromises.push(supabase.from('add_ons').upsert(addOnsToUpdate));
+        }
 
-        const originalItemIds = {
-            formulas: new Set(formulasForService.map(i => i.id)),
-            supplements: new Set(supplementsForService.map(i => i.id)),
-            addOns: new Set(addOnsForService.map(i => i.id)),
-        };
+        // Execute all DB operations
+        const results = await Promise.all(dbPromises);
+        const firstError = results.map(res => res.error).find(Boolean);
+        if (firstError) {
+            throw firstError;
+        }
 
-        const deleteRelated = async (tableName: string, currentItems: any[], originalIds: Set<string>) => {
-            const currentIds = new Set(currentItems.map(i => i.id).filter(Boolean));
-            const idsToDelete = [...originalIds].filter(id => !currentIds.has(id));
-            if (idsToDelete.length > 0) {
-                const { error } = await supabase.from(tableName).delete().in('id', idsToDelete);
-                if (error) throw error;
-            }
-        };
-
-        await Promise.all([
-            upsertRelated('formulas', formulasToSave),
-            upsertRelated('service_vehicle_size_supplements', supplementsToSave),
-            upsertRelated('add_ons', addOnsToSave),
-            deleteRelated('formulas', formulas, originalItemIds.formulas),
-            deleteRelated('service_vehicle_size_supplements', supplements, originalItemIds.supplements),
-            deleteRelated('add_ons', specificAddOns, originalItemIds.addOns),
-        ]);
-        
         await onSave();
 
     } catch (error: any) {
@@ -219,7 +265,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         setIsSaving(false);
     }
   };
-  
+
   const handleDeleteClick = () => {
       if (serviceToEdit && window.confirm(t.deleteServiceConfirmation)) {
           onDelete(serviceToEdit.id);
