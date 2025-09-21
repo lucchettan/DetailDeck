@@ -149,8 +149,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (serviceError) throw serviceError;
         const serviceId = savedService.id;
         
-        // 3. Sync all related data (Formulas, Supplements, Add-ons)
-        const dbPromises: Promise<{ error: any }>[] = [];
+        // 3. Sync all related data (Formulas, Supplements, Add-ons) SEQUENTIALLY
 
         // --- Formulas Sync ---
         const originalFormulaIds = new Set(formulasForService.map(f => f.id));
@@ -158,7 +157,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const formulaIdsToDelete = [...originalFormulaIds].filter(id => !currentFormulaIds.has(id));
 
         if (formulaIdsToDelete.length > 0) {
-            dbPromises.push(supabase.from('formulas').delete().in('id', formulaIdsToDelete));
+            const { error } = await supabase.from('formulas').delete().in('id', formulaIdsToDelete);
+            if (error) throw error;
         }
 
         const formulasToInsert = formulas.filter(f => !f.id).map(f => ({
@@ -179,10 +179,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }));
         
         if (formulasToInsert.length > 0) {
-            dbPromises.push(supabase.from('formulas').insert(formulasToInsert));
+            const { error } = await supabase.from('formulas').insert(formulasToInsert);
+            if (error) throw error;
         }
         if (formulasToUpdate.length > 0) {
-            dbPromises.push(supabase.from('formulas').upsert(formulasToUpdate));
+            const { error } = await supabase.from('formulas').upsert(formulasToUpdate);
+            if (error) throw error;
         }
         
         // --- Supplements Sync ---
@@ -191,7 +193,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const supplementIdsToDelete = [...originalSupplementIds].filter(id => !currentSupplementIds.has(id));
 
         if (supplementIdsToDelete.length > 0) {
-            dbPromises.push(supabase.from('service_vehicle_size_supplements').delete().in('id', supplementIdsToDelete));
+            const { error } = await supabase.from('service_vehicle_size_supplements').delete().in('id', supplementIdsToDelete);
+            if (error) throw error;
         }
         
         const supplementsToInsert = supplements.filter(s => s.size && !s.id).map(s => ({
@@ -210,10 +213,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }));
 
         if (supplementsToInsert.length > 0) {
-            dbPromises.push(supabase.from('service_vehicle_size_supplements').insert(supplementsToInsert));
+            const { error } = await supabase.from('service_vehicle_size_supplements').insert(supplementsToInsert);
+            if (error) throw error;
         }
         if (supplementsToUpdate.length > 0) {
-            dbPromises.push(supabase.from('service_vehicle_size_supplements').upsert(supplementsToUpdate));
+            const { error } = await supabase.from('service_vehicle_size_supplements').upsert(supplementsToUpdate);
+            if (error) throw error;
         }
         
         // --- Specific Add-ons Sync ---
@@ -222,7 +227,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const addOnIdsToDelete = [...originalAddOnIds].filter(id => !currentAddOnIds.has(id));
 
         if (addOnIdsToDelete.length > 0) {
-            dbPromises.push(supabase.from('add_ons').delete().in('id', addOnIdsToDelete));
+            const { error } = await supabase.from('add_ons').delete().in('id', addOnIdsToDelete);
+            if (error) throw error;
         }
 
         const addOnsToInsert = specificAddOns.filter(a => !a.id).map(a => ({
@@ -243,17 +249,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }));
 
         if (addOnsToInsert.length > 0) {
-            dbPromises.push(supabase.from('add_ons').insert(addOnsToInsert));
+            const { error } = await supabase.from('add_ons').insert(addOnsToInsert);
+            if (error) throw error;
         }
         if (addOnsToUpdate.length > 0) {
-            dbPromises.push(supabase.from('add_ons').upsert(addOnsToUpdate));
-        }
-
-        // Execute all DB operations
-        const results = await Promise.all(dbPromises);
-        const firstError = results.map(res => res.error).find(Boolean);
-        if (firstError) {
-            throw firstError;
+            const { error } = await supabase.from('add_ons').upsert(addOnsToUpdate);
+            if (error) throw error;
         }
 
         await onSave();
