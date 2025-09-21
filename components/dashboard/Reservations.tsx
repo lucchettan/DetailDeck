@@ -12,6 +12,8 @@ interface ReservationsProps {
   initialReservations?: Reservation[];
 }
 
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 const getStatusBadgeStyle = (status: Reservation['status']) => {
   switch (status) {
     case 'completed': return 'bg-green-100 text-green-800';
@@ -93,10 +95,17 @@ const Reservations: React.FC<ReservationsProps> = ({ shopId, onAdd, onEdit, init
   const { t } = useLanguage();
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations || []);
   const [loading, setLoading] = useState(!initialReservations);
+  const [lastFetched, setLastFetched] = useState<number | null>(null);
 
-  const fetchReservations = useCallback(async () => {
+  const fetchReservations = useCallback(async (force = false) => {
     if (initialReservations) return;
     if (!shopId) return;
+
+    const now = Date.now();
+    if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
+        return; // Use cached data
+    }
+
     setLoading(true);
     const { data, error } = await supabase
       .from('reservations')
@@ -109,12 +118,24 @@ const Reservations: React.FC<ReservationsProps> = ({ shopId, onAdd, onEdit, init
         console.error("Error fetching reservations:", error);
     } else if (data) {
         setReservations(toCamelCase(data) as Reservation[]);
+        setLastFetched(Date.now());
     }
     setLoading(false);
-  }, [shopId, initialReservations]);
+  }, [shopId, initialReservations, lastFetched]);
 
   useEffect(() => {
     fetchReservations();
+
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+            fetchReservations();
+        }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchReservations]);
 
   const { upcoming, past } = useMemo(() => {

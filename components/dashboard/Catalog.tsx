@@ -12,15 +12,24 @@ interface CatalogProps {
   initialServices?: Service[];
 }
 
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewService, initialServices }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'interior' | 'exterior' | 'complementary'>('interior');
   const [services, setServices] = useState<Service[]>(initialServices || []);
   const [loading, setLoading] = useState(!initialServices);
+  const [lastFetched, setLastFetched] = useState<number | null>(null);
 
-  const fetchServices = useCallback(async () => {
+  const fetchServices = useCallback(async (force = false) => {
     if (initialServices) return;
     if (!shopId) return;
+
+    const now = Date.now();
+    if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
+      return; // Use cached data
+    }
+    
     setLoading(true);
     const { data, error } = await supabase
       .from('services')
@@ -31,12 +40,24 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
       console.error("Error fetching services:", error);
     } else if (data) {
       setServices(toCamelCase(data) as Service[]);
+      setLastFetched(Date.now());
     }
     setLoading(false);
-  }, [shopId, initialServices]);
+  }, [shopId, initialServices, lastFetched]);
 
   useEffect(() => {
     fetchServices();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchServices();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchServices]);
 
   const { interiorServices, exteriorServices, complementaryServices } = useMemo(() => {

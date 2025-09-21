@@ -9,6 +9,8 @@ interface LeadsProps {
   initialLeads?: Lead[];
 }
 
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 const getStatusBadgeStyle = (status: Lead['status']) => {
   switch (status) {
     case 'converted': return 'bg-green-100 text-green-800';
@@ -22,10 +24,17 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
   const { t } = useLanguage();
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
   const [loading, setLoading] = useState(!initialLeads);
+  const [lastFetched, setLastFetched] = useState<number | null>(null);
 
-  const fetchLeads = useCallback(async () => {
+  const fetchLeads = useCallback(async (force = false) => {
     if (initialLeads) return;
     if (!shopId) return;
+
+    const now = Date.now();
+    if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
+        return; // Use cached data
+    }
+
     setLoading(true);
     const { data, error } = await supabase
         .from('leads')
@@ -37,12 +46,24 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
         console.error("Error fetching leads:", error);
     } else if (data) {
         setLeads(toCamelCase(data) as Lead[]);
+        setLastFetched(Date.now());
     }
     setLoading(false);
-  }, [shopId, initialLeads]);
+  }, [shopId, initialLeads, lastFetched]);
 
   useEffect(() => {
     fetchLeads();
+
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+            fetchLeads();
+        }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchLeads]);
   
   const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
