@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Service, Shop, AddOn, Formula, VehicleSizeSupplement } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CarIcon, CloseIcon, CheckCircleIcon, PhoneIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CarIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SeatIcon, SparklesIcon, ChevronUpIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -71,6 +71,9 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const [leadPhoneNumber, setLeadPhoneNumber] = useState('');
     const [isSubmittingLead, setIsSubmittingLead] = useState(false);
     
+    // UI State
+    const [isSummaryDetailsOpen, setIsSummaryDetailsOpen] = useState(false);
+    
     useEffect(() => {
         const fetchShopData = async () => {
             setLoading(true);
@@ -112,32 +115,43 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
 
     useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [step, viewingCategory]);
 
-    const { totalDuration, totalPrice } = useMemo(() => {
+    const { totalDuration, totalPrice, detailsBreakdown } = useMemo(() => {
         let duration = 0;
         let price = 0;
-        if (!shopData || !selectedVehicleSize) return { totalDuration: 0, totalPrice: 0 };
+        if (!shopData || !selectedVehicleSize) return { totalDuration: 0, totalPrice: 0, detailsBreakdown: [] };
         
         const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
         const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
-        const addOnMap = new Map(shopData.addOns.map(a => [a.id, a]));
         const supplementMap = new Map(shopData.supplements.map(s => [`${s.serviceId}-${s.size}`, s]));
-
-        selectedServices.forEach(sel => {
+        
+        const breakdown = selectedServices.map(sel => {
             const service = serviceMap.get(sel.serviceId);
             const formula = formulaMap.get(sel.formulaId);
-            if (!service || !formula) return;
+            if (!service || !formula) return null;
 
-            price += service.basePrice + formula.additionalPrice;
-            duration += service.baseDuration + formula.additionalDuration;
+            let itemPrice = service.basePrice + formula.additionalPrice;
+            let itemDuration = service.baseDuration + formula.additionalDuration;
             
             const supplement = supplementMap.get(`${service.id}-${selectedVehicleSize}`);
             if (supplement) {
-                price += supplement.additionalPrice;
-                duration += supplement.additionalDuration;
+                itemPrice += supplement.additionalPrice;
+                itemDuration += supplement.additionalDuration;
             }
-        });
-        return { totalDuration: duration, totalPrice: price };
-    }, [selectedServices, selectedVehicleSize, shopData]);
+
+            price += itemPrice;
+            duration += itemDuration;
+            
+            const vehicleSizeLabel = t[`size_${selectedVehicleSize as 'S'|'M'|'L'|'XL'}`].split(' (')[0];
+
+            return {
+                name: `${service.name} - ${formula.name} - ${vehicleSizeLabel}`,
+                price: itemPrice,
+                duration: itemDuration
+            };
+        }).filter(Boolean) as { name: string, price: number, duration: number }[];
+
+        return { totalDuration: duration, totalPrice: price, detailsBreakdown: breakdown };
+    }, [selectedServices, selectedVehicleSize, shopData, t]);
 
     const handleServiceClick = (service: Service) => {
         const formulas = shopData?.formulas.filter(f => f.serviceId === service.id) || [];
@@ -270,9 +284,9 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     };
     
     const serviceCategories = [
-        { id: 'exterior', label: t.exteriorServices },
-        { id: 'interior', label: t.interiorServices },
-        { id: 'complementary', label: t.complementaryServices },
+        { id: 'exterior', label: t.exteriorServices, icon: <CarIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
+        { id: 'interior', label: t.interiorServices, icon: <SeatIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
+        { id: 'complementary', label: t.complementaryServices, icon: <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-brand-dark" /> },
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
     const renderContent = () => {
@@ -294,7 +308,8 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {serviceCategories.map(cat => (
                              <button key={cat.id} onClick={() => { setViewingCategory(cat.id as any); setStep('serviceSelection'); }}
-                                className="p-6 rounded-lg border-2 text-center transition-all duration-300 bg-white hover:border-brand-blue hover:shadow-xl hover:-translate-y-1">
+                                className="p-6 rounded-lg border-2 text-center transition-all duration-300 bg-white hover:border-brand-blue hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center">
+                                {cat.icon}
                                 <p className="text-xl font-bold text-brand-dark">{cat.label}</p>
                              </button>
                         ))}
@@ -373,22 +388,48 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 {renderContent()}
             </main>
 
-            {step === 'categorySelection' || step === 'serviceSelection' ? (
-                <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg z-30">
-                    <div className="container mx-auto px-4 py-4">
-                        <div className="flex justify-between items-center gap-4">
-                            <div className="text-left">
-                                <p className="text-2xl font-extrabold text-brand-dark">€{totalPrice}</p>
-                                <p className="text-sm text-brand-gray">{formatDuration(totalDuration)}</p>
+            {(step === 'categorySelection' || step === 'serviceSelection') && (
+                <div className="fixed bottom-0 left-0 right-0 z-30">
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSummaryDetailsOpen && selectedServices.length > 0 ? 'max-h-96' : 'max-h-0'}`}>
+                         <div className="container mx-auto px-4">
+                            <div className="bg-white p-4 rounded-t-lg shadow-lg border-x border-t">
+                                <h4 className="font-bold text-brand-dark mb-2">{t.yourSelection}</h4>
+                                <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                                    {detailsBreakdown.map((item, index) => (
+                                        <li key={index} className="flex justify-between items-center text-brand-gray">
+                                            <span className="flex-1 pr-2">{item.name}</span>
+                                            <span className="font-semibold text-brand-dark whitespace-nowrap">{formatDuration(item.duration)} - €{item.price}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setIsLeadModalOpen(true)} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-4 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.requestCallback}</button>
-                                <button onClick={() => setStep('datetime')} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.bookNow}</button>
+                        </div>
+                    </div>
+                    <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg">
+                        <div className="container mx-auto px-4 py-4">
+                            <div className="flex justify-between items-center gap-4">
+                                <div className="text-left">
+                                    <p className="text-2xl font-extrabold text-brand-dark">€{totalPrice}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-brand-gray">{formatDuration(totalDuration)}</p>
+                                        {selectedServices.length > 0 && (
+                                             <button onClick={() => setIsSummaryDetailsOpen(!isSummaryDetailsOpen)} className="text-sm text-brand-blue font-semibold flex items-center gap-1">
+                                                <span>{t.details}</span>
+                                                <ChevronUpIcon className={`w-4 h-4 transition-transform ${isSummaryDetailsOpen ? 'rotate-180' : ''}`} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsLeadModalOpen(true)} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-gray-200 text-brand-dark font-bold py-4 px-6 rounded-lg text-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.requestCallback}</button>
+                                    <button onClick={() => setStep('datetime')} disabled={selectedServices.length === 0} className="w-full sm:w-auto bg-brand-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">{t.bookNow}</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            ) : null}
+            )}
+
 
             {(step === 'datetime' || step === 'clientInfo') && (
                 <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg z-30">

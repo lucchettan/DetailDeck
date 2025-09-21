@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, memo } from 'react';
 import { Service } from '../Dashboard';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ImageIcon, HourglassIcon, CheckBadgeIcon } from '../Icons';
+import { ImageIcon, HourglassIcon, CheckIcon } from '../Icons';
 import { formatDuration } from '../../lib/utils';
 
 interface BookingServiceCardProps {
@@ -78,8 +77,8 @@ const BookingServiceCard: React.FC<BookingServiceCardProps> = ({ service, isSele
                 </div>
             </div>
             {isSelected && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-brand-blue rounded-full flex items-center justify-center text-white">
-                    <CheckBadgeIcon className="w-7 h-7" />
+                <div className="absolute top-3 right-3 w-6 h-6 bg-brand-blue rounded-full flex items-center justify-center text-white shadow-lg">
+                    <CheckIcon className="w-4 h-4" />
                 </div>
             )}
         </button>
