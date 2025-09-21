@@ -425,6 +425,15 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                         <StorefrontIcon className="w-8 h-8 flex-shrink-0" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.7))' }} />
                         <h1 className="text-3xl font-bold" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{shopData.name}</h1>
                     </div>
+                    {shopData.phone && (
+                        <div className="mt-2">
+                            <a href={`tel:${shopData.phone}`} className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-4 rounded-lg hover:bg-white/30 transition-all text-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                                <PhoneIcon className="w-4 h-4" />
+                                <span className="sm:hidden">{t.call}</span>
+                                <span className="hidden sm:inline">{t.call} {shopData.phone}</span>
+                            </a>
+                        </div>
+                    )}
                 </div>
             </header>
             

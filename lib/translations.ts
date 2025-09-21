@@ -352,6 +352,7 @@ export const translations = {
     minBookingNoticeSubtitle: 'How much notice you need for a booking.',
     maxBookingHorizon: 'Maximum Booking Horizon',
     maxBookingHorizonSubtitle: 'How far in advance clients can book.',
+    call: 'Call',
   },
   fr: {
     // Header & Auth
@@ -706,6 +707,7 @@ export const translations = {
     minBookingNoticeSubtitle: 'Le préavis minimum requis pour une réservation.',
     maxBookingHorizon: 'Horizon de réservation maximum',
     maxBookingHorizonSubtitle: 'Jusqu\'à quand les clients peuvent réserver à l\'avance.',
+    call: 'Appeler',
   },
   es: {
     // Header & Auth
@@ -1060,5 +1062,6 @@ export const translations = {
     minBookingNoticeSubtitle: 'Cuánta antelación necesitas para una reserva.',
     maxBookingHorizon: 'Horizonte máximo de reserva',
     maxBookingHorizonSubtitle: 'Con cuánta antelación pueden reservar los clientes.',
+    call: 'Llamar',
   }
 };
