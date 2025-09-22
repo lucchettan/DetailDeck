@@ -37,7 +37,7 @@ export const translations = {
     // Hero
     heroTitle1: 'Automate Your Business,',
     heroTitle2: 'Effortlessly.',
-    heroSubtitle1: 'The all-in-one platform for detailing pros. •',
+    heroSubtitle1: 'The all-in-one platform for detailing pros. ',
     heroSubtitle2: 'Boost your business with a booking platform that works for you, 24/7.',
     startTrial: 'Start Your Free Trial',
     learnMore: 'Learn More',
