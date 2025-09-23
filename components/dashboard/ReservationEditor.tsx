@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon, SaveIcon, TrashIcon, PencilIcon } from '../Icons';
-import { Reservation, Service, Shop } from '../Dashboard';
+import { Reservation, Service, Shop, ShopVehicleSize, ShopServiceCategory } from '../Dashboard';
 import Calendar from '../booking/Calendar';
 import TimeSlotPicker from '../booking/TimeSlotPicker';
 import { toYYYYMMDD, toCamelCase } from '../../lib/utils';
 import { supabase } from '../../lib/supabaseClient';
+import ServiceSelector from './ServiceSelector';
 
 interface ReservationEditorProps {
     isOpen: boolean;
@@ -14,6 +15,8 @@ interface ReservationEditorProps {
     // FIX: Changed props to be self-contained. The component now fetches its own data using the ID.
     reservationId: string | null;
     shopData: Shop;
+    vehicleSizes: ShopVehicleSize[];
+    serviceCategories: ShopServiceCategory[];
     onSave: (reservation: Omit<Reservation, 'id'> & { id?: string }) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }
@@ -37,13 +40,14 @@ const getInitialFormData = (reservation: Reservation | null): Partial<Reservatio
 
 
 const ReservationEditor: React.FC<ReservationEditorProps> = ({
-    isOpen, onClose, onSave, onDelete, reservationId, shopData
+    isOpen, onClose, onSave, onDelete, reservationId, shopData, vehicleSizes, serviceCategories
 }) => {
     const { t } = useLanguage();
     const isEditing = !!reservationId;
 
     const [formData, setFormData] = useState<Partial<Reservation>>(getInitialFormData(null));
     const [isEditingDateTime, setIsEditingDateTime] = useState(!isEditing);
+    const [selectedServices, setSelectedServices] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchReservation = async () => {
@@ -65,7 +69,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
             fetchReservation();
         }
     }, [reservationId, isOpen, onClose]);
-    
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -83,7 +87,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
         e.preventDefault();
         onSave(formData as Reservation);
     };
-    
+
     const handleDelete = () => {
         if (isEditing && window.confirm(t.deleteReservationConfirmation)) {
             onDelete(reservationId);
@@ -91,11 +95,11 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
     }
 
     if (!isOpen) return null;
-    
-    const formattedDateForDisplay = formData.date 
+
+    const formattedDateForDisplay = formData.date
         ? new Date(formData.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
         : 'No date selected';
-    
+
     const servicesSummary = useMemo(() => {
         if (!formData.serviceDetails?.services || formData.serviceDetails.services.length === 0) {
             return "Aucun service sélectionné.";
@@ -106,36 +110,74 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="card w-full max-w-4xl max-h-[90vh] flex flex-col">
                 <header className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-xl font-bold text-brand-dark">
+                    <h2 className="text-xl font-bold text-neutral-dark">
                         {isEditing ? t.editReservation : t.addReservation}
                     </h2>
-                    <button onClick={onClose}><CloseIcon /></button>
+                    <button onClick={onClose} className="btn btn-ghost p-2">
+                        <CloseIcon className="w-5 h-5" />
+                    </button>
                 </header>
-                
+
                 <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6">
                     <div>
-                        <h3 className="font-bold text-brand-dark mb-2">{t.clientInformation}</h3>
+                        <h3 className="font-bold text-neutral-dark mb-4">{t.clientInformation}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input name="clientName" value={formData.clientName} onChange={handleInputChange} placeholder={t.clientName} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" required/>
-                            <input name="clientEmail" type="email" value={formData.clientEmail || ''} onChange={handleInputChange} placeholder={t.clientEmail} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
-                            <input name="clientPhone" type="tel" value={formData.clientPhone || ''} onChange={handleInputChange} placeholder={t.clientPhone} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" />
+                            <div>
+                                <label className="form-label">Nom du client *</label>
+                                <input
+                                    name="clientName"
+                                    value={formData.clientName}
+                                    onChange={handleInputChange}
+                                    placeholder={t.clientName}
+                                    className="form-input"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="form-label">Email</label>
+                                <input
+                                    name="clientEmail"
+                                    type="email"
+                                    value={formData.clientEmail || ''}
+                                    onChange={handleInputChange}
+                                    placeholder={t.clientEmail}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div>
+                                <label className="form-label">Téléphone</label>
+                                <input
+                                    name="clientPhone"
+                                    type="tel"
+                                    value={formData.clientPhone || ''}
+                                    onChange={handleInputChange}
+                                    placeholder={t.clientPhone}
+                                    className="form-input"
+                                />
+                            </div>
                         </div>
                     </div>
-                    
+
                     <div>
-                        <h3 className="font-bold text-brand-dark mb-2">{t.reservationDetails}</h3>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <p className="font-semibold text-brand-dark">Services</p>
-                            <p className="text-sm text-brand-gray">{servicesSummary}</p>
-                        </div>
+                        <h3 className="font-bold text-neutral-dark mb-4">{t.reservationDetails}</h3>
+                        <ServiceSelector
+                            shopId={shopData.id}
+                            selectedServices={selectedServices}
+                            onServicesChange={setSelectedServices}
+                            vehicleSizes={vehicleSizes}
+                            serviceCategories={serviceCategories}
+                        />
+                    </div>
+
+                    <div>
                         <div className="mt-4">
                             {isEditingDateTime ? (
                                 <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">{t.selectDate}</label>
+                                            <label className="form-label">{t.selectDate}</label>
                                             <Calendar
                                                 shopId={shopData.id}
                                                 schedule={shopData.schedule}
@@ -148,15 +190,15 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">{t.selectTime}</label>
+                                            <label className="form-label">{t.selectTime}</label>
                                             {formData.date && (
-                                                <TimeSlotPicker 
+                                                <TimeSlotPicker
                                                     shopId={shopData.id}
                                                     schedule={shopData.schedule}
                                                     serviceDuration={formData.duration || 0}
                                                     selectedDate={new Date(formData.date + 'T00:00:00')}
                                                     selectedTime={formData.startTime || null}
-                                                    onSelectTime={(time) => setFormData(prev => ({...prev, startTime: time}))}
+                                                    onSelectTime={(time) => setFormData(prev => ({ ...prev, startTime: time }))}
                                                     editingReservationId={reservationId || undefined}
                                                     minBookingNotice={shopData.minBookingNotice}
                                                 />
@@ -168,7 +210,7 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                             type="button"
                                             onClick={() => setIsEditingDateTime(false)}
                                             disabled={!formData.startTime}
-                                            className="bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="btn btn-primary"
                                         >
                                             {t.confirm}
                                         </button>
@@ -178,11 +220,11 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <p className="font-semibold text-brand-dark">{formattedDateForDisplay}</p>
-                                            <p className="text-2xl font-bold text-brand-blue mt-1">{formData.startTime}</p>
+                                            <p className="font-semibold text-neutral-dark">{formattedDateForDisplay}</p>
+                                            <p className="text-2xl font-bold text-primary mt-1">{formData.startTime}</p>
                                         </div>
-                                        <button type="button" onClick={() => setIsEditingDateTime(true)} className="flex items-center gap-2 bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
-                                            <PencilIcon />
+                                        <button type="button" onClick={() => setIsEditingDateTime(true)} className="btn btn-secondary flex items-center gap-2">
+                                            <PencilIcon className="w-4 h-4" />
                                             <span>{t.edit}</span>
                                         </button>
                                     </div>
@@ -190,21 +232,21 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                             )}
                         </div>
                     </div>
-                    
+
                     <div>
-                        <h3 className="font-bold text-brand-dark mb-2">Status</h3>
+                        <h3 className="font-bold text-neutral-dark mb-4">Status</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">{t.reservationStatus}</label>
-                                <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
+                                <label className="form-label">{t.reservationStatus}</label>
+                                <select name="status" value={formData.status} onChange={handleInputChange} className="form-input">
                                     <option value="upcoming">{t.status_upcoming}</option>
                                     <option value="completed">{t.status_completed}</option>
                                     <option value="cancelled">{t.status_cancelled}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">{t.paymentStatus}</label>
-                                <select name="paymentStatus" value={formData.paymentStatus} onChange={handleInputChange} className="w-full p-2 border bg-white border-gray-300 shadow-sm rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
+                                <label className="form-label">{t.paymentStatus}</label>
+                                <select name="paymentStatus" value={formData.paymentStatus} onChange={handleInputChange} className="form-input">
                                     <option value="paid">{t.payment_paid}</option>
                                     <option value="pending_deposit">{t.payment_pending_deposit}</option>
                                     <option value="on_site">{t.payment_on_site}</option>
@@ -218,14 +260,14 @@ const ReservationEditor: React.FC<ReservationEditorProps> = ({
                     <div>
                         {isEditing && (
                             <button type="button" onClick={handleDelete} className="text-red-600 font-semibold hover:underline flex items-center gap-2">
-                                <TrashIcon className="w-5 h-5"/> {t.deleteReservation}
+                                <TrashIcon className="w-5 h-5" /> {t.deleteReservation}
                             </button>
                         )}
                     </div>
                     <div className="flex gap-4">
-                        <button type="button" onClick={onClose} className="bg-gray-200 text-brand-dark font-bold py-2 px-4 rounded-lg hover:bg-gray-300">{t.cancel}</button>
-                        <button type="submit" onClick={handleSubmit} className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 flex items-center gap-2">
-                            <SaveIcon className="w-5 h-5" />
+                        <button type="button" onClick={onClose} className="btn btn-secondary">{t.cancel}</button>
+                        <button type="submit" onClick={handleSubmit} className="btn btn-primary flex items-center gap-2">
+                            <SaveIcon className="w-4 h-4" />
                             {isEditing ? t.saveChanges : t.createReservation}
                         </button>
                     </div>

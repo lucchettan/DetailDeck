@@ -22,7 +22,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
-  
+
   const handleDemoClick = async () => {
     setIsDemoLoading(true);
     const { error } = await accessDemo();
@@ -36,12 +36,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
     }
     setIsDemoLoading(false);
   };
-  
+
   return (
-    <div className="bg-white text-brand-gray font-sans antialiased">
+    <div className="bg-white text-neutral-dark font-primary antialiased">
       <Header onDemoClick={handleDemoClick} isDemoLoading={isDemoLoading} />
       <main>
-        <Hero 
+        <Hero
           onWaitingListClick={() => setIsWaitingListModalOpen(true)}
         />
         <Benefits />
@@ -59,7 +59,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
         isOpen={isOnboardingModalOpen}
         onClose={() => setIsOnboardingModalOpen(false)}
       />
-      <PaymentSuccess onReturnToHome={() => {}} />
+      <PaymentSuccess onReturnToHome={() => { }} />
     </div>
   );
 }

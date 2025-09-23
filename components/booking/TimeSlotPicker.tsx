@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabaseClient';
 import { toYYYYMMDD, getBookingBoundaries } from '../../lib/utils';
+import { IS_MOCK_MODE } from '../../lib/env';
 
 // FIX: Added a guard to prevent crash if time is not a valid string.
 const timeToMinutes = (time: string) => {
@@ -41,8 +42,20 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
                 return;
             }
             setIsLoading(true);
+
+            if (IS_MOCK_MODE) {
+                // Mock mode: simulate some existing reservations
+                const mockReservations: ExistingReservation[] = [
+                    { start_time: '10:00', duration: 90 },
+                    { start_time: '14:30', duration: 60 }
+                ];
+                setExistingReservations(mockReservations);
+                setIsLoading(false);
+                return;
+            }
+
             const dateString = toYYYYMMDD(selectedDate);
-            
+
             let query = supabase
                 .from('reservations')
                 .select('start_time, duration')
@@ -55,7 +68,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             }
 
             const { data, error } = await query;
-            
+
             if (error) {
                 console.error("Error fetching reservations for day:", error);
                 setExistingReservations([]);
@@ -84,7 +97,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
         daySchedule.timeframes.forEach((frame: { from: string, to: string }) => {
             let currentTime = timeToMinutes(frame.from);
             const endTime = timeToMinutes(frame.to);
-            
+
             if (isToday) {
                 const minTimeToday = minDate.getHours() * 60 + minDate.getMinutes();
                 if (currentTime < minTimeToday) {
@@ -114,7 +127,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             const slotEnd = slotStart + serviceDuration;
 
             // Check for overlap with any existing reservation
-            return !reservationIntervals.some(interval => 
+            return !reservationIntervals.some(interval =>
                 slotStart < interval.end && slotEnd > interval.start
             );
         });

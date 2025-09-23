@@ -284,8 +284,8 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
               key={step.id}
               onClick={() => setActiveStep(step.id)}
               className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-300 ${isCurrent
-                  ? 'bg-blue-50 border-brand-blue shadow-md'
-                  : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                ? 'bg-blue-50 border-brand-blue shadow-md'
+                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                 }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${isCurrent ? 'bg-blue-100' : 'bg-gray-100'
@@ -360,18 +360,69 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
             )}
             {formData.businessType === 'mobile' && (
               <div className="border-t pt-6 mt-6">
-                <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2"><MapPinIcon className="w-5 h-5" /> Zone de service</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-brand-dark mb-1">{t.operatingCity}</label>
-                    <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-brand-dark mb-1">{t.serviceRadius}</label>
-                    <select value={radius} onChange={(e) => setRadius(e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white">
-                      {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                    </select>
-                  </div>
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-bold text-brand-dark flex items-center gap-2"><MapPinIcon className="w-5 h-5" /> Zones de service</h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newZones = [...(formData.serviceZones || [{ city: city, radius: radius }]), { city: '', radius: '10' }];
+                      handleInputChange('serviceZones', newZones);
+                    }}
+                    className="btn btn-secondary flex items-center gap-2 text-sm"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    Ajouter une zone
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
+                    <div key={index} className="card p-4 border border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                          <label className="form-label">{t.operatingCity}</label>
+                          <input
+                            value={zone.city || ''}
+                            onChange={(e) => {
+                              const newZones = [...(formData.serviceZones || [])];
+                              newZones[index] = { ...newZones[index], city: e.target.value };
+                              handleInputChange('serviceZones', newZones);
+                            }}
+                            placeholder={t.cityPlaceholder}
+                            className="form-input"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">{t.serviceRadius}</label>
+                          <select
+                            value={zone.radius || '10'}
+                            onChange={(e) => {
+                              const newZones = [...(formData.serviceZones || [])];
+                              newZones[index] = { ...newZones[index], radius: e.target.value };
+                              handleInputChange('serviceZones', newZones);
+                            }}
+                            className="form-input"
+                          >
+                            {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          {(formData.serviceZones || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                                handleInputChange('serviceZones', newZones);
+                              }}
+                              className="btn btn-ghost text-red-500 hover:text-red-700 p-2"
+                            >
+                              <CloseIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

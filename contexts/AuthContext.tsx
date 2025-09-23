@@ -22,20 +22,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // --- Mock Data for Previewing Dashboard ---
 const mockUser: User = {
-    id: 'mock-user-id-123',
-    app_metadata: { provider: 'email', providers: ['email'] },
-    user_metadata: { first_name: 'Alex', email: 'demo@resaone.com' },
-    aud: 'authenticated',
-    created_at: new Date().toISOString(),
-    email: 'demo@resaone.com',
+  id: 'mock-user-id-123',
+  app_metadata: { provider: 'email', providers: ['email'] },
+  user_metadata: { first_name: 'Alex', email: 'demo@resaone.com' },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+  email: 'demo@resaone.com',
 };
 
 const mockSession: Session = {
-    access_token: 'mock-access-token',
-    token_type: 'bearer',
-    user: mockUser,
-    refresh_token: 'mock-refresh-token',
-    expires_in: 3600,
+  access_token: 'mock-access-token',
+  token_type: 'bearer',
+  user: mockUser,
+  refresh_token: 'mock-refresh-token',
+  expires_in: 3600,
 };
 // --- End Mock Data ---
 
@@ -49,8 +49,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // In mock mode, we don't fetch a real session. We just finish loading.
     // Auth state will be handled by mock signUp/logIn functions.
     if (IS_MOCK_MODE) {
-        setLoading(false);
-        return;
+      setLoading(false);
+      return;
     }
 
     const getSession = async () => {
@@ -74,19 +74,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signUp = async (credentials: SignUpWithPasswordCredentials): Promise<AuthResponse> => {
     if (IS_MOCK_MODE) {
-        // Fix: Use type guard to safely access email or phone property for logging.
-        console.log(`%c[Auth MOCK]%c signUp called for ${'email' in credentials ? credentials.email : credentials.phone}. Logging in as mock user 'demo@resaone.com'.`, 'color: purple; font-weight: bold;', 'color: inherit;');
-        setSession(mockSession);
-        setUser(mockUser);
-        // Fix: Corrected the mock response to match the AuthResponse type.
-        const mockAuthResponse: AuthResponse = {
-            data: {
-                session: mockSession,
-                user: mockUser
-            },
-            error: null
-        };
-        return mockAuthResponse;
+      // Fix: Use type guard to safely access email or phone property for logging.
+      console.log(`%c[Auth MOCK]%c signUp called for ${'email' in credentials ? credentials.email : credentials.phone}. Logging in as mock user 'demo@resaone.com'.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      setSession(mockSession);
+      setUser(mockUser);
+      // Fix: Corrected the mock response to match the AuthResponse type.
+      const mockAuthResponse: AuthResponse = {
+        data: {
+          session: mockSession,
+          user: mockUser
+        },
+        error: null
+      };
+      return mockAuthResponse;
     }
 
     const response = await supabase.auth.signUp(credentials);
@@ -99,18 +99,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logIn = async (credentials: SignInWithPasswordCredentials) => {
     if (IS_MOCK_MODE) {
-        // Fix: Use type guard to safely access email or phone property for logging.
-        console.log(`%c[Auth MOCK]%c logIn called for ${'email' in credentials ? credentials.email : credentials.phone}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
-        // Fix: Use type guard to safely access email property for comparison.
-        if ('email' in credentials && credentials.email === 'demo@resaone.com' && credentials.password === 'ResaOneDemo123!') {
-            setSession(mockSession);
-            setUser(mockUser);
-            return { session: mockSession, error: null };
-        } else {
-            return { session: null, error: { name: 'AuthApiError', message: 'Invalid login credentials', status: 400 } as AuthError };
-        }
+      // Fix: Use type guard to safely access email or phone property for logging.
+      console.log(`%c[Auth MOCK]%c logIn called for ${'email' in credentials ? credentials.email : credentials.phone}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      // Fix: Use type guard to safely access email property for comparison.
+      if ('email' in credentials && credentials.email === 'demo@resaone.com' && credentials.password === 'ResaOneDemo123!') {
+        setSession(mockSession);
+        setUser(mockUser);
+        return { session: mockSession, error: null };
+      } else {
+        return { session: null, error: { name: 'AuthApiError', message: 'Invalid login credentials', status: 400 } as AuthError };
+      }
     }
-      
+
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
     if (!error && data.session) {
       setSession(data.session);
@@ -121,13 +121,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logOut = async () => {
-     if (IS_MOCK_MODE) {
-        console.log(`%c[Auth MOCK]%c logOut called.`, 'color: purple; font-weight: bold;', 'color: inherit;');
-        setSession(null);
-        setUser(null);
-        return { error: null };
-     }
-      
+    if (IS_MOCK_MODE) {
+      console.log(`%c[Auth MOCK]%c logOut called.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      setSession(null);
+      setUser(null);
+      return { error: null };
+    }
+
     const { error } = await supabase.auth.signOut();
     if (!error) {
       setSession(null);
@@ -138,45 +138,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const accessDemo = async (): Promise<{ error: AuthError | null }> => {
     try {
-      const randomId = Math.random().toString(36).substring(2, 10);
-      const email = `demo-${randomId}@resaone.com`;
-      const password = `demoPass-${randomId}!`;
+      const demoEmail = 'demo@account.com';
+      const demoPassword = 'demoaccount';
 
       // In mock mode, just simulate success and set mock user
       if (IS_MOCK_MODE) {
-        console.log(`%c[Auth MOCK]%c accessDemo called. Creating mock user ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+        console.log(`%c[Auth MOCK]%c accessDemo called. Logging in as demo user.`, 'color: purple; font-weight: bold;', 'color: inherit;');
         setSession(mockSession);
         setUser(mockUser);
         return { error: null };
       }
 
-      // 1. Create a new user
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      // Login to the existing demo account
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword
+      });
 
-      if (signUpError) {
-        console.error('Demo account creation failed:', signUpError);
-        return { error: signUpError };
+      if (loginError) {
+        console.error('Demo account login failed:', loginError);
+        return { error: loginError };
       }
-      
-      // 2. If user is created and has a session, seed their data
+
+      // Set the session and user
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
-        
-        // Invoke the seeding function
-        const { error: functionError } = await supabase.functions.invoke('seed-demo-data');
-
-        if (functionError) {
-          console.error('Demo data seeding failed:', functionError);
-          // Attempt to sign out the user to prevent them from accessing a broken empty state
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-          return { error: { name: 'FunctionInvokeError', message: `Failed to create demo environment: ${functionError.message}` } as AuthError };
-        }
       } else {
-          const error = { name: 'AuthApiError', message: 'Failed to create a session for the demo account.' } as AuthError;
-          return { error };
+        const error = { name: 'AuthApiError', message: 'Failed to create a session for the demo account.' } as AuthError;
+        return { error };
       }
 
       return { error: null };
@@ -188,8 +178,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resendSignUpConfirmation = async (email: string) => {
     if (IS_MOCK_MODE) {
-        console.log(`%c[Auth MOCK]%c resendSignUpConfirmation called for ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
-        return { error: null };
+      console.log(`%c[Auth MOCK]%c resendSignUpConfirmation called for ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      return { error: null };
     }
     const { error } = await supabase.auth.resend({ type: 'signup', email });
     return { error };
@@ -197,15 +187,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetPasswordForEmail = async (email: string) => {
     if (IS_MOCK_MODE) {
-        console.log(`%c[Auth MOCK]%c resetPasswordForEmail called for ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
-        return { error: null };
+      console.log(`%c[Auth MOCK]%c resetPasswordForEmail called for ${email}.`, 'color: purple; font-weight: bold;', 'color: inherit;');
+      return { error: null };
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
     });
     return { error };
   };
-  
+
   const updateUserPassword = async (password: string) => {
     if (IS_MOCK_MODE) {
       console.log(`%c[Auth MOCK]%c updateUserPassword called.`, 'color: purple; font-weight: bold;', 'color: inherit;');

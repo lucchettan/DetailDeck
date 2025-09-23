@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
 import { toSnakeCase, toCamelCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';
+import DurationPicker from '../common/DurationPicker';
 
 type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
 
@@ -20,6 +21,7 @@ interface ServiceEditorProps {
   onDelete: () => void;
   initialData?: (Service & { formulas: Formula[], supplements: VehicleSizeSupplement[], specificAddOns: AddOn[] }) | null;
 }
+
 
 const ServiceEditor: React.FC<ServiceEditorProps> = ({
   serviceId,
@@ -358,32 +360,30 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
       <div className="bg-white p-8 rounded-lg shadow-md space-y-8">
         <section>
+          {/* Mobile: Image first */}
+          <div className="md:hidden mb-6">
+            <div className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
+              {imagePreviewUrl ? <img src={imagePreviewUrl} alt="Service Preview" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
+            </div>
+            <input type="file" id="serviceImageUploadMobile" className="hidden" onChange={handleImageChange} accept="image/*" />
+            <div className="mt-2 flex gap-2">
+              <label htmlFor="serviceImageUploadMobile" className="flex-1 block text-center bg-gray-200 text-neutral-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.changeImage}</label>
+              {imagePreviewUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200" title={t.removeImage}><TrashIcon /></button>}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
-              {/* Service Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du service *
-                </label>
-                <input
-                  value={formData.name || ''}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t.serviceNamePlaceholder}
-                  className="w-full p-3 text-lg font-bold border-gray-200 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Category and Status Row */}
+              {/* Category and Status Row - FIRST */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="form-label">
                     Catégorie *
                   </label>
                   <select
                     value={formData.categoryId || ''}
                     onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                    className="w-full p-3 border-gray-200 border bg-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className="form-input"
                     required
                   >
                     <option value="" disabled>Choisir une catégorie</option>
@@ -393,13 +393,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="form-label">
                     Statut du service
                   </label>
                   <select
                     value={formData.status || 'active'}
                     onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="w-full p-3 border-gray-200 border bg-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className="form-input"
                   >
                     <option value="active">{t.active}</option>
                     <option value="inactive">{t.inactive}</option>
@@ -407,9 +407,53 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                 </div>
               </div>
 
+              {/* Service Name */}
+              <div>
+                <label className="form-label">
+                  Nom du service *
+                </label>
+                <input
+                  value={formData.name || ''}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder={t.serviceNamePlaceholder}
+                  className="form-input text-lg font-bold"
+                  required
+                />
+              </div>
+
+              {/* Price and Duration Row */}
+              <div className="flex gap-4">
+                <div>
+                  <label className="form-label">
+                    Prix de base (€) *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.basePrice || ''}
+                    onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
+                    placeholder="25"
+                    min="0"
+                    step="0.01"
+                    className="form-input w-24 text-center font-semibold"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">
+                    Durée de base *
+                  </label>
+                  <DurationPicker
+                    value={formData.baseDuration || ''}
+                    onChange={(value) => handleInputChange('baseDuration', value)}
+                    className="form-input w-32"
+                    required
+                  />
+                </div>
+              </div>
+
               {/* Service Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="form-label">
                   Description du service
                 </label>
                 <textarea
@@ -417,36 +461,27 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder={t.serviceDescriptionPlaceholder}
                   rows={4}
-                  className="w-full p-3 border-gray-200 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
               </div>
             </div>
-            <div>
-              <div className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
-                {imagePreviewUrl ? <img src={imagePreviewUrl} alt="Service Preview" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
-              </div>
-              <input type="file" id="serviceImageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
-              <div className="mt-2 flex gap-2">
-                <label htmlFor="serviceImageUpload" className="flex-1 block text-center bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.changeImage}</label>
-                {imagePreviewUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200" title={t.removeImage}><TrashIcon /></button>}
+
+            {/* Desktop: Image section with proper height */}
+            <div className="hidden md:block">
+              <div className="h-full flex flex-col">
+                <div className="flex-1 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border mb-3">
+                  {imagePreviewUrl ? <img src={imagePreviewUrl} alt="Service Preview" className="w-full h-full object-cover" /> : <ImageIcon className="w-12 h-12 text-gray-400" />}
+                </div>
+                <input type="file" id="serviceImageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
+                <div className="flex gap-2">
+                  <label htmlFor="serviceImageUpload" className="flex-1 block text-center bg-gray-200 text-neutral-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">{t.changeImage}</label>
+                  {imagePreviewUrl && <button onClick={handleRemoveImage} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200" title={t.removeImage}><TrashIcon /></button>}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section>
-          <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.basePriceAndDuration}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-brand-dark mb-1">{t.priceEUR}</label>
-              <input type="number" value={formData.basePrice || ''} onChange={e => handleInputChange('basePrice', Number(e.target.value))} className="w-full p-2 border-gray-200 border rounded-lg" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-brand-dark mb-1">{t.durationMIN}</label>
-              <input type="number" step="15" value={formData.baseDuration || ''} onChange={e => handleInputChange('baseDuration', Number(e.target.value))} className="w-full p-2 border-gray-200 border rounded-lg" />
-            </div>
-          </div>
-        </section>
 
         <section>
           <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.formulas}</h3>
@@ -454,24 +489,51 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           <div className="space-y-6">
             {formulas.map((formula, formulaIndex) => (
               <div key={formula.id || `new-${formulaIndex}`} className="p-4 border rounded-lg bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-10 gap-4 items-start">
-                  <div className="md:col-span-4">
-                    <label className="block text-sm font-medium text-gray-500 mb-1">{t.formulaName}</label>
-                    <input value={formula.name || ''} onChange={e => updateFormulaField(formulaIndex, 'name', e.target.value)} placeholder={t.formulaNamePlaceholder} className="w-full p-2 border-gray-200 border rounded-lg" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalPrice}</label>
-                    <input type="number" value={formula.additionalPrice ?? ''} onChange={e => updateFormulaField(formulaIndex, 'additionalPrice', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500 mb-1">{t.additionalDuration}</label>
-                    <input type="number" step="15" value={formula.additionalDuration ?? ''} onChange={e => updateFormulaField(formulaIndex, 'additionalDuration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
-                  </div>
-                  <div className="md:col-span-2 flex justify-end items-center pt-6">
-                    <button type="button" onClick={() => removeFormula(formulaIndex)} className="p-2 text-red-500 hover:text-red-700"><TrashIcon className="w-6 h-6" /></button>
+                <div className="space-y-4">
+                  {/* Formula Name */}
+                  <div>
+                    <label className="form-label">{t.formulaName}</label>
+                    <input
+                      value={formula.name || ''}
+                      onChange={e => updateFormulaField(formulaIndex, 'name', e.target.value)}
+                      placeholder={t.formulaNamePlaceholder}
+                      className="form-input"
+                    />
                   </div>
 
-                  <div className="md:col-span-10 mt-2">
+                  {/* Price and Duration Row */}
+                  <div className="flex gap-4 items-end">
+                    <div>
+                      <label className="form-label">{t.additionalPrice}</label>
+                      <input
+                        type="number"
+                        value={formula.additionalPrice ?? ''}
+                        onChange={e => updateFormulaField(formulaIndex, 'additionalPrice', e.target.value)}
+                        className="form-input w-24 text-center"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">{t.additionalDuration}</label>
+                      <DurationPicker
+                        value={formula.additionalDuration ?? ''}
+                        onChange={(value) => updateFormulaField(formulaIndex, 'additionalDuration', value)}
+                        className="form-input w-32"
+                        placeholder="Aucune"
+                      />
+                    </div>
+                    <div className="ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => removeFormula(formulaIndex)}
+                        className="p-2 text-red-500 hover:text-red-700"
+                      >
+                        <TrashIcon className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-500 mb-2">{t.whatsIncluded}</label>
                     <div className="space-y-2">
                       {formula.includedItems.map((item, itemIndex) => (
@@ -522,26 +584,24 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                     {vehicleSize.name}
                     {vehicleSize.subtitle && <span className="text-sm text-gray-500 block">{vehicleSize.subtitle}</span>}
                   </h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-brand-gray mb-1">{t.priceEUR}</label>
+                      <label className="form-label">Prix (€)</label>
                       <input
                         type="number"
                         value={supplement?.additionalPrice ?? ''}
                         onChange={e => updateSupplement(vehicleSize.id, 'additionalPrice', e.target.value)}
-                        placeholder="€"
-                        className="w-full p-2 border-gray-200 border rounded-lg"
+                        placeholder="0"
+                        className="form-input w-20 text-center"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-brand-gray mb-1">{t.durationMIN}</label>
-                      <input
-                        type="number"
-                        step="15"
+                      <label className="form-label">Durée</label>
+                      <DurationPicker
                         value={supplement?.additionalDuration ?? ''}
-                        onChange={e => updateSupplement(vehicleSize.id, 'additionalDuration', e.target.value)}
-                        placeholder="min"
-                        className="w-full p-2 border-gray-200 border rounded-lg"
+                        onChange={(value) => updateSupplement(vehicleSize.id, 'additionalDuration', value)}
+                        className="form-input w-28"
+                        placeholder="Aucune"
                       />
                     </div>
                   </div>

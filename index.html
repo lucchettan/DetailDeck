@@ -1,33 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ResaOne</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'brand-blue': '#007BFF',
-              'brand-dark': '#111827', // Primary Text
-              'brand-light': '#F9FAFB', // Light Background Sections
-              'brand-gray': '#4B5563',  // Body Text
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DetailDeck</title>
+
+  <!-- TrustCap Design System -->
+  <link rel="stylesheet" href="./styles/designSystem.css">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // TrustCap Design System Colors
+            'primary': '#8895F5',
+            'primary-light': '#F7F7FD',
+            'secondary': '#88B5F5',
+            'neutral-dark': '#000000',
+            'neutral-light': '#F9FAFB',
+
+            // Legacy colors (to be phased out)
+            'brand-blue': '#8895F5',
+            'brand-dark': '#000000',
+            'brand-light': '#F9FAFB',
+            'brand-gray': '#4B5563',
+          },
+          fontFamily: {
+            'primary': ['Montserrat', 'sans-serif'],
+            sans: ['Montserrat', 'sans-serif'],
+          },
+          fontSize: {
+            'heading': '90px',
+            'sub-heading': '60px',
+          },
+          spacing: {
+            '18': '4.5rem',
+            '22': '5.5rem',
           },
         },
-      }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <script src="https://js.stripe.com/v3/"></script>
-<script type="importmap">
+      },
+    }
+  </script>
+
+  <!-- Montserrat Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
@@ -38,8 +62,10 @@
 }
 </script>
 </head>
-  <body class="bg-white text-brand-gray">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body class="bg-white text-brand-gray">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

@@ -6,38 +6,38 @@ const Footer: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-brand-light border-t border-gray-200">
-      <div className="container mx-auto px-6 py-12">
+    <footer className="footer">
+      <div className="container">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <a href="#" className="flex items-center mb-4">
-              <h2 className="text-2xl font-bold text-brand-dark">
-                <span>Resa</span><span className="text-brand-blue">One</span>
+              <h2 className="text-2xl font-bold text-neutral-dark">
+                <span>Detail</span><span className="text-primary">Deck</span>
               </h2>
             </a>
-            <p className="text-brand-gray max-w-sm">{t.footerDescription}</p>
+            <p className="text-gray-600 max-w-sm">{t.footerDescription}</p>
           </div>
           <div>
-            <h4 className="text-brand-dark font-semibold mb-4">{t.product}</h4>
+            <h4 className="text-neutral-dark font-semibold mb-4">{t.product}</h4>
             <ul className="space-y-2">
-              <li><a href="#features" className="text-brand-gray hover:text-brand-blue transition-colors">{t.features}</a></li>
-              <li><a href="#pricing" className="text-brand-gray hover:text-brand-blue transition-colors">{t.pricing}</a></li>
-              <li><a href="#how-it-works" className="text-brand-gray hover:text-brand-blue transition-colors">{t.howItWorks}</a></li>
-              <li><a href="#faq" className="text-brand-gray hover:text-brand-blue transition-colors">{t.faq}</a></li>
+              <li><a href="#features" className="footer-link">{t.features}</a></li>
+              <li><a href="#pricing" className="footer-link">{t.pricing}</a></li>
+              <li><a href="#how-it-works" className="footer-link">{t.howItWorks}</a></li>
+              <li><a href="#faq" className="footer-link">{t.faq}</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-brand-dark font-semibold mb-4">{t.company}</h4>
+            <h4 className="text-neutral-dark font-semibold mb-4">{t.company}</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-brand-gray hover:text-brand-blue transition-colors">{t.aboutUs}</a></li>
-              <li><a href="#" className="text-brand-gray hover:text-brand-blue transition-colors">{t.contact}</a></li>
-              <li><a href="#" className="text-brand-gray hover:text-brand-blue transition-colors">{t.privacyPolicy}</a></li>
-              <li><a href="#" className="text-brand-gray hover:text-brand-blue transition-colors">{t.termsOfService}</a></li>
+              <li><a href="#" className="footer-link">{t.aboutUs}</a></li>
+              <li><a href="#" className="footer-link">{t.contact}</a></li>
+              <li><a href="#" className="footer-link">{t.privacyPolicy}</a></li>
+              <li><a href="#" className="footer-link">{t.termsOfService}</a></li>
             </ul>
           </div>
         </div>
         <div className="mt-12 border-t border-gray-200 pt-8 text-center text-gray-500">
-          <p>{t.customFooter}</p>
+          <p>&copy; 2024 DetailDeck. {t.allRightsReserved || 'All rights reserved.'}</p>
         </div>
       </div>
     </footer>
