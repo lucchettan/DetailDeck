@@ -71,3 +71,15 @@ export const mockLeads: Lead[] = [
         selectedServices: { vehicleSize: 'M', services: [{ serviceName: 'Nettoyage Intérieur Essentiel', formulaName: 'Basique' }] }
     }
 ];
+
+export const mockVehicleSizes = [
+    { id: 'size-1', name: 'Citadine', shopId: mockShop.id },
+    { id: 'size-2', name: 'Berline / Coupé', shopId: mockShop.id },
+    { id: 'size-3', name: 'Break / SUV Compact', shopId: mockShop.id },
+    { id: 'size-4', name: '4x4 / Minivan', shopId: mockShop.id }
+];
+
+export const mockServiceCategories = [
+    { id: 'cat-1', name: 'Intérieur', shopId: mockShop.id },
+    { id: 'cat-2', name: 'Extérieur', shopId: mockShop.id }
+];

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon as XMarkIcon, CheckIcon, CloseIcon as CancelIcon } from '../Icons';
-import { ShopVehicleSize, Service } from '../../types/database';
+import { ShopVehicleSize, Service } from "../../types";
 import { supabase } from '../../lib/supabaseClient';
 import { toSnakeCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';
@@ -205,7 +205,7 @@ const VehicleSizeUpdatePrompt: React.FC<VehicleSizeUpdatePromptProps> = ({
                         </label>
                         <DurationPicker
                           value={update.additionalDuration}
-                          onChange={(value) => updateServiceData(update.serviceId, 'additionalDuration', value)}
+                          onChange={(value) => updateServiceData(update.serviceId, 'additionalDuration', String(value))}
                           className="form-input w-32"
                           placeholder="Aucune"
                         />

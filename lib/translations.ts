@@ -353,6 +353,7 @@ export const translations = {
     maxBookingHorizon: 'Maximum Booking Horizon',
     maxBookingHorizonSubtitle: 'How far in advance clients can book.',
     call: 'Call',
+    allRightsReserved: 'All rights reserved',
   },
   fr: {
     // Header & Auth
@@ -708,6 +709,7 @@ export const translations = {
     maxBookingHorizon: 'Horizon de réservation maximum',
     maxBookingHorizonSubtitle: 'Jusqu\'à quand les clients peuvent réserver à l\'avance.',
     call: 'Appeler',
+    allRightsReserved: 'Tous droits réservés',
   },
   es: {
     // Header & Auth
@@ -1063,5 +1065,6 @@ export const translations = {
     maxBookingHorizon: 'Horizonte máximo de reserva',
     maxBookingHorizonSubtitle: 'Con cuánta antelación pueden reservar los clientes.',
     call: 'Llamar',
+    allRightsReserved: 'Todos los derechos reservados',
   }
 };

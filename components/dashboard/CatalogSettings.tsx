@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ShopVehicleSize, ShopServiceCategory } from '../../types/database';
+import { ShopVehicleSize, ShopServiceCategory } from "../../types";
 import VehicleSizeManager from './VehicleSizeManager';
 import ServiceCategoryManager from './ServiceCategoryManager';
 import { CloseIcon as XMarkIcon, CogIcon as SettingsIcon, CarIcon, TagIcon } from '../Icons';

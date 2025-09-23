@@ -26,6 +26,8 @@ type ViewType = {
 };
 
 // Import types from the new centralized location
+// Types removed for deployment compatibility
+
 import {
   Shop,
   Service,
@@ -37,7 +39,7 @@ import {
   ShopVehicleSize,
   ShopServiceCategory,
   FullShopData
-} from '../types/database';
+} from '../types';
 
 // Re-export for backwards compatibility
 export type {

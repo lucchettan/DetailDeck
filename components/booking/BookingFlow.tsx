@@ -12,11 +12,11 @@ import BookingServiceCard from './BookingServiceCard';
 import { ASSET_URLS } from '../../constants';
 
 interface BookingPageProps {
-  shopId: string;
+    shopId: string;
 }
 
-type FullShopData = Shop & { 
-    services: Service[], 
+type FullShopData = Shop & {
+    services: Service[],
     addOns: AddOn[],
     formulas: Formula[],
     supplements: VehicleSizeSupplement[],
@@ -56,7 +56,7 @@ interface DetailsBreakdownItem {
 
 const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const { t } = useLanguage();
-    
+
     const [step, setStep] = useState<BookingStep>('vehicleSize');
     const [shopData, setShopData] = useState<FullShopData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const [isEditingSelection, setIsEditingSelection] = useState(false);
     const [modalFormulaSelection, setModalFormulaSelection] = useState<string | null>(null);
     const [modalAddOnSelection, setModalAddOnSelection] = useState<Set<string>>(new Set());
-    
+
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [clientVehicle, setClientVehicle] = useState('');
@@ -84,15 +84,15 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
     const [leadPhoneNumber, setLeadPhoneNumber] = useState('');
     const [isSubmittingLead, setIsSubmittingLead] = useState(false);
-    
+
     // UI State
     const [isSummaryDetailsOpen, setIsSummaryDetailsOpen] = useState(false);
-    
+
     useEffect(() => {
         const fetchShopData = async () => {
             setLoading(true);
             setError(null);
-            
+
             try {
                 const { data: shop, error: shopError } = await supabase.from('shops').select('*').eq('id', shopId).single();
                 if (shopError) throw shopError.code === 'PGRST116' ? new Error(t.shopNotFound) : shopError;
@@ -133,39 +133,39 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         let duration = 0;
         let price = 0;
         if (!shopData || !selectedVehicleSize) return { totalDuration: 0, totalPrice: 0, detailsBreakdown: [] };
-        
+
         const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
         const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
         const supplementMap = new Map(shopData.supplements.map(s => [`${s.serviceId}-${s.size}`, s]));
         const addOnMap = new Map(shopData.addOns.map(a => [a.id, a]));
-        
+
         const breakdown = selectedServices.map(sel => {
-            const service = serviceMap.get(sel.serviceId);
-            const formula = formulaMap.get(sel.formulaId);
+            const service = serviceMap.get(sel.serviceId) as any;
+            const formula = formulaMap.get(sel.formulaId) as any;
             if (!service || !formula) return null;
 
-            let itemPrice = service.basePrice + formula.additionalPrice;
-            let itemDuration = service.baseDuration + formula.additionalDuration;
-            
-            const supplement = supplementMap.get(`${service.id}-${selectedVehicleSize}`);
+            let itemPrice = (service.basePrice || service.base_price) + (formula.additionalPrice || formula.additional_price || 0);
+            let itemDuration = (service.baseDuration || service.base_duration) + (formula.additionalDuration || formula.additional_duration || 0);
+
+            const supplement = supplementMap.get(`${service.id}-${selectedVehicleSize}`) as any;
             if (supplement) {
-                itemPrice += supplement.additionalPrice;
-                itemDuration += supplement.additionalDuration;
+                itemPrice += (supplement.additionalPrice || supplement.additional_price || 0);
+                itemDuration += (supplement.additionalDuration || supplement.additional_duration || 0);
             }
-            
+
             const selectedAddOns = sel.addOnIds.map(id => addOnMap.get(id)).filter(Boolean) as AddOn[];
             const addOnsPrice = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
             const addOnsDuration = selectedAddOns.reduce((sum, addon) => sum + addon.duration, 0);
 
             price += itemPrice + addOnsPrice;
             duration += itemDuration + addOnsDuration;
-            
-            const vehicleSizeLabel = t[`size_${selectedVehicleSize as 'S'|'M'|'L'|'XL'}`].split(' (')[0];
+
+            const vehicleSizeLabel = t[`size_${selectedVehicleSize as 'S' | 'M' | 'L' | 'XL'}`].split(' (')[0];
 
             return {
                 serviceId: sel.serviceId,
-                serviceName: service.name,
-                formulaName: formula.name,
+                serviceName: service.name || service.service_name,
+                formulaName: formula.name || formula.formula_name,
                 vehicleSizeLabel,
                 price: itemPrice,
                 duration: itemDuration,
@@ -192,14 +192,14 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         }
         document.body.style.overflow = 'hidden';
     };
-    
+
     const handleConfirmSelection = () => {
         if (!currentServiceForModal || !modalFormulaSelection) return;
         const newSelection = { serviceId: currentServiceForModal.id, formulaId: modalFormulaSelection, addOnIds: Array.from(modalAddOnSelection) };
         setSelectedServices(prev => [...prev.filter(s => s.serviceId !== currentServiceForModal.id), newSelection]);
         closeFormulaModal();
     }
-    
+
     const handleRemoveServiceFromCart = (serviceIdToRemove: string) => {
         setSelectedServices(prev => prev.filter(s => s.serviceId !== serviceIdToRemove));
     };
@@ -218,19 +218,19 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
             return newSet;
         });
     }
-    
+
     const closeFormulaModal = () => {
         setCurrentServiceForModal(null);
         document.body.style.overflow = 'unset';
     }
-    
+
     const handlePrevStep = () => {
         if (step === 'serviceSelection') setStep('categorySelection');
         else if (step === 'categorySelection') setStep('vehicleSize');
         else if (step === 'datetime') setStep('categorySelection');
         else if (step === 'clientInfo') setStep('datetime');
     }
-    
+
     const validateClientInfo = () => {
         const errors: ClientInfoErrors = {};
         if (!clientVehicle.trim()) errors.vehicle = t.fieldIsRequired;
@@ -247,7 +247,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         if (!validateClientInfo() || !selectedServices.length || !selectedDate || !selectedTime || !shopData || !selectedVehicleSize) return;
         setIsConfirming(true);
         setError(null);
-        
+
         const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
         const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
 
@@ -268,24 +268,24 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 specialInstructions: specialInstructions,
                 services: selectedServices.map(s => ({
                     serviceId: s.serviceId,
-                    serviceName: serviceMap.get(s.serviceId)?.name,
+                    serviceName: (serviceMap.get(s.serviceId) as any)?.name,
                     formulaId: s.formulaId,
-                    formulaName: formulaMap.get(s.formulaId)?.name,
+                    formulaName: (formulaMap.get(s.formulaId) as any)?.name,
                     addOns: []
                 }))
             }
         });
-        
+
         if (insertError) {
             console.error("Booking error:", insertError);
             setError(t.bookingFailed);
             setIsConfirming(false);
             return;
-        } 
+        }
         setStep('confirmed');
         setIsConfirming(false);
     };
-    
+
     const handleLeadSubmit = async () => {
         if (!leadPhoneNumber.trim() || !shopData || !selectedVehicleSize) return;
         setIsSubmittingLead(true);
@@ -293,7 +293,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
 
         const serviceMap = new Map(shopData.services.map(s => [s.id, s]));
         const formulaMap = new Map(shopData.formulas.map(f => [f.id, f]));
-        
+
         const { error: leadError } = await supabase.from('leads').insert({
             shop_id: shopId,
             client_phone: leadPhoneNumber,
@@ -301,8 +301,8 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
             selected_services: {
                 vehicleSize: selectedVehicleSize,
                 services: selectedServices.map(s => ({
-                    serviceName: serviceMap.get(s.serviceId)?.name,
-                    formulaName: formulaMap.get(s.formulaId)?.name,
+                    serviceName: (serviceMap.get(s.serviceId) as any)?.name,
+                    formulaName: (formulaMap.get(s.formulaId) as any)?.name,
                 }))
             }
         });
@@ -329,7 +329,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
         confirmed: t.bookingConfirmed,
         leadSubmitted: t.callbackModalSuccessTitle
     };
-    
+
     const serviceCategories = [
         { id: 'exterior', label: t.exteriorServices, icon: <img src={ASSET_URLS.category.exterior} alt={t.exteriorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
         { id: 'interior', label: t.interiorServices, icon: <img src={ASSET_URLS.category.interior} alt={t.interiorServices} className="w-24 h-16 object-contain mx-auto mb-4" /> },
@@ -337,18 +337,18 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
     ].filter(cat => shopData.services.some(s => s.category === cat.id));
 
     const renderContent = () => {
-        switch(step) {
+        switch (step) {
             case 'vehicleSize':
                 return (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {shopData.supportedVehicleSizes.map(size => {
-                            const fullLabel = t[`size_${size as 'S'|'M'|'L'|'XL'}`];
+                            const fullLabel = t[`size_${size as 'S' | 'M' | 'L' | 'XL'}`];
                             const match = fullLabel.match(/(.*?)\s*\((.*)\)/);
                             const title = match ? match[1] : fullLabel;
                             const examples = match ? `(${match[2]})` : '';
 
                             return (
-                                <button key={size} onClick={() => {setSelectedVehicleSize(size); setStep('categorySelection');}}
+                                <button key={size} onClick={() => { setSelectedVehicleSize(size); setStep('categorySelection'); }}
                                     className="p-4 rounded-lg border-2 text-center transition-all duration-200 flex flex-col justify-center items-center min-h-[220px] bg-white hover:border-brand-blue hover:shadow-lg">
                                     <img src={ASSET_URLS.vehicle[size as keyof typeof ASSET_URLS.vehicle]} alt={title} className="w-24 h-16 object-contain" />
                                     <p className="font-semibold text-brand-dark mt-4">{title}</p>
@@ -362,11 +362,11 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {serviceCategories.map(cat => (
-                             <button key={cat.id} onClick={() => { setViewingCategory(cat.id as any); setStep('serviceSelection'); }}
+                            <button key={cat.id} onClick={() => { setViewingCategory(cat.id as any); setStep('serviceSelection'); }}
                                 className="p-6 rounded-lg border-2 text-center transition-all duration-300 bg-white hover:border-brand-blue hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center">
                                 {cat.icon}
                                 <p className="text-xl font-bold text-brand-dark">{cat.label}</p>
-                             </button>
+                            </button>
                         ))}
                     </div>
                 )
@@ -376,7 +376,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {services.map((service, index) => (
-                            <BookingServiceCard key={service.id} service={service} isSelected={selectedServices.some(s => s.serviceId === service.id)} onSelect={() => handleServiceClick(service)} index={index}/>
+                            <BookingServiceCard key={service.id} service={service} isSelected={selectedServices.some(s => s.serviceId === service.id)} onSelect={() => handleServiceClick(service)} index={index} />
                         ))}
                     </div>
                 );
@@ -389,14 +389,14 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-brand-dark mb-4">{t.selectTime}</h3>
-                            { selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule || {}} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} minBookingNotice={shopData.minBookingNotice} /> : <p className="text-sm text-brand-gray">{t.selectDate}</p> }
+                            {selectedDate ? <TimeSlotPicker shopId={shopId} schedule={shopData.schedule || {}} serviceDuration={totalDuration} selectedDate={selectedDate} selectedTime={selectedTime} onSelectTime={setSelectedTime} minBookingNotice={shopData.minBookingNotice} /> : <p className="text-sm text-brand-gray">{t.selectDate}</p>}
                         </div>
                     </div>
                 </div>
             );
             case 'clientInfo': return <StepClientInfo clientInfo={clientInfo} setClientInfo={setClientInfo} errors={clientInfoErrors} specialInstructions={specialInstructions} onSpecialInstructionsChange={setSpecialInstructions} clientVehicle={clientVehicle} onClientVehicleChange={setClientVehicle} />;
             case 'confirmed': return (
-                 <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
+                <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
                     <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.bookingConfirmed}</h2>
                     <p className="text-brand-gray max-w-md mx-auto mb-6">{t.bookingConfirmationDetails}</p>
@@ -404,7 +404,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 </div>
             );
             case 'leadSubmitted': return (
-                 <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
+                <div className="bg-white p-6 rounded-lg shadow-md text-center py-12 max-w-2xl mx-auto">
                     <SuccessIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.callbackModalSuccessTitle}</h2>
                     <p className="text-brand-gray max-w-md mx-auto mb-6">{t.callbackModalSuccessSubtitle}</p>
@@ -417,12 +417,12 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
 
     return (
         <div className="bg-brand-light min-h-screen font-sans pb-32">
-             <header className="relative h-48 bg-gray-800">
+            <header className="relative h-48 bg-gray-800">
                 {shopData.shopImageUrl ? <img src={shopData.shopImageUrl} alt={shopData.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-gray-100"><ImageIcon className="w-16 h-16 text-gray-300" /></div>}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                 <div className="absolute top-0 left-0 right-0 p-6 md:p-8 container mx-auto text-white">
                     <div className="flex items-center gap-3">
-                        <StorefrontIcon className="w-8 h-8 flex-shrink-0" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.7))' }} />
+                        <StorefrontIcon className="w-8 h-8 flex-shrink-0" />
                         <h1 className="text-3xl font-bold" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{shopData.name}</h1>
                     </div>
                     {shopData.phone && (
@@ -436,7 +436,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     )}
                 </div>
             </header>
-            
+
             <main className="container mx-auto p-4 md:p-8 max-w-4xl">
                 {step !== 'confirmed' && step !== 'leadSubmitted' && (
                     <div className="mb-6">
@@ -455,13 +455,13 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
             {(step === 'categorySelection' || step === 'serviceSelection') && (
                 <div className="fixed bottom-0 left-0 right-0 z-30">
                     <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSummaryDetailsOpen && selectedServices.length > 0 ? 'max-h-96' : 'max-h-0'}`}>
-                         <div className="container mx-auto px-4">
+                        <div className="container mx-auto px-4">
                             <div className="bg-white p-4 rounded-t-lg shadow-lg border-x border-t">
                                 <h4 className="font-bold text-brand-dark mb-2">{t.yourSelection}</h4>
                                 <ul className="space-y-3 text-sm max-h-48 overflow-y-auto">
                                     {detailsBreakdown.map((item, index) => (
                                         <li key={index} className="flex items-start text-brand-gray border-b last:border-b-0 pb-2 pt-2">
-                                            <button 
+                                            <button
                                                 onClick={() => handleRemoveServiceFromCart(item.serviceId)}
                                                 className="mr-3 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
                                                 aria-label={`Remove ${item.serviceName}`}
@@ -537,39 +537,39 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
                         <header className="flex justify-between items-center p-4 border-b">
                             <h2 className="text-lg font-bold text-brand-dark">{currentServiceForModal.name}</h2>
-                            <button onClick={closeFormulaModal}><CloseIcon/></button>
+                            <button onClick={closeFormulaModal}><CloseIcon /></button>
                         </header>
                         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
                             {(shopData.formulas.filter(f => f.serviceId === currentServiceForModal.id)).map(formula => (
                                 <label key={formula.id} className={`w-full text-left p-4 border-2 rounded-lg block cursor-pointer ${modalFormulaSelection === formula.id ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
                                     <div className="flex justify-between items-start">
                                         <span className="font-bold flex items-start flex-1 pr-2">
-                                            <input type="radio" name="formula" value={formula.id} checked={modalFormulaSelection === formula.id} onChange={() => setModalFormulaSelection(formula.id)} className="w-4 h-4 mr-3 text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0"/>
+                                            <input type="radio" name="formula" value={formula.id} checked={modalFormulaSelection === formula.id} onChange={() => setModalFormulaSelection(formula.id)} className="w-4 h-4 mr-3 text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0" />
                                             {formula.name}
                                         </span>
                                         <span className="font-semibold text-brand-blue whitespace-nowrap">+ {formula.additionalPrice}€</span>
                                     </div>
-                                     {formula.description && (
+                                    {formula.description && (
                                         <ul className="mt-2 text-sm text-brand-gray space-y-1 text-left pl-7">
                                             {formula.description.split('\n').map((item, index) => (item.trim() && <li key={index} className="flex items-start gap-2"><CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" /><span>{item.trim()}</span></li>))}
                                         </ul>
                                     )}
                                 </label>
                             ))}
-                            
-                             {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).length > 0 && (
+
+                            {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).length > 0 && (
                                 <div className="pt-4 mt-4 border-t">
                                     <h3 className="text-base font-bold text-brand-dark mb-2">{t.selectAddOns}</h3>
                                     <div className="space-y-2">
-                                    {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).map(addOn => (
-                                        <label key={addOn.id} className={`w-full text-left p-3 border-2 rounded-lg flex items-start justify-between cursor-pointer ${modalAddOnSelection.has(addOn.id) ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
-                                            <div className="flex items-start flex-1 pr-4">
-                                                <input type="checkbox" checked={modalAddOnSelection.has(addOn.id)} onChange={() => handleToggleAddOn(addOn.id)} className="w-4 h-4 mr-3 rounded text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0"/>
-                                                <span>{addOn.name}</span>
-                                            </div>
-                                            <span className="text-sm font-semibold text-brand-blue whitespace-nowrap">+ {addOn.price}€</span>
-                                        </label>
-                                    ))}
+                                        {shopData.addOns.filter(a => a.serviceId === currentServiceForModal.id).map(addOn => (
+                                            <label key={addOn.id} className={`w-full text-left p-3 border-2 rounded-lg flex items-start justify-between cursor-pointer ${modalAddOnSelection.has(addOn.id) ? 'border-brand-blue bg-blue-50' : 'hover:bg-blue-50'}`}>
+                                                <div className="flex items-start flex-1 pr-4">
+                                                    <input type="checkbox" checked={modalAddOnSelection.has(addOn.id)} onChange={() => handleToggleAddOn(addOn.id)} className="w-4 h-4 mr-3 rounded text-brand-blue focus:ring-brand-blue mt-1 flex-shrink-0" />
+                                                    <span>{addOn.name}</span>
+                                                </div>
+                                                <span className="text-sm font-semibold text-brand-blue whitespace-nowrap">+ {addOn.price}€</span>
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -584,17 +584,17 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                     </div>
                 </div>
             )}
-            
+
             {isLeadModalOpen && (
-                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-                        <button onClick={() => setIsLeadModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><CloseIcon/></button>
+                        <button onClick={() => setIsLeadModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><CloseIcon /></button>
                         <h2 className="text-xl font-bold text-brand-dark mb-2">{t.callbackModalTitle}</h2>
                         <p className="text-brand-gray mb-4">{t.callbackModalSubtitle}</p>
                         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
                         <div className="relative">
-                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><PhoneIcon className="h-5 w-5 text-gray-400" /></div>
-                           <input type="tel" value={leadPhoneNumber} onChange={e => setLeadPhoneNumber(e.target.value)} placeholder={t.phoneNumberPlaceholder} className="w-full p-3 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 border-gray-300 focus:border-brand-blue focus:ring-brand-blue" required />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><PhoneIcon className="h-5 w-5 text-gray-400" /></div>
+                            <input type="tel" value={leadPhoneNumber} onChange={e => setLeadPhoneNumber(e.target.value)} placeholder={t.phoneNumberPlaceholder} className="w-full p-3 pl-10 border bg-white shadow-sm rounded-lg focus:outline-none focus:ring-1 border-gray-300 focus:border-brand-blue focus:ring-brand-blue" required />
                         </div>
                         <button onClick={handleLeadSubmit} disabled={isSubmittingLead || !leadPhoneNumber} className="w-full mt-4 bg-brand-blue text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex justify-center">{isSubmittingLead ? <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> : t.submitRequest}</button>
                     </div>
