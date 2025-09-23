@@ -25,7 +25,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   const { t } = useLanguage();
   const { user } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
-  
+
   const [formData, setFormData] = useState<FormData>({
     shopName: '',
     address: '',
@@ -43,7 +43,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
 
   const handleClose = () => {
     setTimeout(() => {
-        resetState();
+      resetState();
     }, 300);
     onClose();
   };
@@ -54,7 +54,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     if (!formData.shopName.trim()) newErrors.shopName = t.fieldIsRequired;
     // FIX: Use 'fieldIsRequired' translation key.
     if (!formData.address.trim()) newErrors.address = t.fieldIsRequired;
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,8 +74,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     if (IS_MOCK_MODE) {
       console.log("Mock Mode: Simulating shop creation.", { formData });
       setTimeout(() => {
-          setLoading(false);
-          handleClose();
+        setLoading(false);
+        handleClose();
       }, 1500);
       return;
     }
@@ -84,13 +84,13 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
       const { error } = await supabase.from('shops').insert({
         owner_id: user!.id,
         name: formData.shopName,
-        address_line1: formData.address, 
+        address_line1: formData.address,
       });
 
       if (error) {
         throw new Error(error.message);
       }
-      
+
       // On success, close the modal.
       handleClose();
 
@@ -98,15 +98,15 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
       console.error('Shop Creation Error:', e);
       setApiError(e.message || 'An unexpected error occurred. Please try again.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if(errors[name as keyof FormErrors]) {
-        setErrors(prev => ({...prev, [name]: undefined}));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
@@ -139,48 +139,66 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     >
       <div
         ref={modalRef}
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 sm:p-8 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+        className="card w-full max-w-lg transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
         style={{ animationFillMode: 'forwards' }}
       >
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="btn btn-ghost absolute top-4 right-4 p-2"
           aria-label={t.closeModal}
         >
           <CloseIcon className="w-6 h-6" />
         </button>
 
         <div className="text-center">
-            <h2 id="modal-title" className="text-2xl sm:text-3xl font-bold text-brand-dark mb-2">
-                {t.onboardingTitle}
-            </h2>
-            <p className="text-brand-gray mb-6 text-sm sm:text-base">
-                {t.onboardingSubtitle}
-            </p>
+          <h2 id="modal-title" className="text-2xl sm:text-3xl font-bold text-neutral-dark mb-2">
+            {t.onboardingTitle}
+          </h2>
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">
+            {t.onboardingSubtitle}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-            <div className="space-y-4 mb-6">
-                {/* Shop Name */}
-                <div>
-                    <label htmlFor="shopNameOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.shopName}</label>
-                    <input type="text" name="shopName" id="shopNameOnboarding" value={formData.shopName} onChange={handleInputChange} placeholder={t.shopNamePlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border shadow-sm focus:outline-none focus:ring-1 transition ${errors.shopName ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
-                    {errors.shopName && <p className="text-red-500 text-xs text-left mt-1">{errors.shopName}</p>}
-                </div>
-                
-                {/* Address */}
-                <div>
-                    <label htmlFor="addressOnboarding" className="block text-sm font-medium text-brand-dark text-left mb-1">{t.address}</label>
-                    <input type="text" name="address" id="addressOnboarding" value={formData.address} onChange={handleInputChange} placeholder={t.addressPlaceholder} className={`w-full px-4 py-2 bg-white rounded-lg border shadow-sm focus:outline-none focus:ring-1 transition ${errors.address ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:border-brand-blue focus:ring-brand-blue'}`} required />
-                    {errors.address && <p className="text-red-500 text-xs text-left mt-1">{errors.address}</p>}
-                </div>
+          <div className="space-y-4 mb-6">
+            {/* Shop Name */}
+            <div>
+              <label htmlFor="shopNameOnboarding" className="form-label text-left">{t.shopName}</label>
+              <input
+                type="text"
+                name="shopName"
+                id="shopNameOnboarding"
+                value={formData.shopName}
+                onChange={handleInputChange}
+                placeholder={t.shopNamePlaceholder}
+                className={`form-input ${errors.shopName ? 'border-red-500 focus:border-red-500' : ''}`}
+                required
+              />
+              {errors.shopName && <p className="form-error text-left">{errors.shopName}</p>}
             </div>
 
-            {apiError && <p className="text-red-500 text-sm text-center mb-4">{apiError}</p>}
+            {/* Address */}
+            <div>
+              <label htmlFor="addressOnboarding" className="form-label text-left">{t.address}</label>
+              <input
+                type="text"
+                name="address"
+                id="addressOnboarding"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder={t.addressPlaceholder}
+                className={`form-input ${errors.address ? 'border-red-500 focus:border-red-500' : ''}`}
+                required
+              />
+              {errors.address && <p className="form-error text-left">{errors.address}</p>}
+            </div>
+          </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-brand-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
-                {loading ? t.creatingShop : t.createShop}
-            </button>
+          {apiError && <p className="form-error text-center">{apiError}</p>}
+
+          <button type="submit" disabled={loading} className="btn btn-primary w-full text-lg py-3 px-8">
+            {loading ? t.creatingShop : t.createShop}
+          </button>
         </form>
       </div>
       <style>{`

@@ -5,6 +5,7 @@ import { ShopVehicleSize, Service } from '../../types/database';
 import { supabase } from '../../lib/supabaseClient';
 import { toSnakeCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';
+import DurationPicker from '../common/DurationPicker';
 
 interface VehicleSizeUpdatePromptProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ const VehicleSizeUpdatePrompt: React.FC<VehicleSizeUpdatePromptProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
@@ -184,9 +185,9 @@ const VehicleSizeUpdatePrompt: React.FC<VehicleSizeUpdatePromptProps> = ({
                 {serviceUpdates.map(update => (
                   <div key={update.serviceId} className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-medium text-gray-900 mb-3">{update.serviceName}</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="flex gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="form-label">
                           Prix supplémentaire (€)
                         </label>
                         <input
@@ -194,22 +195,19 @@ const VehicleSizeUpdatePrompt: React.FC<VehicleSizeUpdatePromptProps> = ({
                           value={update.additionalPrice}
                           onChange={(e) => updateServiceData(update.serviceId, 'additionalPrice', e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          className="form-input w-24 text-center"
                           disabled={loading}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Durée supplémentaire (min)
+                        <label className="form-label">
+                          Durée supplémentaire
                         </label>
-                        <input
-                          type="number"
-                          step="15"
+                        <DurationPicker
                           value={update.additionalDuration}
-                          onChange={(e) => updateServiceData(update.serviceId, 'additionalDuration', e.target.value)}
-                          placeholder="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          disabled={loading}
+                          onChange={(value) => updateServiceData(update.serviceId, 'additionalDuration', value)}
+                          className="form-input w-32"
+                          placeholder="Aucune"
                         />
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { HomeIcon, BookOpenIcon, CalendarDaysIcon, CogIcon as SettingsIcon, PhoneArrowUpRightIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, CalendarDaysIcon, CogIcon as SettingsIcon, PhoneArrowUpRightIcon, CloseIcon as LogoutIcon } from './Icons';
 import DashboardHome from './dashboard/DashboardHome';
 import Catalog from './dashboard/Catalog';
 import ServiceEditor from './dashboard/ServiceEditor';
@@ -335,22 +335,30 @@ const Dashboard: React.FC = () => {
                 <span className="ml-4 font-semibold">{item.label}</span>
               </button>
             ))}
+
+            {/* User info and logout at the bottom */}
+            <div className="mt-8 px-6 py-4 border-t border-gray-200">
+              <div className="text-center mb-4">
+                <p className="font-semibold text-brand-dark text-sm">{user?.email}</p>
+                <p className="text-xs text-brand-gray">{t.shopOwner}</p>
+              </div>
+              <button
+                onClick={logOut}
+                className="w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                {t.logout}
+              </button>
+            </div>
           </nav>
         </aside>
 
         <div className="flex-1 flex flex-col pb-20 md:pb-0">
           <header className="bg-white shadow-sm">
             <div className="container mx-auto px-6 py-4 flex justify-end items-center">
-              <div className="text-right mr-4">
+              <div className="text-right">
                 <p className="font-semibold text-brand-dark">{user?.email}</p>
                 <p className="text-sm text-brand-gray">{t.shopOwner}</p>
               </div>
-              <button
-                onClick={logOut}
-                className="bg-brand-blue text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-600 transition-all duration-300"
-              >
-                {t.logout}
-              </button>
             </div>
           </header>
           <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
@@ -404,6 +412,8 @@ const Dashboard: React.FC = () => {
               }}
               reservationId={editingReservationId}
               shopData={shopData}
+              vehicleSizes={vehicleSizes}
+              serviceCategories={serviceCategories}
               onSave={handleSaveReservation}
               onDelete={handleDeleteReservation}
             />

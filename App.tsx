@@ -15,14 +15,14 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     trackEvent('page_view');
-    
+
     const onLocationChange = () => {
       setPath(window.location.pathname);
     };
-    
+
     // Listen to popstate for browser back/forward navigation
     window.addEventListener('popstate', onLocationChange);
-    
+
     // Custom event for programmatic navigation
     const handlePushState = () => {
       onLocationChange();
@@ -34,7 +34,7 @@ const AppContent: React.FC = () => {
       window.removeEventListener('pushstate', handlePushState);
     };
   }, []);
-  
+
   // Custom navigation function to update state and history
   const navigate = (newPath: string) => {
     // This check is a workaround for the preview environment's security restrictions.
@@ -42,13 +42,13 @@ const AppContent: React.FC = () => {
     const isPreviewEnvironment = window.location.origin.includes('scf.usercontent.goog');
 
     if (isPreviewEnvironment) {
-        // In preview, directly update the state to change the view without altering browser history.
-        // This avoids the cross-origin error but sacrifices back/forward button functionality in the preview.
-        setPath(newPath);
+      // In preview, directly update the state to change the view without altering browser history.
+      // This avoids the cross-origin error but sacrifices back/forward button functionality in the preview.
+      setPath(newPath);
     } else {
-        // In a standard environment, update the browser history as usual.
-        window.history.pushState({}, '', newPath);
-        window.dispatchEvent(new Event('pushstate'));
+      // In a standard environment, update the browser history as usual.
+      window.history.pushState({}, '', newPath);
+      window.dispatchEvent(new Event('pushstate'));
     }
   };
 
@@ -80,13 +80,13 @@ const AppContent: React.FC = () => {
   }
 
   if (path === '/signin') {
-     if (user) {
-        navigate('/dashboard');
-        return <Dashboard />;
-     }
-     return <SignInPage />;
+    if (user) {
+      navigate('/dashboard');
+      return <Dashboard />;
+    }
+    return <SignInPage />;
   }
-  
+
   // Default to Landing Page
   return <LandingPage navigate={navigate} />;
 }

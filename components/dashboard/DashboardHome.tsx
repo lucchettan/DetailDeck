@@ -101,18 +101,18 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, shopData, has
           <p className="text-brand-blue font-mono text-sm overflow-x-auto whitespace-nowrap">{bookingUrl}</p>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
-          <button onClick={copyToClipboard} className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
+          <button onClick={copyToClipboard} className="flex-1 min-w-[120px] btn btn-secondary flex items-center justify-center gap-2">
             <LinkIcon className="w-5 h-5"/>
             <span>{linkCopied ? t.linkCopied : t.copyLink}</span>
           </button>
-          <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
+          <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[120px] btn btn-secondary flex items-center justify-center gap-2">
             {t.openLink}
           </a>
-          <button onClick={onPreview} className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
+          <button onClick={onPreview} className="flex-1 min-w-[120px] btn btn-secondary flex items-center justify-center gap-2">
             <EyeIcon className="w-5 h-5"/>
             <span>{t.previewPage}</span>
           </button>
-          <button className="flex-1 min-w-[120px] bg-gray-200 text-brand-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2">
+          <button className="flex-1 min-w-[120px] btn btn-secondary flex items-center justify-center gap-2">
             <ShareIcon className="w-5 h-5" />
             <span>{t.share}</span>
           </button>

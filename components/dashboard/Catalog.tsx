@@ -87,7 +87,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <button
         onClick={onAdd}
-        className="flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-brand-blue hover:bg-blue-50 transition-all duration-300 text-brand-gray hover:text-brand-dark min-h-[280px]"
+        className="flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 transition-all duration-300 text-gray-600 hover:text-neutral-dark min-h-[280px]"
       >
         <PlusIcon className="w-10 h-10 mb-2" />
         <span className="font-bold text-lg text-center">{addText}</span>
@@ -97,7 +97,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
         <div
           key={service.id}
           onClick={() => onEditService(service.id)}
-          className="bg-white rounded-lg shadow-md hover:shadow-xl hover:border-brand-blue border border-gray-200 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden"
+          className="card cursor-pointer flex flex-col overflow-hidden border border-gray-200 hover:border-primary"
         >
           {service.imageUrl ? (
             <div className="h-40 w-full">
@@ -111,16 +111,16 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
           <div className="p-6 flex flex-col flex-grow">
             <div className="flex-grow">
               <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-brand-dark pr-2">{service.name}</h3>
+                <h3 className="text-lg font-bold text-neutral-dark pr-2">{service.name}</h3>
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   {t[service.status as 'active' | 'inactive']}
                 </span>
               </div>
-              <p className="text-brand-gray mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
+              <p className="text-gray-600 mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2">
               <MoneyIcon className="w-6 h-6 text-gray-400" />
-              <p className="text-xl font-bold text-brand-dark">
+              <p className="text-xl font-bold text-neutral-dark">
                 {t.fromPrice.replace('{price}', String(service.basePrice || 0))}
               </p>
             </div>
@@ -142,15 +142,15 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-brand-dark">{t.catalog}</h2>
-          <p className="text-brand-gray mt-1">{t.manageServicesSubtitle}</p>
+          <h2 className="text-2xl font-bold text-neutral-dark">{t.catalog}</h2>
+          <p className="text-gray-600 mt-1">{t.manageServicesSubtitle}</p>
         </div>
         <div className="flex items-center space-x-3">
           {/* Catalog Settings Button */}
           {onOpenCatalogSettings && (
             <button
               onClick={onOpenCatalogSettings}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+              className="btn btn-secondary flex items-center space-x-2"
               title="Paramètres du Catalogue"
             >
               <SettingsIcon className="w-4 h-4" />
@@ -160,7 +160,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
         </div>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-lg shadow-md">
+      <div className="card p-6 md:p-8">
         <div className="border-b border-gray-200 mb-6">
           <nav className="-mb-px flex space-x-6" aria-label="Tabs">
             {shopServiceCategories.filter(cat => cat.isActive).map(category => {
@@ -170,16 +170,16 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
                 <button
                   key={category.id}
                   onClick={() => setActiveTab(category.id)}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors
                                   ${isActive
-                      ? 'border-brand-blue text-brand-blue'
-                      : 'border-transparent text-brand-gray hover:text-brand-dark hover:border-gray-300'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-600 hover:text-neutral-dark hover:border-gray-300'
                     }`
                   }
                 >
                   <span className="text-lg">{category.iconName === 'interior' ? '🏠' : category.iconName === 'exterior' ? '✨' : '🔧'}</span>
                   {category.name}
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-blue-100 text-brand-blue' : 'bg-gray-100 text-brand-gray'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}>
                     {categoryServices.length}
                   </span>
                 </button>

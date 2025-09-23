@@ -7,20 +7,22 @@ const Features: React.FC = () => {
   const features = FEATURES[language];
 
   return (
-    <section id="features" className="py-20 bg-brand-light">
-      <div className="container mx-auto px-6">
+    <section id="features" className="section bg-neutral-light">
+      <div className="container">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">{t.featuresTitle}</h2>
-          <p className="text-lg text-brand-gray mt-4 max-w-2xl mx-auto">{t.featuresSubtitle}</p>
+          <h2 className="sub-heading mb-md">{t.featuresTitle}</h2>
+          <p className="body-text max-w-2xl mx-auto">{t.featuresSubtitle}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-brand-blue hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                {feature.icon}
+            <div key={index} className="card text-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-4 mx-auto">
+                <div className="text-white text-2xl">
+                  {feature.icon}
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-brand-dark mb-2">{feature.title}</h3>
-              <p className="text-brand-gray">{feature.description}</p>
+              <h3 className="text-xl font-semibold text-neutral-dark mb-2">{feature.title}</h3>
+              <p className="text-gray-600">{feature.description}</p>
             </div>
           ))}
         </div>
