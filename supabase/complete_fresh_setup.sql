@@ -136,6 +136,25 @@ CREATE TABLE leads (
     created_at timestamptz DEFAULT now() NOT NULL
 );
 
+-- Table shop_vehicle_sizes
+CREATE TABLE IF NOT EXISTS shop_vehicle_sizes (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    subtitle text,
+    is_active boolean DEFAULT true,
+    created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Table shop_service_categories
+CREATE TABLE IF NOT EXISTS shop_service_categories (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    is_active boolean DEFAULT true,
+    created_at timestamptz DEFAULT now() NOT NULL
+);
+
 -- ========================================
 -- ÉTAPE 3: ACTIVER RLS SUR TOUTES LES TABLES
 -- ========================================

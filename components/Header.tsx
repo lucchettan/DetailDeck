@@ -107,7 +107,7 @@ const Header: React.FC<{ onDemoClick: () => void; isDemoLoading: boolean; }> = (
         <div className="flex items-center justify-between">
           <a href="/" className="flex items-center">
             <h1 className="text-2xl font-bold text-neutral-dark">
-              <span>Detail</span><span className="text-primary">Deck</span>
+              <span>Resa</span><span className="text-primary">One</span>
             </h1>
           </a>
           <nav className="flex items-center space-x-3 sm:space-x-6">
