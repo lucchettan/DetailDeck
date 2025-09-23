@@ -7,12 +7,19 @@ const GenericIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }
     </svg>
 );
 
+// Icône de fermeture spécifique (X)
+const CloseIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+);
+
 // Toutes les icônes utilisées dans l'app
 export const ChevronLeftIcon = GenericIcon;
 export const ChevronRightIcon = GenericIcon;
 export const EyeIcon = GenericIcon;
 export const EyeSlashIcon = GenericIcon;
-export const CloseIcon = GenericIcon;
+export const CloseIcon = CloseIconSvg;
 export const CustomServicesIcon = GenericIcon;
 export const AutomatedBookingIcon = GenericIcon;
 export const ManagedCalendarIcon = GenericIcon;
@@ -58,13 +65,16 @@ export const CatalogIcon = GenericIcon;
 export const UpsellIcon = GenericIcon;
 export const CompanyIcon = GenericIcon;
 export const WebpageIcon = GenericIcon;
+export const ShopIcon = GenericIcon;
+export const CategoryIcon = GenericIcon;
+export const ServiceIcon = GenericIcon;
 
 export default {
     ChevronLeftIcon,
     ChevronRightIcon,
     EyeIcon,
     EyeSlashIcon,
-    CloseIcon,
+    CloseIcon: CloseIconSvg,
     CustomServicesIcon,
     AutomatedBookingIcon,
     ManagedCalendarIcon,
@@ -109,5 +119,8 @@ export default {
     CatalogIcon,
     UpsellIcon,
     CompanyIcon,
-    WebpageIcon
+    WebpageIcon,
+    ShopIcon,
+    CategoryIcon,
+    ServiceIcon
 };

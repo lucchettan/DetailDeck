@@ -19,6 +19,7 @@ import BookingPreviewModal from './booking/BookingPreviewModal';
 import Leads from './dashboard/Leads';
 import { IS_MOCK_MODE } from '../lib/env';
 import { mockShop, mockServices, mockLeads, mockReservations, mockVehicleSizes, mockServiceCategories } from '../lib/mockData';
+import NewOnboarding from './NewOnboarding';
 
 type ViewType = {
   page: 'home' | 'settings' | 'catalog' | 'reservations' | 'leads';
@@ -87,6 +88,8 @@ const Dashboard: React.FC = () => {
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [loadingShopData, setLoadingShopData] = useState(true);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null);
@@ -131,6 +134,8 @@ const Dashboard: React.FC = () => {
       setServiceCategories(mockServiceCategories);
       setServices(mockServices); // Add this line to populate services in mock mode
       setLoadingShopData(false);
+      setNeedsOnboarding(false); // Mock mode is always complete
+      setCheckingOnboarding(false);
       return;
     }
     if (!user) return;
@@ -194,12 +199,72 @@ const Dashboard: React.FC = () => {
           setServices(toCamelCase(servicesData) as Service[]);
         }
       }
+      // Vérifier si l'onboarding est nécessaire
+      const checkOnboardingStatus = async () => {
+        if (!user?.id) return;
+
+        try {
+          const { data: shop } = await supabase
+            .from('shops')
+            .select('id, name, address_line1, schedule')
+            .eq('owner_id', user.id)
+            .single();
+
+          const { data: categories } = await supabase
+            .from('shop_service_categories')
+            .select('id')
+            .eq('shop_id', shop?.id);
+
+          const { data: services } = await supabase
+            .from('services')
+            .select('id')
+            .eq('shop_id', shop?.id);
+
+          const { data: vehicleSizes } = await supabase
+            .from('shop_vehicle_sizes')
+            .select('id')
+            .eq('shop_id', shop?.id);
+
+          // Vérifier si toutes les étapes requises sont complètes
+          const hasBasicInfo = !!(shop?.name && shop?.address_line1);
+          const hasSchedule = !!(shop?.schedule);
+          const hasCategories = (categories?.length || 0) >= 2;
+          const hasVehicleSizes = (vehicleSizes?.length || 0) >= 4;
+          const hasServices = (services?.length || 0) >= 2;
+
+          const isComplete = hasBasicInfo && hasSchedule && hasCategories && hasVehicleSizes && hasServices;
+          setNeedsOnboarding(!isComplete);
+
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          // En cas d'erreur, on assume que l'onboarding est nécessaire
+          setNeedsOnboarding(true);
+        } finally {
+          setCheckingOnboarding(false);
+        }
+      };
+
+      await checkOnboardingStatus();
+
     } catch (error: any) {
       console.error("Error fetching shop data:", error);
       setAlertInfo({
         isOpen: true,
         title: 'Data Fetch Error',
         message: `Error fetching shop data: ${error.message || error}`
+      });
+      // En cas d'erreur, on assume que l'onboarding est nécessaire
+      setNeedsOnboarding(true);
+      setCheckingOnboarding(false);
+      
+      // Créer un shop vide pour éviter l'écran blanc
+      setShopData({
+        id: 'temp',
+        name: '',
+        email: user?.email || '',
+        phone: '',
+        addressLine1: '',
+        supportedVehicleSizes: ['S', 'M', 'L', 'XL']
       });
     } finally {
       setLoadingShopData(false);
@@ -305,15 +370,46 @@ const Dashboard: React.FC = () => {
   ];
 
 
-  if (authLoading || loadingShopData) {
+  // Debug logs pour la production
+  console.log('Dashboard render state:', {
+    authLoading,
+    loadingShopData,
+    checkingOnboarding,
+    needsOnboarding,
+    user: !!user,
+    shopData: !!shopData
+  });
+
+  if (authLoading || loadingShopData || checkingOnboarding) {
     return (
-      <div className="flex-1 flex items-center justify-center h-full flex-col">
+      <div className="flex-1 flex items-center justify-center h-screen flex-col bg-gray-50">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-brand-blue"></div>
+        <p className="mt-4 text-gray-600">Chargement de votre tableau de bord...</p>
       </div>
     );
   }
 
+  // Vérification de sécurité pour l'utilisateur
+  if (!user) {
+    console.error('Dashboard: No user found, redirecting to login');
+    window.location.href = '/';
+    return null;
+  }
+
+  // Afficher l'onboarding si nécessaire
+  if (needsOnboarding) {
+    return (
+      <NewOnboarding
+        onComplete={() => {
+          setNeedsOnboarding(false);
+          fetchShopData(); // Recharger les données après l'onboarding
+        }}
+      />
+    );
+  }
+
   if (!shopData) {
+    console.log('Dashboard: No shop data, showing Settings');
     return <Settings shopData={null} onSave={handleSaveShop} initialStep={1} />;
   }
 
@@ -355,14 +451,6 @@ const Dashboard: React.FC = () => {
         </aside>
 
         <div className="flex-1 flex flex-col pb-20 md:pb-0">
-          <header className="bg-white shadow-sm">
-            <div className="container mx-auto px-6 py-4 flex justify-end items-center">
-              <div className="text-right">
-                <p className="font-semibold text-brand-dark">{user?.email}</p>
-                <p className="text-sm text-brand-gray">{t.shopOwner}</p>
-              </div>
-            </div>
-          </header>
           <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
             <div className={currentView.page === 'home' ? '' : 'hidden'}>
               <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />

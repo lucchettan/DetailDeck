@@ -4,9 +4,11 @@ import { ImageIcon, PlusIcon, TrashIcon, SaveIcon, CheckCircleIcon, Bars3Icon } 
 import { Service, Formula, VehicleSizeSupplement, AddOn, ShopVehicleSize, ShopServiceCategory } from '../Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 import AlertModal from '../AlertModal';
+import FormRestoreAlert from '../FormRestoreAlert';
 import { toSnakeCase, toCamelCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';
 import DurationPicker from '../common/DurationPicker';
+import { useFormPersistence } from '../../hooks/useFormPersistence';
 
 type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
 
@@ -37,7 +39,15 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const { t } = useLanguage();
   const isEditing = serviceId !== 'new';
 
-  const [formData, setFormData] = useState<Partial<Service>>({});
+  // Persistance automatique du formulaire
+  const {
+    formData,
+    setFormData,
+    clearPersistedData,
+    handleSubmitSuccess,
+    hasPersistedData
+  } = useFormPersistence<Partial<Service>>(`service_${serviceId}`, {});
+
   const [formulas, setFormulas] = useState<FormulaWithIncluded[]>([]);
   const [supplements, setSupplements] = useState<Partial<VehicleSizeSupplement>[]>([]);
   const [specificAddOns, setSpecificAddOns] = useState<Partial<AddOn>[]>([]);
@@ -45,6 +55,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
+  const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -57,8 +68,16 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     const initializeState = async () => {
       setLoading(true);
 
+      // Vérifier s'il y a des données persistées pour un nouveau service
+      if (serviceId === 'new' && hasPersistedData) {
+        setShowRestoreAlert(true);
+      }
+
       const setupNewService = () => {
-        setFormData({ name: '', description: '', status: 'active', category: 'interior', basePrice: 50, baseDuration: 60 });
+        // Ne pas écraser si on a des données persistées
+        if (!hasPersistedData) {
+          setFormData({ name: '', description: '', status: 'active', category: 'interior', basePrice: 50, baseDuration: 60 });
+        }
         setFormulas([{ name: 'Basique', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
         setSupplements([]);
         setSpecificAddOns([]);
@@ -146,6 +165,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       setTimeout(() => {
         setIsSaving(false);
         setAlertInfo({ isOpen: true, title: 'Démo', message: 'La sauvegarde est simulée en mode démo.' });
+        // Nettoyer les données persistées après sauvegarde réussie
+        handleSubmitSuccess();
         onSave();
       }, 1000);
       return;
@@ -241,6 +262,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (error) throw error;
       }
 
+      // Nettoyer les données persistées après sauvegarde réussie
+      handleSubmitSuccess();
       onSave();
 
     } catch (error: any) {
@@ -353,6 +376,19 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   return (
     <div>
+      <FormRestoreAlert
+        isVisible={showRestoreAlert}
+        onRestore={() => {
+          setShowRestoreAlert(false);
+          // Les données sont déjà dans formData grâce au hook
+        }}
+        onDismiss={() => {
+          setShowRestoreAlert(false);
+          clearPersistedData();
+          // Réinitialiser avec les valeurs par défaut
+          setFormData({ name: '', description: '', status: 'active', category: 'interior', basePrice: 50, baseDuration: 60 });
+        }}
+      />
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-brand-dark">{isEditing ? t.editService : t.addNewService}</h2>
         <button type="button" onClick={onBack} className="text-brand-gray hover:text-brand-dark">&larr; {t.catalog}</button>

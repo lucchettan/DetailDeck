@@ -332,7 +332,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
         {(isAddingNew || editingId) && (
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {isAddingNew ? 'Add New Vehicle Size' : 'Edit Vehicle Size'}
+              {isAddingNew ? t.addNewVehicleSize : 'Edit Vehicle Size'}
             </h3>
 
             <div className="space-y-4">
@@ -408,7 +408,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
             className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors flex items-center justify-center space-x-2"
           >
             <PlusIcon className="w-5 h-5" />
-            <span>Add New Vehicle Size</span>
+            <span>{t.addNewVehicleSize}</span>
           </button>
         )}
       </div>

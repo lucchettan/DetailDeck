@@ -354,6 +354,8 @@ export const translations = {
     maxBookingHorizonSubtitle: 'How far in advance clients can book.',
     call: 'Call',
     allRightsReserved: 'All rights reserved',
+    addNewServiceCategory: 'Add New Service Category',
+    addNewVehicleSize: 'Add New Vehicle Size',
   },
   fr: {
     // Header & Auth
@@ -710,6 +712,8 @@ export const translations = {
     maxBookingHorizonSubtitle: 'Jusqu\'à quand les clients peuvent réserver à l\'avance.',
     call: 'Appeler',
     allRightsReserved: 'Tous droits réservés',
+    addNewServiceCategory: 'Ajouter une nouvelle catégorie',
+    addNewVehicleSize: 'Ajouter une nouvelle taille',
   },
   es: {
     // Header & Auth
@@ -1066,5 +1070,7 @@ export const translations = {
     maxBookingHorizonSubtitle: 'Con cuánta antelación pueden reservar los clientes.',
     call: 'Llamar',
     allRightsReserved: 'Todos los derechos reservados',
+    addNewServiceCategory: 'Añadir nueva categoría',
+    addNewVehicleSize: 'Añadir nuevo tamaño',
   }
 };

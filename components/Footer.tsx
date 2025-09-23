@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
           <div className="col-span-1 md:col-span-2">
             <a href="#" className="flex items-center mb-4">
               <h2 className="text-2xl font-bold text-neutral-dark">
-                <span>Detail</span><span className="text-primary">Deck</span>
+                <span>Resa</span><span className="text-primary">One</span>
               </h2>
             </a>
             <p className="text-gray-600 max-w-sm">{t.footerDescription}</p>
@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
         <div className="mt-12 border-t border-gray-200 pt-8 text-center text-gray-500">
-          <p>&copy; 2024 DetailDeck. {t.allRightsReserved || 'All rights reserved.'}</p>
+          <p>&copy; 2024 Resaone. {t.allRightsReserved || 'All rights reserved.'}</p>
         </div>
       </div>
     </footer>

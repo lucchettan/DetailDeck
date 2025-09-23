@@ -192,7 +192,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
           <ServiceList
             serviceList={currentServices}
             onAdd={() => onAddNewService()}
-            addText={currentCategory?.name ? `Add ${currentCategory.name}` : 'Add New Service'}
+            addText={currentCategory?.name ? `Créer un service ${currentCategory.name.toLowerCase()}` : t.addNewService}
           />
         </div>
       </div>
