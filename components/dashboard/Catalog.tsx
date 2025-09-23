@@ -5,7 +5,7 @@ import { PlusIcon, ImageIcon, MoneyIcon, CogIcon as SettingsIcon } from '../Icon
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase } from '../../lib/utils';
 
-import { ShopServiceCategory } from '../../types/database';
+import { ShopServiceCategory } from '../../types';
 
 interface CatalogProps {
   shopId: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CloseIcon as XMarkIcon, PlusIcon, TrashIcon, PencilIcon, CheckIcon, CloseIcon as CancelIcon } from '../Icons';
-import { ShopVehicleSize, VehicleSizeFormData } from '../../types/database';
+import { ShopVehicleSize, VehicleSizeFormData } from "../../types";
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase, toSnakeCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';

@@ -599,7 +599,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                       <label className="form-label">Durée</label>
                       <DurationPicker
                         value={supplement?.additionalDuration ?? ''}
-                        onChange={(value) => updateSupplement(vehicleSize.id, 'additionalDuration', value)}
+                        onChange={(value) => updateSupplement(vehicleSize.id, 'additionalDuration', String(value))}
                         className="form-input w-28"
                         placeholder="Aucune"
                       />
