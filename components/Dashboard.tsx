@@ -256,7 +256,7 @@ const Dashboard: React.FC = () => {
       // En cas d'erreur, on assume que l'onboarding est nécessaire
       setNeedsOnboarding(true);
       setCheckingOnboarding(false);
-      
+
       // Créer un shop vide pour éviter l'écran blanc
       setShopData({
         id: 'temp',

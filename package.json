@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:test": "vite --mode development --config vite.config.ts",
+    "dev:prod": "vite --mode production --config vite.config.ts",
     "build": "tsc && vite build",
+    "build:staging": "NODE_ENV=staging tsc && vite build --mode staging",
+    "build:test": "NODE_ENV=development tsc && vite build --mode development",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:db": "echo 'Base de données de test: SecondDetailDeck (shxnokjzkfnreolujhew)'",
+    "prod:db": "echo 'Base de données de production: DetailDeck (jtusofarsnwcfxnrvgus)'"
   },
   "dependencies": {
     "@eslint/js": "^9.36.0",
