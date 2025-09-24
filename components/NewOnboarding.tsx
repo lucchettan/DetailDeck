@@ -6,6 +6,7 @@ import ShopInfoStep from './onboarding/ShopInfoStep';
 import ScheduleStep from './onboarding/ScheduleStep';
 import CategoriesStep from './onboarding/CategoriesStep';
 import VehicleSizesStep from './onboarding/VehicleSizesStep';
+import ServicesStep from './onboarding/ServicesStep';
 
 interface NewOnboardingProps {
   onComplete: () => void;
@@ -93,24 +94,10 @@ const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
 
       case 'services':
         return (
-          <div className="max-w-2xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Vos premiers services</h2>
-            <p className="text-gray-600 mb-8">Cette étape sera développée prochainement.</p>
-            <div className="flex justify-between">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800"
-              >
-                ← Retour
-              </button>
-              <button
-                onClick={handleNext}
-                className="bg-green-600 text-white px-8 py-3 rounded-lg"
-              >
-                Terminer (temporaire)
-              </button>
-            </div>
-          </div>
+          <ServicesStep
+            onBack={handleBack}
+            onNext={handleNext}
+          />
         );
 
       default:
