@@ -13,10 +13,10 @@ export function useFormPersistence<T>(
   } = {}
 ) {
   const { debounceMs = 500, clearOnSubmit = true } = options;
-  
+
   // Clé unique pour localStorage
   const storageKey = `form_${formKey}`;
-  
+
   // État du formulaire
   const [formData, setFormDataState] = useState<T>(() => {
     // Restaurer depuis localStorage au démarrage
@@ -98,7 +98,7 @@ export function usePersistedInput(
   debounceMs: number = 300
 ) {
   const storageKey = `input_${key}`;
-  
+
   const [value, setValue] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem(storageKey) || initialValue;

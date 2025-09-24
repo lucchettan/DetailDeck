@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import OnboardingWelcome from './OnboardingWelcome';
 import ShopInfoStep from './onboarding/ShopInfoStep';
-// Import d'autres étapes à créer
-// import ScheduleStep from './onboarding/ScheduleStep';
-// import CategoriesStep from './onboarding/CategoriesStep';
-// import ServicesStep from './onboarding/ServicesStep';
+import ScheduleStep from './onboarding/ScheduleStep';
+import CategoriesStep from './onboarding/CategoriesStep';
+import VehicleSizesStep from './onboarding/VehicleSizesStep';
 
 interface NewOnboardingProps {
   onComplete: () => void;
@@ -15,6 +15,7 @@ type OnboardingStep = 'welcome' | 'shop-info' | 'schedule' | 'categories' | 'veh
 
 const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
   const { t } = useLanguage();
+  const { logout } = useAuth();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
 
   const handleStepSelect = (stepId: string) => {
@@ -68,68 +69,26 @@ const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
 
       case 'schedule':
         return (
-          <div className="max-w-2xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Horaires d'ouverture</h2>
-            <p className="text-gray-600 mb-8">Cette étape sera développée prochainement.</p>
-            <div className="flex justify-between">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800"
-              >
-                ← Retour
-              </button>
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg"
-              >
-                Continuer (temporaire)
-              </button>
-            </div>
-          </div>
+          <ScheduleStep
+            onBack={handleBack}
+            onNext={handleNext}
+          />
         );
 
       case 'categories':
         return (
-          <div className="max-w-2xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Catégories de services</h2>
-            <p className="text-gray-600 mb-8">Cette étape sera développée prochainement.</p>
-            <div className="flex justify-between">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800"
-              >
-                ← Retour
-              </button>
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg"
-              >
-                Continuer (temporaire)
-              </button>
-            </div>
-          </div>
+          <CategoriesStep
+            onBack={handleBack}
+            onNext={handleNext}
+          />
         );
 
       case 'vehicle-sizes':
         return (
-          <div className="max-w-2xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Tailles de véhicules</h2>
-            <p className="text-gray-600 mb-8">Définissez les 4 tailles : Citadine, Berline, Break/SUV, 4x4/Minivan</p>
-            <div className="flex justify-between">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800"
-              >
-                ← Retour
-              </button>
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg"
-              >
-                Continuer (temporaire)
-              </button>
-            </div>
-          </div>
+          <VehicleSizesStep
+            onBack={handleBack}
+            onNext={handleNext}
+          />
         );
 
       case 'services':
@@ -172,6 +131,21 @@ const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
                   Configuration initiale
                 </span>
               )}
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onComplete}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                Ignorer l'onboarding
+              </button>
+              <button
+                onClick={logout}
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Se déconnecter
+              </button>
             </div>
 
             {/* Progress indicator */}

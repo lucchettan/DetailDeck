@@ -32,3 +32,19 @@ dist-ssr
 
 # Supabase
 .supabase
+# Fichiers d'environnement locaux
+.env.local
+.env.development
+
+# Fichiers temporaires Supabase
+supabase/.temp/
+supabase/check_*.sql
+supabase/*_temp.sql
+
+# Logs de développement
+*.log
+debug.log
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
