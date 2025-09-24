@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@eslint/js": "^9.36.0",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.43.4",
     "globals": "^16.4.0",
     "react": "^18.2.0",
