@@ -125,23 +125,45 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
     setUploadingImages(prev => ({ ...prev, [index]: true }));
 
     try {
+      // Vérifier la taille du fichier (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Le fichier est trop volumineux (max 5MB)');
+      }
+
+      // Vérifier le type de fichier
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Seules les images sont autorisées');
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${shopId}/temp/${Date.now()}-${index}.${fileExt}`;
+      const fileName = `${shopId}/services/${Date.now()}-${index}.${fileExt}`;
       
-      const { data, error } = await supabase.storage
-        .from('service-images')
+      // Essayer d'abord avec le bucket 'service-images', sinon utiliser 'avatars'
+      let bucketName = 'service-images';
+      let { data, error } = await supabase.storage
+        .from(bucketName)
         .upload(fileName, file);
+
+      // Si le bucket n'existe pas, essayer avec 'avatars'
+      if (error && error.message.includes('not found')) {
+        bucketName = 'avatars';
+        const result = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, file);
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('service-images')
+        .from(bucketName)
         .getPublicUrl(fileName);
 
       updateService(index, 'image_url', publicUrl);
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
-      alert(t.uploadError);
+      alert(error.message || t.uploadError);
     } finally {
       setUploadingImages(prev => ({ ...prev, [index]: false }));
     }
@@ -152,20 +174,32 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
 
     setLoading(true);
     try {
+      // Vérifier que tous les services ont un nom
+      const invalidServices = services.filter(s => !s.name.trim());
+      if (invalidServices.length > 0) {
+        alert('Veuillez donner un nom à tous les services');
+        return;
+      }
+
       // Supprimer les services existants pour cette étape d'onboarding
-      await supabase
+      const { error: deleteError } = await supabase
         .from('services')
         .delete()
         .eq('shop_id', shopId);
+
+      if (deleteError) {
+        console.error('Erreur lors de la suppression:', deleteError);
+        // Continue même si la suppression échoue
+      }
 
       // Créer les nouveaux services
       const servicesToInsert = services.map(service => ({
         shop_id: shopId,
         category_id: service.category_id,
-        name: service.name,
-        description: service.description,
-        base_price: service.base_price,
-        base_duration: service.base_duration,
+        name: service.name.trim(),
+        description: service.description.trim(),
+        base_price: Number(service.base_price) || 0,
+        base_duration: Number(service.base_duration) || 30,
         image_url: service.image_url || null,
         is_active: true
       }));
@@ -175,56 +209,16 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
         .insert(servicesToInsert)
         .select();
 
-      if (error) throw error;
-
-      // Déplacer les images du dossier temp vers le dossier final
-      for (let i = 0; i < services.length; i++) {
-        const service = services[i];
-        if (service.image_url && insertedServices && insertedServices[i]) {
-          const tempPath = service.image_url.split('/').pop();
-          const finalPath = `${shopId}/services/${insertedServices[i].id}`;
-          
-          try {
-            // Copier l'image vers le nouveau chemin
-            const { data: fileData, error: downloadError } = await supabase.storage
-              .from('service-images')
-              .download(`${shopId}/temp/${tempPath}`);
-
-            if (downloadError) throw downloadError;
-
-            // Uploader vers le nouveau chemin
-            const { error: uploadError } = await supabase.storage
-              .from('service-images')
-              .upload(`${finalPath}`, fileData);
-
-            if (uploadError) throw uploadError;
-
-            // Supprimer l'ancien fichier temp
-            await supabase.storage
-              .from('service-images')
-              .remove([`${shopId}/temp/${tempPath}`]);
-
-            // Mettre à jour l'URL dans la base de données
-            const { data: { publicUrl } } = supabase.storage
-              .from('service-images')
-              .getPublicUrl(finalPath);
-
-            await supabase
-              .from('services')
-              .update({ image_url: publicUrl })
-              .eq('id', insertedServices[i].id);
-
-          } catch (imageError) {
-            console.error('Erreur lors du déplacement de l\'image:', imageError);
-            // Continue même si l'image ne peut pas être déplacée
-          }
-        }
+      if (error) {
+        console.error('Erreur lors de l\'insertion:', error);
+        throw new Error(`Erreur lors de la sauvegarde: ${error.message}`);
       }
 
+      console.log('Services sauvegardés avec succès:', insertedServices);
       onNext();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde des services');
+      alert(error.message || 'Erreur lors de la sauvegarde des services');
     } finally {
       setLoading(false);
     }
