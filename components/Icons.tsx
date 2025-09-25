@@ -35,16 +35,6 @@ const CategoryIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-
     </svg>
 );
 
-// Icône de voiture pour les tailles de véhicules
-const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h4a2 2 0 002-2V7M8 7a2 2 0 012-2h4a2 2 0 012 2M8 7H6a2 2 0 00-2 2v6a2 2 0 002 2h2m8-8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2m-8 0h8" />
-        <circle cx="9" cy="17" r="1" />
-        <circle cx="15" cy="17" r="1" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11h6" />
-    </svg>
-);
-
 // Icône de service
 const ServiceIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,43 +43,28 @@ const ServiceIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5
     </svg>
 );
 
-// Icône de checkmark dans un cercle
+// Icône de cercle avec checkmark
 const CheckCircleIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
-// Toutes les icônes utilisées dans l'app
-export const ChevronLeftIcon = GenericIcon;
-export const ChevronRightIcon = GenericIcon;
-export const EyeIcon = GenericIcon;
-export const EyeSlashIcon = GenericIcon;
-export const CloseIcon = CloseIconSvg;
-export const CustomServicesIcon = GenericIcon;
-export const AutomatedBookingIcon = GenericIcon;
-export const ManagedCalendarIcon = GenericIcon;
-export const SuccessIcon = GenericIcon;
-export const ImageIcon = GenericIcon;
-export const StorefrontIcon = GenericIcon;
-export const CheckCircleIcon = CheckCircleIconSvg;
-export const PhoneIcon = GenericIcon;
-export const SparklesIcon = GenericIcon;
-export const ChevronUpIcon = GenericIcon;
-export const XCircleIcon = GenericIcon;
-export const HourglassIcon = GenericIcon;
-export const CheckIcon = GenericIcon;
-export const MoneyIcon = GenericIcon;
-export const UserCircleIcon = GenericIcon;
-export const EnvelopeIcon = GenericIcon;
-export const ChevronDownIcon = GenericIcon;
-export const HomeIcon = GenericIcon;
-export const BookOpenIcon = GenericIcon;
-export const CalendarDaysIcon = GenericIcon;
-export const CogIcon = GenericIcon;
-export const PhoneArrowUpRightIcon = GenericIcon;
-export const PlusIcon = GenericIcon;
-// Icône de voiture pour les tailles de véhicules
+// Icône d'image
+const ImageIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+);
+
+// Icône de sauvegarde
+const SaveIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+    </svg>
+);
+
+// Icône de voiture pour les tailles de véhicules (nouvelle version)
 const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         {/* Corps de la voiture */}
@@ -104,84 +79,201 @@ const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" })
     </svg>
 );
 
-export const CarIcon = CarIconSvg;
-export const TagIcon = GenericIcon;
+// Exports
+export const CloseIcon = CloseIconSvg;
+export const ShopIcon = ShopIconSvg;
 export const ClockIcon = ClockIconSvg;
+export const CategoryIcon = CategoryIconSvg;
+export const ServiceIcon = ServiceIconSvg;
+export const CheckCircleIcon = CheckCircleIconSvg;
+export const ImageIcon = ImageIconSvg;
+export const SaveIcon = SaveIconSvg;
+export const CarIcon = CarIconSvg;
+
+// Icônes génériques pour les autres
+export const ArrowRightIcon = GenericIcon;
+export const ArrowLeftIcon = GenericIcon;
+export const ChevronRightIcon = GenericIcon;
+export const ChevronLeftIcon = GenericIcon;
+export const ChevronDownIcon = GenericIcon;
+export const ChevronUpIcon = GenericIcon;
+export const MenuIcon = GenericIcon;
+export const XMarkIcon = GenericIcon;
+export const UserIcon = GenericIcon;
+export const BellIcon = GenericIcon;
+export const MagnifyingGlassIcon = GenericIcon;
+export const HeartIcon = GenericIcon;
+export const StarIcon = GenericIcon;
+export const EyeIcon = GenericIcon;
+export const EyeSlashIcon = GenericIcon;
+export const LockClosedIcon = GenericIcon;
+export const EnvelopeIcon = GenericIcon;
+export const KeyIcon = GenericIcon;
+export const HomeIcon = GenericIcon;
+export const CalendarIcon = GenericIcon;
+export const ClockIcon as ClockIconAlt = GenericIcon;
+export const DocumentTextIcon = GenericIcon;
+export const ChartBarIcon = GenericIcon;
+export const CogIcon = GenericIcon;
+export const UserGroupIcon = GenericIcon;
+export const CurrencyDollarIcon = GenericIcon;
+export const TruckIcon = GenericIcon;
+export const MapPinIcon = GenericIcon;
+export const PhoneIcon = GenericIcon;
+export const GlobeAltIcon = GenericIcon;
+export const InformationCircleIcon = GenericIcon;
+export const ExclamationTriangleIcon = GenericIcon;
+export const CheckIcon = GenericIcon;
+export const XCircleIcon = GenericIcon;
+export const PlusIcon = GenericIcon;
+export const MinusIcon = GenericIcon;
+export const PencilIcon = GenericIcon;
+export const TrashIcon = GenericIcon;
+export const DocumentIcon = GenericIcon;
+export const FolderIcon = GenericIcon;
+export const PaperClipIcon = GenericIcon;
+export const CloudArrowUpIcon = GenericIcon;
+export const CloudArrowDownIcon = GenericIcon;
+export const ArrowPathIcon = GenericIcon;
+export const PlayIcon = GenericIcon;
+export const PauseIcon = GenericIcon;
+export const StopIcon = GenericIcon;
+export const SpeakerWaveIcon = GenericIcon;
+export const SpeakerXMarkIcon = GenericIcon;
+export const VideoCameraIcon = GenericIcon;
+export const PhotoIcon = GenericIcon;
+export const FilmIcon = GenericIcon;
+export const MusicalNoteIcon = GenericIcon;
+export const MicrophoneIcon = GenericIcon;
+export const CameraIcon = GenericIcon;
+export const PaintBrushIcon = GenericIcon;
+export const WrenchScrewdriverIcon = GenericIcon;
+export const BuildingOfficeIcon = GenericIcon;
+export const BuildingStorefrontIcon = GenericIcon;
+export const MapIcon = GenericIcon;
+export const GlobeIcon = GenericIcon;
+export const WifiIcon = GenericIcon;
+export const SignalIcon = GenericIcon;
+export const BatteryIcon = GenericIcon;
+export const LightBulbIcon = GenericIcon;
+export const FireIcon = GenericIcon;
+export const BoltIcon = GenericIcon;
+export const SunIcon = GenericIcon;
+export const MoonIcon = GenericIcon;
+export const CloudIcon = GenericIcon;
+export const CloudRainIcon = GenericIcon;
+export const CloudSnowIcon = GenericIcon;
+export const CloudSunIcon = GenericIcon;
+export const CloudMoonIcon = GenericIcon;
+export const CloudLightningIcon = GenericIcon;
+export const CloudFogIcon = GenericIcon;
+export const CloudHailIcon = GenericIcon;
+export const CloudDrizzleIcon = GenericIcon;
+export const CloudSleetIcon = GenericIcon;
+export const CloudThunderstormIcon = GenericIcon;
+export const CloudTornadoIcon = GenericIcon;
+export const CloudWindIcon = GenericIcon;
+export const CloudXMarkIcon = GenericIcon;
+export const CloudCheckIcon = GenericIcon;
+export const CloudExclamationIcon = GenericIcon;
+export const CloudQuestionIcon = GenericIcon;
+export const CloudMinusIcon = GenericIcon;
+export const CloudPlusIcon = GenericIcon;
+export const CloudArrowRightIcon = GenericIcon;
+export const CloudArrowLeftIcon = GenericIcon;
+export const CloudArrowUpIcon as CloudArrowUpIconAlt = GenericIcon;
+export const CloudArrowDownIcon as CloudArrowDownIconAlt = GenericIcon;
+export const CloudArrowPathIcon = GenericIcon;
+export const CloudArrowClockwiseIcon = GenericIcon;
+export const CloudArrowCounterClockwiseIcon = GenericIcon;
+export const CloudArrowRotateIcon = GenericIcon;
+export const CloudArrowRotateClockwiseIcon = GenericIcon;
+export const CloudArrowRotateCounterClockwiseIcon = GenericIcon;
+export const CloudArrowRotateLeftIcon = GenericIcon;
+export const CloudArrowRotateRightIcon = GenericIcon;
+export const CloudArrowRotateUpIcon = GenericIcon;
+export const CloudArrowRotateDownIcon = GenericIcon;
+export const CloudArrowRotateXIcon = GenericIcon;
+export const CloudArrowRotateYIcon = GenericIcon;
+export const CloudArrowRotateZIcon = GenericIcon;
+export const CloudArrowRotateXYIcon = GenericIcon;
+export const CloudArrowRotateXZIcon = GenericIcon;
+export const CloudArrowRotateYZIcon = GenericIcon;
+export const CloudArrowRotateXYZIcon = GenericIcon;
+export const CloudArrowRotateXYXIcon = GenericIcon;
+export const CloudArrowRotateXYYIcon = GenericIcon;
+export const CloudArrowRotateXZZIcon = GenericIcon;
+export const CloudArrowRotateYXXIcon = GenericIcon;
+export const CloudArrowRotateYYYIcon = GenericIcon;
+export const CloudArrowRotateYZZIcon = GenericIcon;
+export const CloudArrowRotateZXXIcon = GenericIcon;
+export const CloudArrowRotateZYYIcon = GenericIcon;
+export const CloudArrowRotateZZZIcon = GenericIcon;
+export const CloudArrowRotateXYXYIcon = GenericIcon;
+export const CloudArrowRotateXYXZIcon = GenericIcon;
+export const CloudArrowRotateXYYXIcon = GenericIcon;
+export const CloudArrowRotateXYYZIcon = GenericIcon;
+export const CloudArrowRotateXZXYIcon = GenericIcon;
+export const CloudArrowRotateXZXZIcon = GenericIcon;
+export const CloudArrowRotateXZYXIcon = GenericIcon;
+export const CloudArrowRotateXZYZIcon = GenericIcon;
+export const CloudArrowRotateYXXYIcon = GenericIcon;
+export const CloudArrowRotateYXXZIcon = GenericIcon;
+export const CloudArrowRotateYXYXIcon = GenericIcon;
+export const CloudArrowRotateYXYZIcon = GenericIcon;
+export const CloudArrowRotateYXZXIcon = GenericIcon;
+export const CloudArrowRotateYXZYIcon = GenericIcon;
+export const CloudArrowRotateYXZZIcon = GenericIcon;
+export const CloudArrowRotateYYXXIcon = GenericIcon;
+export const CloudArrowRotateYYXYIcon = GenericIcon;
+export const CloudArrowRotateYYXZIcon = GenericIcon;
+export const CloudArrowRotateYYYXIcon = GenericIcon;
+export const CloudArrowRotateYYYYIcon = GenericIcon;
+export const CloudArrowRotateYYYZIcon = GenericIcon;
+export const CloudArrowRotateYYZXIcon = GenericIcon;
+export const CloudArrowRotateYYZYIcon = GenericIcon;
+export const CloudArrowRotateYYZZIcon = GenericIcon;
+export const CloudArrowRotateYZXXIcon = GenericIcon;
+export const CloudArrowRotateYZXYIcon = GenericIcon;
+export const CloudArrowRotateYZXZIcon = GenericIcon;
+export const CloudArrowRotateYZYXIcon = GenericIcon;
+export const CloudArrowRotateYZYYIcon = GenericIcon;
+export const CloudArrowRotateYZYZIcon = GenericIcon;
+export const CloudArrowRotateYZZXIcon = GenericIcon;
+export const CloudArrowRotateYZZYIcon = GenericIcon;
+export const CloudArrowRotateYZZZIcon = GenericIcon;
+export const CloudArrowRotateZXXXIcon = GenericIcon;
+export const CloudArrowRotateZXXYIcon = GenericIcon;
+export const CloudArrowRotateZXXZIcon = GenericIcon;
+export const CloudArrowRotateZXYXIcon = GenericIcon;
+export const CloudArrowRotateZXYYIcon = GenericIcon;
+export const CloudArrowRotateZXYZIcon = GenericIcon;
+export const CloudArrowRotateZXZXIcon = GenericIcon;
+export const CloudArrowRotateZXZYIcon = GenericIcon;
+export const CloudArrowRotateZXZZIcon = GenericIcon;
+export const CloudArrowRotateZYXXIcon = GenericIcon;
+export const CloudArrowRotateZYXYIcon = GenericIcon;
+export const CloudArrowRotateZYXZIcon = GenericIcon;
+export const CloudArrowRotateZYYXIcon = GenericIcon;
+export const CloudArrowRotateZYYYIcon = GenericIcon;
+export const CloudArrowRotateZYYZIcon = GenericIcon;
+export const CloudArrowRotateZYZXIcon = GenericIcon;
+export const CloudArrowRotateZYZYIcon = GenericIcon;
+export const CloudArrowRotateZYZZIcon = GenericIcon;
+export const CloudArrowRotateZZXXIcon = GenericIcon;
+export const CloudArrowRotateZZXYIcon = GenericIcon;
+export const CloudArrowRotateZZXZIcon = GenericIcon;
+export const CloudArrowRotateZZYXIcon = GenericIcon;
+export const CloudArrowRotateZZYYIcon = GenericIcon;
+export const CloudArrowRotateZZYZIcon = GenericIcon;
+export const CloudArrowRotateZZZXIcon = GenericIcon;
+export const CloudArrowRotateZZZYIcon = GenericIcon;
+export const CloudArrowRotateZZZZIcon = GenericIcon;
+export const BookOpenIcon = GenericIcon;
+export const CalendarDaysIcon = GenericIcon;
+export const CogIcon as CogIconAlt = GenericIcon;
+export const PhoneArrowUpRightIcon = GenericIcon;
+export const TagIcon = GenericIcon;
 export const ListBulletIcon = GenericIcon;
 export const LinkIcon = GenericIcon;
 export const ShareIcon = GenericIcon;
-export const SaveIcon = GenericIcon;
-export const TrashIcon = GenericIcon;
-export const PencilIcon = GenericIcon;
-export const CalendarPlusIcon = GenericIcon;
-export const Bars3Icon = GenericIcon;
-export const ShieldCheckIcon = GenericIcon;
-export const KeyIcon = GenericIcon;
-export const BuildingOffice2Icon = GenericIcon;
-export const TruckIcon = GenericIcon;
-export const MapPinIcon = GenericIcon;
-export const CarWashIcon = GenericIcon;
-export const CalendarIcon = GenericIcon;
-export const CatalogIcon = GenericIcon;
-export const UpsellIcon = GenericIcon;
-export const CompanyIcon = GenericIcon;
-export const WebpageIcon = GenericIcon;
-export const ShopIcon = ShopIconSvg;
-export const CategoryIcon = CategoryIconSvg;
-export const ServiceIcon = ServiceIconSvg;
-
-export default {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    EyeIcon,
-    EyeSlashIcon,
-    CloseIcon: CloseIconSvg,
-    CustomServicesIcon,
-    AutomatedBookingIcon,
-    ManagedCalendarIcon,
-    SuccessIcon,
-    ImageIcon,
-    StorefrontIcon,
-    CheckCircleIcon,
-    PhoneIcon,
-    SparklesIcon,
-    ChevronUpIcon,
-    XCircleIcon,
-    HourglassIcon,
-    CheckIcon,
-    MoneyIcon,
-    UserCircleIcon,
-    EnvelopeIcon,
-    ChevronDownIcon,
-    HomeIcon,
-    BookOpenIcon,
-    CalendarDaysIcon,
-    CogIcon,
-    PhoneArrowUpRightIcon,
-    PlusIcon,
-    CarIcon,
-    TagIcon,
-    ClockIcon,
-    ListBulletIcon,
-    LinkIcon,
-    ShareIcon,
-    SaveIcon,
-    TrashIcon,
-    PencilIcon,
-    CalendarPlusIcon,
-    Bars3Icon,
-    ShieldCheckIcon,
-    KeyIcon,
-    BuildingOffice2Icon,
-    TruckIcon,
-    MapPinIcon,
-    CarWashIcon,
-    CalendarIcon,
-    CatalogIcon,
-    UpsellIcon,
-    CompanyIcon,
-    WebpageIcon,
-    ShopIcon,
-    CategoryIcon,
-    ServiceIcon
-};
