@@ -35,7 +35,7 @@ const CategoryIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-
     </svg>
 );
 
-// Icône de voiture
+// Icône de voiture pour les tailles de véhicules
 const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h4a2 2 0 002-2V7M8 7a2 2 0 012-2h4a2 2 0 012 2M8 7H6a2 2 0 00-2 2v6a2 2 0 002 2h2m8-8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2m-8 0h8" />
@@ -89,7 +89,7 @@ export const CalendarDaysIcon = GenericIcon;
 export const CogIcon = GenericIcon;
 export const PhoneArrowUpRightIcon = GenericIcon;
 export const PlusIcon = GenericIcon;
-export const CarIcon = CarIconSvg;
+export { default as CarIcon } from './CarIcon';
 export const TagIcon = GenericIcon;
 export const ClockIcon = ClockIconSvg;
 export const ListBulletIcon = GenericIcon;
