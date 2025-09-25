@@ -64,7 +64,7 @@ const SaveIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }
     </svg>
 );
 
-// Icône de voiture pour les tailles de véhicules (nouvelle version)
+// Icône de voiture pour les tailles de véhicules
 const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         {/* Corps de la voiture */}
@@ -79,7 +79,7 @@ const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" })
     </svg>
 );
 
-// Exports
+// Exports des icônes spécifiques
 export const CloseIcon = CloseIconSvg;
 export const ShopIcon = ShopIconSvg;
 export const ClockIcon = ClockIconSvg;
@@ -90,7 +90,7 @@ export const ImageIcon = ImageIconSvg;
 export const SaveIcon = SaveIconSvg;
 export const CarIcon = CarIconSvg;
 
-// Icônes génériques pour les autres
+// Toutes les autres icônes utilisent l'icône générique
 export const ArrowRightIcon = GenericIcon;
 export const ArrowLeftIcon = GenericIcon;
 export const ChevronRightIcon = GenericIcon;
@@ -111,7 +111,6 @@ export const EnvelopeIcon = GenericIcon;
 export const KeyIcon = GenericIcon;
 export const HomeIcon = GenericIcon;
 export const CalendarIcon = GenericIcon;
-export const ClockIconAlt = GenericIcon;
 export const DocumentTextIcon = GenericIcon;
 export const ChartBarIcon = GenericIcon;
 export const CogIcon = GenericIcon;
@@ -181,8 +180,6 @@ export const CloudMinusIcon = GenericIcon;
 export const CloudPlusIcon = GenericIcon;
 export const CloudArrowRightIcon = GenericIcon;
 export const CloudArrowLeftIcon = GenericIcon;
-export const CloudArrowUpIcon as CloudArrowUpIconAlt = GenericIcon;
-export const CloudArrowDownIcon as CloudArrowDownIconAlt = GenericIcon;
 export const CloudArrowPathIcon = GenericIcon;
 export const CloudArrowClockwiseIcon = GenericIcon;
 export const CloudArrowCounterClockwiseIcon = GenericIcon;
@@ -196,82 +193,8 @@ export const CloudArrowRotateDownIcon = GenericIcon;
 export const CloudArrowRotateXIcon = GenericIcon;
 export const CloudArrowRotateYIcon = GenericIcon;
 export const CloudArrowRotateZIcon = GenericIcon;
-export const CloudArrowRotateXYIcon = GenericIcon;
-export const CloudArrowRotateXZIcon = GenericIcon;
-export const CloudArrowRotateYZIcon = GenericIcon;
-export const CloudArrowRotateXYZIcon = GenericIcon;
-export const CloudArrowRotateXYXIcon = GenericIcon;
-export const CloudArrowRotateXYYIcon = GenericIcon;
-export const CloudArrowRotateXZZIcon = GenericIcon;
-export const CloudArrowRotateYXXIcon = GenericIcon;
-export const CloudArrowRotateYYYIcon = GenericIcon;
-export const CloudArrowRotateYZZIcon = GenericIcon;
-export const CloudArrowRotateZXXIcon = GenericIcon;
-export const CloudArrowRotateZYYIcon = GenericIcon;
-export const CloudArrowRotateZZZIcon = GenericIcon;
-export const CloudArrowRotateXYXYIcon = GenericIcon;
-export const CloudArrowRotateXYXZIcon = GenericIcon;
-export const CloudArrowRotateXYYXIcon = GenericIcon;
-export const CloudArrowRotateXYYZIcon = GenericIcon;
-export const CloudArrowRotateXZXYIcon = GenericIcon;
-export const CloudArrowRotateXZXZIcon = GenericIcon;
-export const CloudArrowRotateXZYXIcon = GenericIcon;
-export const CloudArrowRotateXZYZIcon = GenericIcon;
-export const CloudArrowRotateYXXYIcon = GenericIcon;
-export const CloudArrowRotateYXXZIcon = GenericIcon;
-export const CloudArrowRotateYXYXIcon = GenericIcon;
-export const CloudArrowRotateYXYZIcon = GenericIcon;
-export const CloudArrowRotateYXZXIcon = GenericIcon;
-export const CloudArrowRotateYXZYIcon = GenericIcon;
-export const CloudArrowRotateYXZZIcon = GenericIcon;
-export const CloudArrowRotateYYXXIcon = GenericIcon;
-export const CloudArrowRotateYYXYIcon = GenericIcon;
-export const CloudArrowRotateYYXZIcon = GenericIcon;
-export const CloudArrowRotateYYYXIcon = GenericIcon;
-export const CloudArrowRotateYYYYIcon = GenericIcon;
-export const CloudArrowRotateYYYZIcon = GenericIcon;
-export const CloudArrowRotateYYZXIcon = GenericIcon;
-export const CloudArrowRotateYYZYIcon = GenericIcon;
-export const CloudArrowRotateYYZZIcon = GenericIcon;
-export const CloudArrowRotateYZXXIcon = GenericIcon;
-export const CloudArrowRotateYZXYIcon = GenericIcon;
-export const CloudArrowRotateYZXZIcon = GenericIcon;
-export const CloudArrowRotateYZYXIcon = GenericIcon;
-export const CloudArrowRotateYZYYIcon = GenericIcon;
-export const CloudArrowRotateYZYZIcon = GenericIcon;
-export const CloudArrowRotateYZZXIcon = GenericIcon;
-export const CloudArrowRotateYZZYIcon = GenericIcon;
-export const CloudArrowRotateYZZZIcon = GenericIcon;
-export const CloudArrowRotateZXXXIcon = GenericIcon;
-export const CloudArrowRotateZXXYIcon = GenericIcon;
-export const CloudArrowRotateZXXZIcon = GenericIcon;
-export const CloudArrowRotateZXYXIcon = GenericIcon;
-export const CloudArrowRotateZXYYIcon = GenericIcon;
-export const CloudArrowRotateZXYZIcon = GenericIcon;
-export const CloudArrowRotateZXZXIcon = GenericIcon;
-export const CloudArrowRotateZXZYIcon = GenericIcon;
-export const CloudArrowRotateZXZZIcon = GenericIcon;
-export const CloudArrowRotateZYXXIcon = GenericIcon;
-export const CloudArrowRotateZYXYIcon = GenericIcon;
-export const CloudArrowRotateZYXZIcon = GenericIcon;
-export const CloudArrowRotateZYYXIcon = GenericIcon;
-export const CloudArrowRotateZYYYIcon = GenericIcon;
-export const CloudArrowRotateZYYZIcon = GenericIcon;
-export const CloudArrowRotateZYZXIcon = GenericIcon;
-export const CloudArrowRotateZYZYIcon = GenericIcon;
-export const CloudArrowRotateZYZZIcon = GenericIcon;
-export const CloudArrowRotateZZXXIcon = GenericIcon;
-export const CloudArrowRotateZZXYIcon = GenericIcon;
-export const CloudArrowRotateZZXZIcon = GenericIcon;
-export const CloudArrowRotateZZYXIcon = GenericIcon;
-export const CloudArrowRotateZZYYIcon = GenericIcon;
-export const CloudArrowRotateZZYZIcon = GenericIcon;
-export const CloudArrowRotateZZZXIcon = GenericIcon;
-export const CloudArrowRotateZZZYIcon = GenericIcon;
-export const CloudArrowRotateZZZZIcon = GenericIcon;
 export const BookOpenIcon = GenericIcon;
 export const CalendarDaysIcon = GenericIcon;
-export const CogIconAlt = GenericIcon;
 export const PhoneArrowUpRightIcon = GenericIcon;
 export const TagIcon = GenericIcon;
 export const ListBulletIcon = GenericIcon;
