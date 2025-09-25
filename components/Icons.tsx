@@ -38,9 +38,10 @@ const CategoryIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-
 // Icône de voiture
 const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 17a2 2 0 002 2h1.5a2 2 0 002-2v-1h2v1a2 2 0 002 2H16a2 2 0 002-2v-1h1a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h0zm0 0V9h14v8M7 12h10" />
-        <circle cx="8.5" cy="15.5" r="1.5" />
-        <circle cx="15.5" cy="15.5" r="1.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h4a2 2 0 002-2V7M8 7a2 2 0 012-2h4a2 2 0 012 2M8 7H6a2 2 0 00-2 2v6a2 2 0 002 2h2m8-8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2m-8 0h8" />
+        <circle cx="9" cy="17" r="1" />
+        <circle cx="15" cy="17" r="1" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11h6" />
     </svg>
 );
 

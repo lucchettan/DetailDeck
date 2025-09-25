@@ -79,7 +79,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
           // Créer un service par défaut pour chaque catégorie
           const defaultServices = categoriesData?.map(category => ({
             name: category.name === 'Intérieur' ? 'Nettoyage intérieur complet' : 'Lavage extérieur',
-            description: category.name === 'Intérieur' 
+            description: category.name === 'Intérieur'
               ? 'Aspirateur, nettoyage des sièges et tableau de bord'
               : 'Lavage carrosserie, jantes et vitres',
             category_id: category.id,
@@ -126,7 +126,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${shopId}/services/${Date.now()}.${fileExt}`;
+      const fileName = `${shopId}/temp/${Date.now()}-${index}.${fileExt}`;
       
       const { data, error } = await supabase.storage
         .from('service-images')
@@ -141,7 +141,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
       updateService(index, 'image_url', publicUrl);
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
-      alert('Erreur lors de l\'upload de l\'image');
+      alert(t.uploadError);
     } finally {
       setUploadingImages(prev => ({ ...prev, [index]: false }));
     }
@@ -170,11 +170,56 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
         is_active: true
       }));
 
-      const { error } = await supabase
+      const { data: insertedServices, error } = await supabase
         .from('services')
-        .insert(servicesToInsert);
+        .insert(servicesToInsert)
+        .select();
 
       if (error) throw error;
+
+      // Déplacer les images du dossier temp vers le dossier final
+      for (let i = 0; i < services.length; i++) {
+        const service = services[i];
+        if (service.image_url && insertedServices && insertedServices[i]) {
+          const tempPath = service.image_url.split('/').pop();
+          const finalPath = `${shopId}/services/${insertedServices[i].id}`;
+          
+          try {
+            // Copier l'image vers le nouveau chemin
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from('service-images')
+              .download(`${shopId}/temp/${tempPath}`);
+
+            if (downloadError) throw downloadError;
+
+            // Uploader vers le nouveau chemin
+            const { error: uploadError } = await supabase.storage
+              .from('service-images')
+              .upload(`${finalPath}`, fileData);
+
+            if (uploadError) throw uploadError;
+
+            // Supprimer l'ancien fichier temp
+            await supabase.storage
+              .from('service-images')
+              .remove([`${shopId}/temp/${tempPath}`]);
+
+            // Mettre à jour l'URL dans la base de données
+            const { data: { publicUrl } } = supabase.storage
+              .from('service-images')
+              .getPublicUrl(finalPath);
+
+            await supabase
+              .from('services')
+              .update({ image_url: publicUrl })
+              .eq('id', insertedServices[i].id);
+
+          } catch (imageError) {
+            console.error('Erreur lors du déplacement de l\'image:', imageError);
+            // Continue même si l'image ne peut pas être déplacée
+          }
+        }
+      }
 
       onNext();
     } catch (error) {
@@ -193,7 +238,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Créez vos premiers services
+          {t.createFirstServices}
         </h2>
         <p className="text-lg text-gray-600">
           Définissez les services que vous proposez. Vous pourrez en ajouter d'autres plus tard.
@@ -300,7 +345,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Photo du service
+                    {t.servicePhoto}
                   </label>
                   <div className="flex items-center space-x-4">
                     {service.image_url ? (
@@ -323,7 +368,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
                         <ImageIcon className="w-8 h-8 text-gray-400" />
                       </div>
                     )}
-                    
+
                     <div className="flex-1">
                       <input
                         type="file"
@@ -338,19 +383,18 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
                       />
                       <label
                         htmlFor={`image-upload-${index}`}
-                        className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 ${
-                          uploadingImages[index] ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 ${uploadingImages[index] ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                       >
                         {uploadingImages[index] ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                            Upload en cours...
+                            {t.uploadInProgress}
                           </>
                         ) : (
                           <>
                             <ImageIcon className="w-4 h-4 mr-2" />
-                            {service.image_url ? 'Changer la photo' : 'Ajouter une photo'}
+                            {service.image_url ? t.changePhoto : t.addPhoto}
                           </>
                         )}
                       </label>
@@ -390,8 +434,8 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
           onClick={saveServices}
           disabled={!canProceed || loading}
           className={`px-8 py-3 rounded-lg font-medium transition-colors ${canProceed && !loading
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-green-600 text-white hover:bg-green-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
         >
           {loading ? 'Sauvegarde...' : 'Terminer l\'onboarding'}

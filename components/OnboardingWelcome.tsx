@@ -170,11 +170,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
             >
               {/* Status Badge */}
               <div className="absolute top-4 right-4">
-                {step.completed ? (
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircleIcon className="w-5 h-5 text-white" />
-                  </div>
-                ) : (
+                {!step.completed && (
                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-gray-600">
                       {steps.findIndex(s => s.id === step.id) + 1}

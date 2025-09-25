@@ -356,6 +356,12 @@ export const translations = {
     allRightsReserved: 'All rights reserved',
     addNewServiceCategory: 'Add New Service Category',
     addNewVehicleSize: 'Add New Vehicle Size',
+    createFirstServices: 'Create your first services',
+    servicePhoto: 'Service photo',
+    addPhoto: 'Add photo',
+    changePhoto: 'Change photo',
+    uploadInProgress: 'Upload in progress...',
+    uploadError: 'Error uploading image',
   },
   fr: {
     // Header & Auth
@@ -714,6 +720,12 @@ export const translations = {
     allRightsReserved: 'Tous droits réservés',
     addNewServiceCategory: 'Ajouter une nouvelle catégorie',
     addNewVehicleSize: 'Ajouter une nouvelle taille',
+    createFirstServices: 'Créez vos premiers services',
+    servicePhoto: 'Photo du service',
+    addPhoto: 'Ajouter une photo',
+    changePhoto: 'Changer la photo',
+    uploadInProgress: 'Upload en cours...',
+    uploadError: 'Erreur lors de l\'upload de l\'image',
   },
   es: {
     // Header & Auth
@@ -1072,5 +1084,11 @@ export const translations = {
     allRightsReserved: 'Todos los derechos reservados',
     addNewServiceCategory: 'Añadir nueva categoría',
     addNewVehicleSize: 'Añadir nuevo tamaño',
+    createFirstServices: 'Crea tus primeros servicios',
+    servicePhoto: 'Foto del servicio',
+    addPhoto: 'Añadir foto',
+    changePhoto: 'Cambiar foto',
+    uploadInProgress: 'Subida en progreso...',
+    uploadError: 'Error al subir la imagen',
   }
 };
