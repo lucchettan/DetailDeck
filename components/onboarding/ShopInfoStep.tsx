@@ -9,11 +9,17 @@ interface ShopInfoData {
   name: string;
   phone: string;
   email: string;
-  businessType: 'local' | 'mobile';
+  isLocal: boolean;
+  isMobile: boolean;
   addressLine1: string;
   addressCity: string;
   addressPostalCode: string;
   addressCountry: string;
+  serviceZones: Array<{
+    city: string;
+    radius: number;
+    unit: 'km' | 'miles';
+  }>;
 }
 
 interface ShopInfoStepProps {
@@ -37,11 +43,13 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
     name: '',
     phone: '',
     email: user?.email || '',
-    businessType: 'local',
+    isLocal: true,
+    isMobile: false,
     addressLine1: '',
     addressCity: '',
     addressPostalCode: '',
-    addressCountry: 'France'
+    addressCountry: 'France',
+    serviceZones: []
   });
 
   useEffect(() => {
@@ -64,11 +72,13 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
           name: shop.name || '',
           phone: shop.phone || '',
           email: shop.email || user.email || '',
-          businessType: shop.business_type || 'local',
+          isLocal: shop.business_type === 'local' || shop.business_type === 'both',
+          isMobile: shop.business_type === 'mobile' || shop.business_type === 'both',
           addressLine1: shop.address_line1 || '',
           addressCity: shop.address_city || '',
           addressPostalCode: shop.address_postal_code || '',
-          addressCountry: shop.address_country || 'France'
+          addressCountry: shop.address_country || 'France',
+          serviceZones: shop.service_zones || []
         });
       }
     } catch (error) {
@@ -89,8 +99,14 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       if (!formData.name.trim()) {
         throw new Error('Le nom de l\'entreprise est requis');
       }
-      if (!formData.addressLine1.trim()) {
-        throw new Error('L\'adresse est requise');
+      if (formData.isLocal && !formData.addressLine1.trim()) {
+        throw new Error('L\'adresse est requise pour un service local');
+      }
+      if (formData.isMobile && formData.serviceZones.length === 0) {
+        throw new Error('Au moins une zone d\'intervention est requise pour un service mobile');
+      }
+      if (!formData.isLocal && !formData.isMobile) {
+        throw new Error('Veuillez sélectionner au moins un type de service (local ou mobile)');
       }
 
       // Vérifier si le shop existe déjà
@@ -100,16 +116,25 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         .eq('owner_id', user.id)
         .single();
 
+      // Déterminer le type de business
+      let businessType = 'local';
+      if (formData.isLocal && formData.isMobile) {
+        businessType = 'both';
+      } else if (formData.isMobile) {
+        businessType = 'mobile';
+      }
+
       const shopData = {
         owner_id: user.id,
         name: formData.name.trim(),
         phone: formData.phone.trim() || null,
         email: formData.email.trim() || null,
-        business_type: formData.businessType,
-        address_line1: formData.addressLine1.trim(),
-        address_city: formData.addressCity.trim() || null,
-        address_postal_code: formData.addressPostalCode.trim() || null,
-        address_country: formData.addressCountry.trim() || 'France'
+        business_type: businessType,
+        address_line1: formData.isLocal ? formData.addressLine1.trim() : null,
+        address_city: formData.isLocal ? formData.addressCity.trim() || null : null,
+        address_postal_code: formData.isLocal ? formData.addressPostalCode.trim() || null : null,
+        address_country: formData.isLocal ? formData.addressCountry.trim() || 'France' : null,
+        service_zones: formData.isMobile ? formData.serviceZones : null
       };
 
       if (existingShop) {
@@ -140,8 +165,31 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
     }
   };
 
-  const updateField = (field: keyof ShopInfoData, value: string) => {
+  const updateField = (field: keyof ShopInfoData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addServiceZone = () => {
+    setFormData(prev => ({
+      ...prev,
+      serviceZones: [...prev.serviceZones, { city: '', radius: 10, unit: 'km' }]
+    }));
+  };
+
+  const removeServiceZone = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceZones: prev.serviceZones.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateServiceZone = (index: number, field: 'city' | 'radius' | 'unit', value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceZones: prev.serviceZones.map((zone, i) =>
+        i === index ? { ...zone, [field]: value } : zone
+      )
+    }));
   };
 
   if (loading) {
@@ -218,116 +266,176 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         {/* Type d'entreprise */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Type d'entreprise
+            Type de service
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className={`
-              flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all
-              ${formData.businessType === 'local'
+          <div className="space-y-4">
+            {/* Service Local */}
+            <div className={`
+              p-4 border-2 rounded-lg transition-all
+              ${formData.isLocal
                 ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
+                : 'border-gray-200'
               }
             `}>
-              <input
-                type="radio"
-                name="businessType"
-                value="local"
-                checked={formData.businessType === 'local'}
-                onChange={(e) => updateField('businessType', e.target.value as 'local' | 'mobile')}
-                className="sr-only"
-              />
-              <div className="flex items-center">
-                <div className={`
-                  w-4 h-4 rounded-full border-2 mr-3
-                  ${formData.businessType === 'local'
-                    ? 'border-blue-500 bg-blue-500'
-                    : 'border-gray-300'
-                  }
-                `}>
-                  {formData.businessType === 'local' && (
-                    <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
-                  )}
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isLocal}
+                  onChange={(e) => updateField('isLocal', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <div className="font-medium text-gray-900">Service Local</div>
+                  <div className="text-sm text-gray-500">Vous accueillez vos clients dans un local</div>
                 </div>
-                <div>
-                  <div className="font-medium text-gray-900">Entreprise locale</div>
-                  <div className="text-sm text-gray-500">Les clients viennent chez vous</div>
+              </label>
+              
+              {formData.isLocal && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Adresse du local *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.addressLine1}
+                      onChange={(e) => updateField('addressLine1', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="123 Rue de la Paix"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressCity}
+                        onChange={(e) => updateField('addressCity', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Paris"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Code postal
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressPostalCode}
+                        onChange={(e) => updateField('addressPostalCode', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="75001"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Pays
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressCountry}
+                        onChange={(e) => updateField('addressCountry', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="France"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </label>
+              )}
+            </div>
 
-            <label className={`
-              flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all
-              ${formData.businessType === 'mobile'
+            {/* Service Mobile */}
+            <div className={`
+              p-4 border-2 rounded-lg transition-all
+              ${formData.isMobile
                 ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
+                : 'border-gray-200'
               }
             `}>
-              <input
-                type="radio"
-                name="businessType"
-                value="mobile"
-                checked={formData.businessType === 'mobile'}
-                onChange={(e) => updateField('businessType', e.target.value as 'local' | 'mobile')}
-                className="sr-only"
-              />
-              <div className="flex items-center">
-                <div className={`
-                  w-4 h-4 rounded-full border-2 mr-3
-                  ${formData.businessType === 'mobile'
-                    ? 'border-blue-500 bg-blue-500'
-                    : 'border-gray-300'
-                  }
-                `}>
-                  {formData.businessType === 'mobile' && (
-                    <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isMobile}
+                  onChange={(e) => updateField('isMobile', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3">
+                  <div className="font-medium text-gray-900">Service Mobile</div>
+                  <div className="text-sm text-gray-500">Vous vous déplacez chez vos clients</div>
+                </div>
+              </label>
+              
+              {formData.isMobile && (
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Zones d'intervention *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addServiceZone}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      + Ajouter une zone
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {formData.serviceZones.map((zone, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={zone.city}
+                            onChange={(e) => updateServiceZone(index, 'city', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Ville (ex: Paris)"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={zone.radius}
+                            onChange={(e) => updateServiceZone(index, 'radius', parseInt(e.target.value) || 0)}
+                            className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min="1"
+                            max="100"
+                          />
+                          <select
+                            value={zone.unit}
+                            onChange={(e) => updateServiceZone(index, 'unit', e.target.value as 'km' | 'miles')}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="km">km</option>
+                            <option value="miles">miles</option>
+                          </select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeServiceZone(index)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {formData.serviceZones.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">
+                      Ajoutez au moins une zone d'intervention pour votre service mobile
+                    </p>
                   )}
                 </div>
-                <div>
-                  <div className="font-medium text-gray-900">Entreprise mobile</div>
-                  <div className="text-sm text-gray-500">Vous vous déplacez chez les clients</div>
-                </div>
-              </div>
-            </label>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Adresse */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Adresse *
-          </label>
-          <input
-            type="text"
-            value={formData.addressLine1}
-            onChange={(e) => updateField('addressLine1', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-            placeholder="123 Rue Principale"
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              value={formData.addressCity}
-              onChange={(e) => updateField('addressCity', e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ville"
-            />
-            <input
-              type="text"
-              value={formData.addressPostalCode}
-              onChange={(e) => updateField('addressPostalCode', e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Code postal"
-            />
-            <input
-              type="text"
-              value={formData.addressCountry}
-              onChange={(e) => updateField('addressCountry', e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Pays"
-            />
-          </div>
-        </div>
       </div>
 
       {/* Actions */}
