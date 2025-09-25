@@ -38,7 +38,9 @@ const CategoryIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-
 // Icône de voiture
 const CarIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 17a2 2 0 002 2h1.5a2 2 0 002-2v-1h2v1a2 2 0 002 2H16a2 2 0 002-2v-1h1a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h0zm0 0V9h14v8M7 12h10" />
+        <circle cx="8.5" cy="15.5" r="1.5" />
+        <circle cx="15.5" cy="15.5" r="1.5" />
     </svg>
 );
 
@@ -53,7 +55,7 @@ const ServiceIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5
 // Icône de checkmark dans un cercle
 const CheckCircleIconSvg: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
     </svg>
 );
 

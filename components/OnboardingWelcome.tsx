@@ -211,8 +211,6 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
                   `}>
                     {step.completed ? '✅ Terminé' : '⏳ À faire'}
                   </span>
-
-                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
             </div>

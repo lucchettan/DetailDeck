@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ImageIcon } from '../Icons';
 
 interface ServicesStepProps {
   onBack: () => void;
@@ -16,6 +17,7 @@ interface Service {
   category_id: string;
   base_price: number;
   base_duration: number;
+  image_url?: string;
 }
 
 interface Category {
@@ -30,6 +32,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);
+  const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
   useEffect(() => {
     fetchShopAndCategories();
@@ -81,9 +84,10 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
               : 'Lavage carrosserie, jantes et vitres',
             category_id: category.id,
             base_price: category.name === 'Intérieur' ? 25 : 15,
-            base_duration: category.name === 'Intérieur' ? 45 : 30
+            base_duration: category.name === 'Intérieur' ? 45 : 30,
+            image_url: ''
           })) || [];
-          
+
           setServices(defaultServices);
         }
       }
@@ -94,13 +98,14 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
 
   const addService = () => {
     if (categories.length === 0) return;
-    
+
     setServices([...services, {
       name: '',
       description: '',
       category_id: categories[0].id,
       base_price: 20,
-      base_duration: 30
+      base_duration: 30,
+      image_url: ''
     }]);
   };
 
@@ -112,6 +117,34 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
     const updatedServices = [...services];
     updatedServices[index] = { ...updatedServices[index], [field]: value };
     setServices(updatedServices);
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    if (!shopId) return;
+
+    setUploadingImages(prev => ({ ...prev, [index]: true }));
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${shopId}/services/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('service-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(fileName);
+
+      updateService(index, 'image_url', publicUrl);
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      alert('Erreur lors de l\'upload de l\'image');
+    } finally {
+      setUploadingImages(prev => ({ ...prev, [index]: false }));
+    }
   };
 
   const saveServices = async () => {
@@ -133,6 +166,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
         description: service.description,
         base_price: service.base_price,
         base_duration: service.base_duration,
+        image_url: service.image_url || null,
         is_active: true
       }));
 
@@ -151,7 +185,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
     }
   };
 
-  const canProceed = services.length > 0 && services.every(service => 
+  const canProceed = services.length > 0 && services.every(service =>
     service.name.trim() && service.category_id && service.base_price > 0
   );
 
@@ -263,6 +297,69 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
                     placeholder="Décrivez ce service en détail..."
                   />
                 </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Photo du service
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    {service.image_url ? (
+                      <div className="relative">
+                        <img
+                          src={service.image_url}
+                          alt={service.name}
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateService(index, 'image_url', '')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(index, file);
+                        }}
+                        className="hidden"
+                        id={`image-upload-${index}`}
+                        disabled={uploadingImages[index]}
+                      />
+                      <label
+                        htmlFor={`image-upload-${index}`}
+                        className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 ${
+                          uploadingImages[index] ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {uploadingImages[index] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                            Upload en cours...
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-4 h-4 mr-2" />
+                            {service.image_url ? 'Changer la photo' : 'Ajouter une photo'}
+                          </>
+                        )}
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG jusqu'à 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -292,11 +389,10 @@ const ServicesStep: React.FC<ServicesStepProps> = ({ onBack, onNext }) => {
         <button
           onClick={saveServices}
           disabled={!canProceed || loading}
-          className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-            canProceed && !loading
+          className={`px-8 py-3 rounded-lg font-medium transition-colors ${canProceed && !loading
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+            }`}
         >
           {loading ? 'Sauvegarde...' : 'Terminer l\'onboarding'}
         </button>
