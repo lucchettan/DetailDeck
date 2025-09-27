@@ -373,7 +373,17 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
                   <input
                     type="checkbox"
                     checked={formData.isMobile}
-                    onChange={(e) => updateField({ isMobile: e.target.checked })}
+                    onChange={(e) => {
+                      const isMobile = e.target.checked;
+                      updateField({ isMobile });
+                      
+                      // Si on active le service mobile et qu'il n'y a pas de zones, en ajouter une
+                      if (isMobile && formData.serviceZones.length === 0) {
+                        updateField({ 
+                          serviceZones: [{ city: '', radius: 10, unit: 'km' }] 
+                        });
+                      }
+                    }}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <div className="ml-3">
@@ -384,17 +394,10 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
 
                 {formData.isMobile && (
                   <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="mb-4">
                       <label className="block text-sm font-bold text-gray-700">
                         Zones d'intervention *
                       </label>
-                      <button
-                        type="button"
-                        onClick={addServiceZone}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        + Ajouter une zone
-                      </button>
                     </div>
 
                     <div className="space-y-3">
@@ -438,6 +441,18 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
                           </button>
                         </div>
                       ))}
+                      
+                      {/* Bouton d'ajout à l'intérieur de la liste */}
+                      <button
+                        type="button"
+                        onClick={addServiceZone}
+                        className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Ajouter une zone d'intervention
+                      </button>
                     </div>
 
                     {formData.serviceZones.length === 0 && (

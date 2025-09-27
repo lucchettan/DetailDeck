@@ -95,20 +95,8 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
         console.log('📦 ServicesStep: Loading prop services:', propServices.length);
         setServices(propServices);
       } else {
-        // Créer des services par défaut
-        const defaultServices = propCategories.map(category => ({
-          name: category.name === 'Intérieur' ? 'Nettoyage intérieur complet' : 'Lavage extérieur',
-          description: category.name === 'Intérieur'
-            ? 'Aspirateur, nettoyage des sièges et tableau de bord'
-            : 'Lavage carrosserie, jantes et vitres',
-          category_id: category.id,
-          base_price: category.name === 'Intérieur' ? 25 : 15,
-          base_duration: category.name === 'Intérieur' ? 45 : 30,
-          image_urls: [],
-          vehicle_size_variations: {},
-          specific_addons: []
-        }));
-        setServices(defaultServices);
+        // Ne pas pré-remplir de services - laisser l'utilisateur créer le premier service
+        setServices([]);
       }
     } else {
       // Fallback: fetch si pas de props
@@ -160,19 +148,8 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
           }));
           setServices(mappedServices);
         } else {
-          // Créer un service par défaut pour chaque catégorie
-          const defaultServices = categoriesData?.map(category => ({
-            name: category.name === 'Intérieur' ? 'Nettoyage intérieur complet' : 'Lavage extérieur',
-            description: category.name === 'Intérieur'
-              ? 'Aspirateur, nettoyage des sièges et tableau de bord'
-              : 'Lavage carrosserie, jantes et vitres',
-            category_id: category.id,
-            base_price: category.name === 'Intérieur' ? 25 : 15,
-            base_duration: category.name === 'Intérieur' ? 45 : 30,
-            image_urls: []
-          })) || [];
-
-          setServices(defaultServices);
+          // Ne pas créer de services par défaut - laisser l'utilisateur créer le premier service
+          setServices([]);
         }
       }
     } catch (error) {
@@ -190,9 +167,11 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
       name: '',
       description: '',
       category_id: categories[0]?.id || '',
-      base_price: 20,
+      base_price: 0,
       base_duration: 30,
-      image_urls: []
+      image_urls: [],
+      vehicle_size_variations: {},
+      specific_addons: []
     };
     const updatedServices = [...services, newService];
     setServices(updatedServices);
@@ -425,15 +404,15 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-2xl mx-auto p-6">
       {/* Unsaved changes alert */}
       <UnsavedChangesAlert hasUnsavedChanges={hasUnsavedChanges()} />
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          {t.createFirstServices}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Créer votre premier service
         </h2>
-        <p className="text-lg text-gray-600">
-          Définissez les services que vous proposez. Vous pourrez en ajouter d'autres plus tard.
+        <p className="text-gray-600">
+          Définissez votre premier service. Vous pourrez en ajouter d'autres plus tard.
         </p>
       </div>
 
@@ -449,22 +428,35 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {services.map((service, index) => (
-            <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-lg p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Service
-                </h3>
-                {services.length > 1 && (
-                  <button
-                    onClick={() => removeService(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                )}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
+          <div className="mb-6">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
+              <h3 className="text-xl font-semibold text-gray-900">Vos services</h3>
+            </div>
+          </div>
+          <p className="text-gray-600 mb-6">Définissez les services que vous proposez à vos clients</p>
+
+          <div className="space-y-4">
+            {services.map((service, index) => (
+              <div key={index} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                  <h4 className="text-lg font-medium text-gray-900">
+                    Service {index + 1}
+                  </h4>
+                  {services.length > 1 && (
+                    <button
+                      onClick={() => removeService(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
 
               <div className="space-y-4">
                 {/* Nom du service en premier */}
@@ -746,12 +738,17 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
             </div>
           ))}
 
-          <button
-            onClick={addService}
-            className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center"
-          >
-            Ajouter un service
-          </button>
+            {/* Bouton d'ajout à l'intérieur de la liste */}
+            <button
+              onClick={addService}
+              className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              {services.length === 0 ? 'Créer votre premier service' : 'Ajouter un service'}
+            </button>
+          </div>
         </div>
       )}
 

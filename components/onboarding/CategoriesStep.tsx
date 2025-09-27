@@ -217,7 +217,7 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
       </div>
 
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-100">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,12 +226,6 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
             </div>
             <h3 className="text-xl font-semibold text-gray-900">Vos catégories</h3>
           </div>
-          <button
-            onClick={addCategory}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Ajouter une catégorie
-          </button>
         </div>
         <p className="text-gray-600 mb-6">Organisez vos services par catégories pour une meilleure présentation</p>
 
@@ -334,6 +328,17 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
               </div>
             </div>
           ))}
+          
+          {/* Bouton d'ajout à l'intérieur de la liste */}
+          <button
+            onClick={addCategory}
+            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Ajouter une catégorie
+          </button>
         </div>
 
         <div className="mt-6 bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
