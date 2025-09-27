@@ -127,9 +127,19 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   const loadExistingServices = async (shopId: string) => {
     const { data } = await supabase
       .from('services')
-      .select('*')
+      .select(`
+        *,
+        addons:addons(*)
+      `)
       .eq('shop_id', shopId);
-    setServices(data || []);
+    
+    // Transformer les données pour inclure les add-ons dans chaque service
+    const servicesWithAddOns = (data || []).map(service => ({
+      ...service,
+      specific_addons: service.addons || []
+    }));
+    
+    setServices(servicesWithAddOns);
   };
 
   const resetForm = () => {
@@ -185,25 +195,62 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         base_duration: formData.base_duration,
         image_urls: formData.image_urls,
         vehicle_size_variations: formData.vehicle_size_variations,
-        formulas: formData.formulas,
-        specific_addons: formData.specific_addons
+        formulas: formData.formulas
+        // Note: specific_addons ne sont pas stockés dans la table services
+        // Ils sont gérés séparément dans la table addons
       };
 
+      let serviceId: string;
+      
       if (editingService) {
         // Mettre à jour
         const { error } = await supabase
           .from('services')
           .update(serviceData)
           .eq('id', editingService.id);
-
+        
         if (error) throw error;
+        serviceId = editingService.id;
       } else {
         // Créer
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('services')
-          .insert([serviceData]);
-
+          .insert([serviceData])
+          .select('id')
+          .single();
+        
         if (error) throw error;
+        serviceId = data.id;
+      }
+
+      // Gérer les add-ons spécifiques dans la table addons
+      if (formData.specific_addons.length > 0) {
+        // Supprimer les anciens add-ons si on édite
+        if (editingService) {
+          await supabase
+            .from('addons')
+            .delete()
+            .eq('service_id', serviceId);
+        }
+
+        // Insérer les nouveaux add-ons
+        const addOnsData = formData.specific_addons.map(addon => ({
+          service_id: serviceId,
+          name: addon.name,
+          description: addon.description || '',
+          price: addon.price,
+          duration: addon.duration,
+          is_active: true
+        }));
+
+        const { error: addOnsError } = await supabase
+          .from('addons')
+          .insert(addOnsData);
+
+        if (addOnsError) {
+          console.error('Erreur lors de la sauvegarde des add-ons:', addOnsError);
+          // Ne pas faire échouer la sauvegarde du service pour les add-ons
+        }
       }
 
       await loadExistingServices(shopId);
@@ -604,7 +651,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                         <div className="space-y-3">
                           {vehicleSizes.map((size) => (
                             <div key={size.id} className="bg-gray-50 rounded-lg p-4 border">
-                              <h7 className="font-medium text-gray-900 mb-3 block">{size.name}</h7>
+                              <h6 className="font-medium text-gray-900 mb-3 block">{size.name}</h6>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
@@ -647,12 +694,12 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                           Ajouter une formule
                         </button>
                       </div>
-                      
+
                       <div className="space-y-4">
                         {formData.formulas.map((formula, formulaIndex) => (
                           <div key={formulaIndex} className="bg-gray-50 rounded-lg p-4 border">
                             <div className="flex justify-between items-start mb-4">
-                              <h7 className="font-medium text-gray-900">Formule {formulaIndex + 1}</h7>
+                              <h6 className="font-medium text-gray-900">Formule {formulaIndex + 1}</h6>
                               <button
                                 type="button"
                                 onClick={() => removeFormula(formulaIndex)}
@@ -661,7 +708,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                 <TrashIcon className="w-4 h-4" />
                               </button>
                             </div>
-                            
+
                             <div className="space-y-4">
                               {/* Nom de la formule */}
                               <div>
@@ -674,7 +721,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                   placeholder="Ex: Formule Premium"
                                 />
                               </div>
-                              
+
                               {/* Prix et durée additionnels */}
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -699,7 +746,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                   />
                                 </div>
                               </div>
-                              
+
                               {/* Points forts inclus */}
                               <div>
                                 <label className="block text-sm text-gray-600 mb-2">Points forts inclus</label>
@@ -755,13 +802,13 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                           Ajouter un add-on
                         </button>
                       </div>
-                      
+
                       {formData.specific_addons.length > 0 ? (
                         <div className="space-y-3">
                           {formData.specific_addons.map((addOn, index) => (
                             <div key={index} className="bg-gray-50 rounded-lg p-4 border">
                               <div className="flex justify-between items-start mb-3">
-                                <h7 className="font-medium text-gray-900">Add-on {index + 1}</h7>
+                                <h6 className="font-medium text-gray-900">Add-on {index + 1}</h6>
                                 <button
                                   type="button"
                                   onClick={() => removeSpecificAddOn(index)}
@@ -770,7 +817,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                   <TrashIcon className="w-4 h-4" />
                                 </button>
                               </div>
-                              
+
                               <div className="space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
@@ -794,7 +841,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                     />
                                   </div>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
                                     <label className="block text-sm text-gray-600 mb-1">Prix (€)</label>
