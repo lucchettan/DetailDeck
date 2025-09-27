@@ -126,6 +126,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
   const [reservationId, setReservationId] = useState<string>('');
   const [isCartExpanded, setIsCartExpanded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Charger les données du shop
   useEffect(() => {
@@ -285,6 +286,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   const handleReservationSubmit = async () => {
     if (!shopData || !selectedDate || !selectedTimeSlot) return;
 
+    setIsSubmitting(true);
     try {
       // Calculer l'heure de fin
       const calculateEndTime = (startTime: string, durationMinutes: number): string => {
@@ -366,6 +368,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
     } catch (error) {
       console.error('Erreur lors de la création de la réservation:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -456,8 +460,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         setCurrentStep('categorySelection');
                       }}
                       className={`p-4 border-2 rounded-lg text-left transition-colors ${selectedVehicleSize === vehicleSize.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -504,21 +508,21 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     return categoriesWithServices.map(category => {
                       const servicesInCategory = services.filter(service => service.category_id === category.id);
                       return (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        setSelectedCategory(category.id);
-                        setCurrentStep('serviceSelection');
-                      }}
-                      className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
-                    >
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            setSelectedCategory(category.id);
+                            setCurrentStep('serviceSelection');
+                          }}
+                          className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
+                        >
                           <h3 className="font-semibold text-gray-900">
                             {category.name}
                             <span className="text-sm font-normal text-gray-500 ml-2">
                               ({servicesInCategory.length} service{servicesInCategory.length > 1 ? 's' : ''})
                             </span>
                           </h3>
-                    </button>
+                        </button>
                       );
                     });
                   })()}
@@ -640,7 +644,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             )}
           </div>
         </div>
-          </div>
+      </div>
 
       {/* Footer fixe avec résumé */}
       {totalCalculation.totalPrice > 0 && (
@@ -651,22 +655,22 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
               <div className="max-w-7xl mx-auto">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Détail de votre réservation</h3>
 
-              {selectedVehicleSize && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600">Véhicule:</p>
-                  <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
-                </div>
-              )}
+                {selectedVehicleSize && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">Véhicule:</p>
+                    <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
+                  </div>
+                )}
 
-              {selectedServices.length > 0 && (
-                <div className="space-y-3 mb-4">
-                  <p className="text-sm text-gray-600">Services sélectionnés:</p>
-                  {totalCalculation.breakdown.map((item, index) => (
-                    <div key={index} className="border-l-2 border-blue-500 pl-3">
-                      <p className="font-medium text-sm">{item.serviceName}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.totalPrice}€ • {formatDuration(item.totalDuration)}
-                      </p>
+                {selectedServices.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    <p className="text-sm text-gray-600">Services sélectionnés:</p>
+                    {totalCalculation.breakdown.map((item, index) => (
+                      <div key={index} className="border-l-2 border-blue-500 pl-3">
+                        <p className="font-medium text-sm">{item.serviceName}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.totalPrice}€ • {formatDuration(item.totalDuration)}
+                        </p>
                         <div className="text-xs text-gray-500 ml-2">
                           <p>Base: {item.basePrice}€</p>
                           {item.variationPrice > 0 && (
@@ -676,19 +680,19 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                             <p>Formule: {item.formulaPrice}€</p>
                           )}
                         </div>
-                      {item.addOns.length > 0 && (
-                        <div className="mt-1">
-                          {item.addOns.map(addOn => (
-                            <p key={addOn.id} className="text-xs text-gray-500 ml-2">
+                        {item.addOns.length > 0 && (
+                          <div className="mt-1">
+                            {item.addOns.map(addOn => (
+                              <p key={addOn.id} className="text-xs text-gray-500 ml-2">
                                 Add-on: {addOn.name} ({addOn.price}€)
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
               </div>
             </div>
@@ -705,20 +709,20 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
                     </div>
                   )}
-                  
+
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
                       <p className="text-sm font-medium">{selectedServices.length} service{selectedServices.length > 1 ? 's' : ''}</p>
-                  </div>
+                    </div>
                   )}
-                  
+
                   <div>
                     <p className="text-xs text-gray-500">Durée totale</p>
                     <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
                   </div>
                 </div>
-                
+
                 {/* Bouton pour expander/réduire le détail - À GAUCHE */}
                 <button
                   onClick={() => setIsCartExpanded(!isCartExpanded)}
@@ -727,7 +731,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   {isCartExpanded ? "Masquer le détail" : "Voir le détail"}
                 </button>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Total</p>
@@ -745,17 +749,17 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     >
                       Ajouter un autre service
                     </button>
-                    
-                    {currentStep === 'services' && (
+
+                    {currentStep === 'serviceSelection' && (
                       <button
-                        onClick={() => setCurrentStep('dateTime')}
+                        onClick={() => setCurrentStep('datetime')}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                       >
                         Réserver un RDV
                       </button>
                     )}
-                    
-                    {currentStep === 'dateTime' && selectedTimeSlot && (
+
+                    {currentStep === 'datetime' && selectedTimeSlot && (
                       <button
                         onClick={() => setCurrentStep('clientInfo')}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -763,15 +767,32 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         Continuer
                       </button>
                     )}
-                    
-                    {currentStep === 'clientInfo' && (
+
+                    {currentStep === 'datetime' && !selectedTimeSlot && (
                       <button
-                        onClick={handleReservationSubmit}
-                        disabled={isSubmitting}
-                        className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                        onClick={() => setCurrentStep('serviceSelection')}
+                        className="bg-gray-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
                       >
-                        {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                        Modifier services
                       </button>
+                    )}
+
+                    {currentStep === 'clientInfo' && (
+                      <>
+                        <button
+                          onClick={() => setCurrentStep('datetime')}
+                          className="bg-gray-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                        >
+                          Modifier RDV
+                        </button>
+                        <button
+                          onClick={handleReservationSubmit}
+                          disabled={isSubmitting}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                          {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                        </button>
+                      </>
                     )}
                   </>
                 )}
