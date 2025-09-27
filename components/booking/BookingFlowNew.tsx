@@ -456,8 +456,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         setCurrentStep('categorySelection');
                       }}
                       className={`p-4 border-2 rounded-lg text-left transition-colors ${selectedVehicleSize === vehicleSize.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -504,21 +504,21 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     return categoriesWithServices.map(category => {
                       const servicesInCategory = services.filter(service => service.category_id === category.id);
                       return (
-                        <button
-                          key={category.id}
-                          onClick={() => {
-                            setSelectedCategory(category.id);
-                            setCurrentStep('serviceSelection');
-                          }}
-                          className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
-                        >
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategory(category.id);
+                        setCurrentStep('serviceSelection');
+                      }}
+                      className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
+                    >
                           <h3 className="font-semibold text-gray-900">
                             {category.name}
                             <span className="text-sm font-normal text-gray-500 ml-2">
                               ({servicesInCategory.length} service{servicesInCategory.length > 1 ? 's' : ''})
                             </span>
                           </h3>
-                        </button>
+                    </button>
                       );
                     });
                   })()}
@@ -640,7 +640,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             )}
           </div>
         </div>
-      </div>
+          </div>
 
       {/* Footer fixe avec résumé */}
       {totalCalculation.totalPrice > 0 && (
@@ -651,22 +651,22 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
               <div className="max-w-7xl mx-auto">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Détail de votre réservation</h3>
 
-                {selectedVehicleSize && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600">Véhicule:</p>
-                    <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
-                  </div>
-                )}
+              {selectedVehicleSize && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">Véhicule:</p>
+                  <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
+                </div>
+              )}
 
-                {selectedServices.length > 0 && (
-                  <div className="space-y-3 mb-4">
-                    <p className="text-sm text-gray-600">Services sélectionnés:</p>
-                    {totalCalculation.breakdown.map((item, index) => (
-                      <div key={index} className="border-l-2 border-blue-500 pl-3">
-                        <p className="font-medium text-sm">{item.serviceName}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.totalPrice}€ • {formatDuration(item.totalDuration)}
-                        </p>
+              {selectedServices.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-600">Services sélectionnés:</p>
+                  {totalCalculation.breakdown.map((item, index) => (
+                    <div key={index} className="border-l-2 border-blue-500 pl-3">
+                      <p className="font-medium text-sm">{item.serviceName}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.totalPrice}€ • {formatDuration(item.totalDuration)}
+                      </p>
                         <div className="text-xs text-gray-500 ml-2">
                           <p>Base: {item.basePrice}€</p>
                           {item.variationPrice > 0 && (
@@ -676,19 +676,19 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                             <p>Formule: {item.formulaPrice}€</p>
                           )}
                         </div>
-                        {item.addOns.length > 0 && (
-                          <div className="mt-1">
-                            {item.addOns.map(addOn => (
-                              <p key={addOn.id} className="text-xs text-gray-500 ml-2">
+                      {item.addOns.length > 0 && (
+                        <div className="mt-1">
+                          {item.addOns.map(addOn => (
+                            <p key={addOn.id} className="text-xs text-gray-500 ml-2">
                                 Add-on: {addOn.name} ({addOn.price}€)
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               </div>
             </div>
@@ -697,7 +697,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
           {/* Barre principale du footer */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
+              <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-6">
                   {selectedVehicleSize && (
                     <div>
@@ -705,21 +705,29 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
                     </div>
                   )}
-
+                  
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
                       <p className="text-sm font-medium">{selectedServices.length} service{selectedServices.length > 1 ? 's' : ''}</p>
-                    </div>
+                  </div>
                   )}
-
+                  
                   <div>
                     <p className="text-xs text-gray-500">Durée totale</p>
                     <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
                   </div>
                 </div>
+                
+                {/* Bouton pour expander/réduire le détail - À GAUCHE */}
+                <button
+                  onClick={() => setIsCartExpanded(!isCartExpanded)}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  {isCartExpanded ? "Masquer le détail" : "Voir le détail"}
+                </button>
               </div>
-
+              
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Total</p>
@@ -728,34 +736,25 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </p>
                 </div>
 
-                {/* Bouton pour expander/réduire le détail */}
-                <button
-                  onClick={() => setIsCartExpanded(!isCartExpanded)}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  {isCartExpanded ? "Masquer le détail" : "Voir le détail"}
-                </button>
-
-                {/* Actions principales quand des services sont sélectionnés */}
+                {/* Actions principales - TOUJOURS VISIBLES quand des services sont sélectionnés */}
                 {selectedServices.length > 0 && (
                   <>
+                    <button
+                      onClick={() => setCurrentStep('categorySelection')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                    >
+                      Ajouter un autre service
+                    </button>
+                    
                     {currentStep === 'services' && (
-                      <>
-                        <button
-                          onClick={() => setCurrentStep('categorySelection')}
-                          className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                        >
-                          Ajouter un autre service
-                        </button>
-                        <button
-                          onClick={() => setCurrentStep('dateTime')}
-                          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                        >
-                          Réserver un RDV
-                        </button>
-                      </>
+                      <button
+                        onClick={() => setCurrentStep('dateTime')}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Réserver un RDV
+                      </button>
                     )}
-
+                    
                     {currentStep === 'dateTime' && selectedTimeSlot && (
                       <button
                         onClick={() => setCurrentStep('clientInfo')}
@@ -764,32 +763,15 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         Continuer
                       </button>
                     )}
-
-                    {currentStep === 'dateTime' && (
-                      <button
-                        onClick={() => setCurrentStep('services')}
-                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                      >
-                        Modifier services
-                      </button>
-                    )}
-
+                    
                     {currentStep === 'clientInfo' && (
-                      <>
-                        <button
-                          onClick={() => setCurrentStep('dateTime')}
-                          className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                        >
-                          Modifier RDV
-                        </button>
-                        <button
-                          onClick={handleReservationSubmit}
-                          disabled={isSubmitting}
-                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                        >
-                          {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
-                        </button>
-                      </>
+                      <button
+                        onClick={handleReservationSubmit}
+                        disabled={isSubmitting}
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                      </button>
                     )}
                   </>
                 )}
