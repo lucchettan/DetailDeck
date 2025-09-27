@@ -3,7 +3,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { Service, ShopVehicleSize, ShopServiceCategory } from '../Dashboard';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { processImageFile } from '../../lib/heicUtils';
 
 interface ServiceEditorOnboardingProps {
   onBack: () => void;
@@ -35,7 +36,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  
+
   const [shopId, setShopId] = useState<string | null>(null);
   const [categories, setCategories] = useState<ShopServiceCategory[]>([]);
   const [vehicleSizes, setVehicleSizes] = useState<ShopVehicleSize[]>([]);
@@ -44,6 +45,8 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   // Formulaire de service
   const [formData, setFormData] = useState<ServiceFormData>({
@@ -178,14 +181,14 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           .from('services')
           .update(serviceData)
           .eq('id', editingService.id);
-        
+
         if (error) throw error;
       } else {
         // Créer
         const { error } = await supabase
           .from('services')
           .insert([serviceData]);
-        
+
         if (error) throw error;
       }
 
@@ -216,6 +219,96 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       console.error('Erreur lors de la suppression:', error);
       alert('Erreur lors de la suppression du service');
     }
+  };
+
+  // Gestion des images
+  const handleImageUpload = async (file: File) => {
+    if (!user || !shopId) return;
+
+    setUploadingImages(true);
+    try {
+      const processedFile = await processImageFile(file);
+      const fileExt = processedFile.name.split('.').pop();
+      const fileName = `${shopId}/services/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('service-images')
+        .upload(fileName, processedFile);
+
+      if (error) {
+        // Fallback vers le bucket avatars si service-images n'existe pas
+        const { data: fallbackData, error: fallbackError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, processedFile);
+
+        if (fallbackError) throw fallbackError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        setFormData({
+          ...formData,
+          image_urls: [...formData.image_urls, publicUrl]
+        });
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('service-images')
+          .getPublicUrl(fileName);
+
+        setFormData({
+          ...formData,
+          image_urls: [...formData.image_urls, publicUrl]
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData({
+      ...formData,
+      image_urls: formData.image_urls.filter((_, i) => i !== index)
+    });
+  };
+
+  // Gestion des formules
+  const addFormula = () => {
+    setFormData({
+      ...formData,
+      specific_addons: [...formData.specific_addons, { name: '', price: 0, duration: 0, description: '' }]
+    });
+  };
+
+  const updateFormula = (index: number, field: string, value: string | number) => {
+    const updatedFormulas = [...formData.specific_addons];
+    updatedFormulas[index] = { ...updatedFormulas[index], [field]: value };
+    setFormData({ ...formData, specific_addons: updatedFormulas });
+  };
+
+  const removeFormula = (index: number) => {
+    setFormData({
+      ...formData,
+      specific_addons: formData.specific_addons.filter((_, i) => i !== index)
+    });
+  };
+
+  // Gestion des variations par taille
+  const updateVehicleSizeVariation = (sizeId: string, field: 'price' | 'duration', value: number) => {
+    setFormData({
+      ...formData,
+      vehicle_size_variations: {
+        ...formData.vehicle_size_variations,
+        [sizeId]: {
+          ...formData.vehicle_size_variations[sizeId],
+          [field]: value
+        }
+      }
+    });
   };
 
   const handleContinue = () => {
@@ -311,82 +404,277 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                 </h4>
               </div>
 
-              <div className="space-y-4">
-                {/* Nom du service */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Nom du service *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ex: Nettoyage intérieur complet"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={3}
-                    placeholder="Décrivez ce que comprend ce service..."
-                  />
-                </div>
-
-                {/* Catégorie, Prix, Durée */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-6">
+                {/* Informations de base */}
+                <div className="space-y-4">
+                  <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Informations de base</h5>
+                  
+                  {/* Nom du service */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Catégorie *
+                      Nom du service *
                     </label>
-                    <select
-                      value={formData.category_id}
-                      onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ex: Nettoyage intérieur complet"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={3}
+                      placeholder="Décrivez ce que comprend ce service..."
+                    />
+                  </div>
+
+                  {/* Catégorie, Prix, Durée */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Catégorie *
+                      </label>
+                      <select
+                        value={formData.category_id}
+                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Prix de base (€) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.base_price}
+                        onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="20.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Durée (minutes) *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.base_duration}
+                        onChange={(e) => setFormData({ ...formData, base_duration: parseInt(e.target.value) || 30 })}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="30"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Images */}
+                <div className="space-y-4">
+                  <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Images du service</h5>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {formData.image_urls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Service ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {formData.image_urls.length < 4 && (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(file);
+                          }}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <label
+                          htmlFor="image-upload"
+                          className={`cursor-pointer text-center ${uploadingImages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {uploadingImages ? (
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                          ) : (
+                            <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          )}
+                          <p className="text-sm text-gray-500">Ajouter image</p>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Options avancées */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Options avancées</h5>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
+                      {showAdvancedOptions ? 'Masquer' : 'Afficher'} les options
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Prix de base (€) *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.base_price}
-                      onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="20.00"
-                    />
-                  </div>
+                  {showAdvancedOptions && (
+                    <div className="space-y-6">
+                      {/* Variations par taille de véhicule */}
+                      {vehicleSizes.length > 0 && (
+                        <div>
+                          <h6 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h6>
+                          <div className="space-y-3">
+                            {vehicleSizes.map((size) => (
+                              <div key={size.id} className="bg-gray-50 rounded-lg p-4">
+                                <h7 className="font-medium text-gray-900 mb-3 block">{size.name}</h7>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={formData.vehicle_size_variations[size.id]?.price || 0}
+                                      onChange={(e) => updateVehicleSizeVariation(size.id, 'price', parseFloat(e.target.value) || 0)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="0.00"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Supplément durée (min)</label>
+                                    <input
+                                      type="number"
+                                      value={formData.vehicle_size_variations[size.id]?.duration || 0}
+                                      onChange={(e) => updateVehicleSizeVariation(size.id, 'duration', parseInt(e.target.value) || 0)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Durée (minutes) *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.base_duration}
-                      onChange={(e) => setFormData({ ...formData, base_duration: parseInt(e.target.value) || 30 })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="30"
-                    />
-                  </div>
+                      {/* Formules/Add-ons */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <h6 className="text-md font-semibold text-gray-800">Formules et add-ons</h6>
+                          <button
+                            type="button"
+                            onClick={addFormula}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                          >
+                            <PlusIcon className="w-4 h-4" />
+                            Ajouter une formule
+                          </button>
+                        </div>
+                        
+                        {formData.specific_addons.length > 0 ? (
+                          <div className="space-y-3">
+                            {formData.specific_addons.map((formula, index) => (
+                              <div key={index} className="bg-gray-50 rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h7 className="font-medium text-gray-900">Formule {index + 1}</h7>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFormula(index)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Nom de la formule</label>
+                                    <input
+                                      type="text"
+                                      value={formula.name}
+                                      onChange={(e) => updateFormula(index, 'name', e.target.value)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Ex: Formule Premium"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Description</label>
+                                    <input
+                                      type="text"
+                                      value={formula.description || ''}
+                                      onChange={(e) => updateFormula(index, 'description', e.target.value)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Ex: Nettoyage en profondeur + cire"
+                                    />
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={formula.price}
+                                        onChange={(e) => updateFormula(index, 'price', parseFloat(e.target.value) || 0)}
+                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm text-gray-600 mb-1">Supplément durée (min)</label>
+                                      <input
+                                        type="number"
+                                        value={formula.duration}
+                                        onChange={(e) => updateFormula(index, 'duration', parseInt(e.target.value) || 0)}
+                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="0"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">Aucune formule ajoutée</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -433,7 +721,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         >
           ← Retour
         </button>
-        
+
         <button
           onClick={handleContinue}
           disabled={services.length === 0}
