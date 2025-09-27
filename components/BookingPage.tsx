@@ -1,12 +1,12 @@
 import React from 'react';
-import BookingFlow from './booking/BookingFlow';
+import BookingFlowNew from './booking/BookingFlowNew';
 
 interface BookingPageProps {
   shopId: string;
 }
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
-  return <BookingFlow shopId={shopId} />;
+  return <BookingFlowNew shopId={shopId} />;
 };
 
 export default BookingPage;
