@@ -23,17 +23,17 @@ interface ServiceFormData {
   base_duration: number;
   image_urls: string[];
   vehicle_size_variations: { [key: string]: { price: number; duration: number } };
-  formulas: Array<{ 
-    name: string; 
-    additionalPrice: number; 
-    additionalDuration: number; 
-    includedItems: string[] 
+  formulas: Array<{
+    name: string;
+    additionalPrice: number;
+    additionalDuration: number;
+    includedItems: string[]
   }>;
-  specific_addons: Array<{ 
-    name: string; 
-    price: number; 
-    duration: number; 
-    description?: string 
+  specific_addons: Array<{
+    name: string;
+    price: number;
+    duration: number;
+    description?: string
   }>;
 }
 
@@ -57,7 +57,6 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   // Formulaire de service
   const [formData, setFormData] = useState<ServiceFormData>({
@@ -595,250 +594,239 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
 
                 {/* Options avancées */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Options avancées</h5>
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      {showAdvancedOptions ? 'Masquer' : 'Afficher'} les options
-                    </button>
-                  </div>
+                  <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Options avancées</h5>
 
-                  {showAdvancedOptions && (
-                    <div className="space-y-6">
-                      {/* Formules */}
+                  <div className="space-y-6">
+                    {/* Variations par taille de véhicule */}
+                    {vehicleSizes.length > 0 && (
                       <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <h6 className="text-md font-semibold text-gray-800">Formules</h6>
-                          <button
-                            type="button"
-                            onClick={addFormula}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
-                          >
-                            <PlusIcon className="w-4 h-4" />
-                            Ajouter une formule
-                          </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          {formData.formulas.map((formula, formulaIndex) => (
-                            <div key={formulaIndex} className="bg-gray-50 rounded-lg p-4 border">
-                              <div className="flex justify-between items-start mb-4">
-                                <h7 className="font-medium text-gray-900">Formule {formulaIndex + 1}</h7>
-                                <button
-                                  type="button"
-                                  onClick={() => removeFormula(formulaIndex)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </div>
-                              
-                              <div className="space-y-4">
-                                {/* Nom de la formule */}
+                        <h6 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h6>
+                        <div className="space-y-3">
+                          {vehicleSizes.map((size) => (
+                            <div key={size.id} className="bg-gray-50 rounded-lg p-4 border">
+                              <h7 className="font-medium text-gray-900 mb-3 block">{size.name}</h7>
+                              <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <label className="block text-sm text-gray-600 mb-1">Nom de la formule</label>
+                                  <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
                                   <input
-                                    type="text"
-                                    value={formula.name}
-                                    onChange={(e) => updateFormula(formulaIndex, 'name', e.target.value)}
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.vehicle_size_variations[size.id]?.price || 0}
+                                    onChange={(e) => updateVehicleSizeVariation(size.id, 'price', parseFloat(e.target.value) || 0)}
                                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Ex: Formule Premium"
+                                    placeholder="0.00"
                                   />
                                 </div>
-                                
-                                {/* Prix et durée additionnels */}
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Prix additionnel (€)</label>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      value={formula.additionalPrice}
-                                      onChange={(e) => updateFormula(formulaIndex, 'additionalPrice', parseFloat(e.target.value) || 0)}
-                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder="0.00"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Durée additionnelle (min)</label>
-                                    <input
-                                      type="number"
-                                      value={formula.additionalDuration}
-                                      onChange={(e) => updateFormula(formulaIndex, 'additionalDuration', parseInt(e.target.value) || 0)}
-                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                </div>
-                                
-                                {/* Points forts inclus */}
                                 <div>
-                                  <label className="block text-sm text-gray-600 mb-2">Points forts inclus</label>
-                                  <div className="space-y-2">
-                                    {formula.includedItems.map((item, itemIndex) => (
-                                      <div key={itemIndex} className="flex items-center gap-2">
-                                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                          </svg>
-                                        </div>
-                                        <input
-                                          type="text"
-                                          value={item}
-                                          onChange={(e) => updateIncludedItem(formulaIndex, itemIndex, e.target.value)}
-                                          className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                          placeholder="Ex: Aspiration complète"
-                                        />
-                                        <button
-                                          type="button"
-                                          onClick={() => removeIncludedItem(formulaIndex, itemIndex)}
-                                          className="text-red-500 hover:text-red-700 p-1"
-                                        >
-                                          <TrashIcon className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    ))}
-                                    <button
-                                      type="button"
-                                      onClick={() => addIncludedItem(formulaIndex)}
-                                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                    >
-                                      + Ajouter un point fort
-                                    </button>
-                                  </div>
+                                  <label className="block text-sm text-gray-600 mb-1">Supplément durée (min)</label>
+                                  <input
+                                    type="number"
+                                    value={formData.vehicle_size_variations[size.id]?.duration || 0}
+                                    onChange={(e) => updateVehicleSizeVariation(size.id, 'duration', parseInt(e.target.value) || 0)}
+                                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="0"
+                                  />
                                 </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
+                    )}
 
-                      {/* Add-ons spécifiques */}
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <h6 className="text-md font-semibold text-gray-800">Add-ons spécifiques</h6>
-                          <button
-                            type="button"
-                            onClick={addSpecificAddOn}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
-                          >
-                            <PlusIcon className="w-4 h-4" />
-                            Ajouter un add-on
-                          </button>
-                        </div>
-                        
-                        {formData.specific_addons.length > 0 ? (
-                          <div className="space-y-3">
-                            {formData.specific_addons.map((addOn, index) => (
-                              <div key={index} className="bg-gray-50 rounded-lg p-4 border">
-                                <div className="flex justify-between items-start mb-3">
-                                  <h7 className="font-medium text-gray-900">Add-on {index + 1}</h7>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeSpecificAddOn(index)}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <TrashIcon className="w-4 h-4" />
-                                  </button>
+                    {/* Formules */}
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <h6 className="text-md font-semibold text-gray-800">Formules</h6>
+                        <button
+                          type="button"
+                          onClick={addFormula}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                          Ajouter une formule
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {formData.formulas.map((formula, formulaIndex) => (
+                          <div key={formulaIndex} className="bg-gray-50 rounded-lg p-4 border">
+                            <div className="flex justify-between items-start mb-4">
+                              <h7 className="font-medium text-gray-900">Formule {formulaIndex + 1}</h7>
+                              <button
+                                type="button"
+                                onClick={() => removeFormula(formulaIndex)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                              {/* Nom de la formule */}
+                              <div>
+                                <label className="block text-sm text-gray-600 mb-1">Nom de la formule</label>
+                                <input
+                                  type="text"
+                                  value={formula.name}
+                                  onChange={(e) => updateFormula(formulaIndex, 'name', e.target.value)}
+                                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Ex: Formule Premium"
+                                />
+                              </div>
+                              
+                              {/* Prix et durée additionnels */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm text-gray-600 mb-1">Prix additionnel (€)</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={formula.additionalPrice}
+                                    onChange={(e) => updateFormula(formulaIndex, 'additionalPrice', parseFloat(e.target.value) || 0)}
+                                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="0.00"
+                                  />
                                 </div>
-                                
-                                <div className="space-y-3">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm text-gray-600 mb-1">Nom de l'add-on</label>
-                                      <input
-                                        type="text"
-                                        value={addOn.name}
-                                        onChange={(e) => updateSpecificAddOn(index, 'name', e.target.value)}
-                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Ex: Cire haute qualité"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm text-gray-600 mb-1">Description (optionnel)</label>
-                                      <input
-                                        type="text"
-                                        value={addOn.description || ''}
-                                        onChange={(e) => updateSpecificAddOn(index, 'description', e.target.value)}
-                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Description de l'add-on"
-                                      />
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm text-gray-600 mb-1">Prix (€)</label>
-                                      <input
-                                        type="number"
-                                        step="0.01"
-                                        value={addOn.price}
-                                        onChange={(e) => updateSpecificAddOn(index, 'price', parseFloat(e.target.value) || 0)}
-                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="0.00"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm text-gray-600 mb-1">Durée (min)</label>
-                                      <input
-                                        type="number"
-                                        value={addOn.duration}
-                                        onChange={(e) => updateSpecificAddOn(index, 'duration', parseInt(e.target.value) || 0)}
-                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="0"
-                                      />
-                                    </div>
-                                  </div>
+                                <div>
+                                  <label className="block text-sm text-gray-600 mb-1">Durée additionnelle (min)</label>
+                                  <input
+                                    type="number"
+                                    value={formula.additionalDuration}
+                                    onChange={(e) => updateFormula(formulaIndex, 'additionalDuration', parseInt(e.target.value) || 0)}
+                                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="0"
+                                  />
                                 </div>
                               </div>
-                            ))}
+                              
+                              {/* Points forts inclus */}
+                              <div>
+                                <label className="block text-sm text-gray-600 mb-2">Points forts inclus</label>
+                                <div className="space-y-2">
+                                  {formula.includedItems.map((item, itemIndex) => (
+                                    <div key={itemIndex} className="flex items-center gap-2">
+                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={item}
+                                        onChange={(e) => updateIncludedItem(formulaIndex, itemIndex, e.target.value)}
+                                        className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Ex: Aspiration complète"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => removeIncludedItem(formulaIndex, itemIndex)}
+                                        className="text-red-500 hover:text-red-700 p-1"
+                                      >
+                                        <TrashIcon className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => addIncludedItem(formulaIndex)}
+                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                  >
+                                    + Ajouter un point fort
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">Aucun add-on ajouté</p>
-                        )}
+                        ))}
                       </div>
+                    </div>
 
-                      {/* Variations par taille de véhicule */}
-                      {vehicleSizes.length > 0 && (
-                        <div>
-                          <h6 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h6>
-                          <div className="space-y-3">
-                            {vehicleSizes.map((size) => (
-                              <div key={size.id} className="bg-gray-50 rounded-lg p-4 border">
-                                <h7 className="font-medium text-gray-900 mb-3 block">{size.name}</h7>
+                    {/* Add-ons spécifiques */}
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <h6 className="text-md font-semibold text-gray-800">Add-ons spécifiques</h6>
+                        <button
+                          type="button"
+                          onClick={addSpecificAddOn}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                          Ajouter un add-on
+                        </button>
+                      </div>
+                      
+                      {formData.specific_addons.length > 0 ? (
+                        <div className="space-y-3">
+                          {formData.specific_addons.map((addOn, index) => (
+                            <div key={index} className="bg-gray-50 rounded-lg p-4 border">
+                              <div className="flex justify-between items-start mb-3">
+                                <h7 className="font-medium text-gray-900">Add-on {index + 1}</h7>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSpecificAddOn(index)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Nom de l'add-on</label>
+                                    <input
+                                      type="text"
+                                      value={addOn.name}
+                                      onChange={(e) => updateSpecificAddOn(index, 'name', e.target.value)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Ex: Cire haute qualité"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Description (optionnel)</label>
+                                    <input
+                                      type="text"
+                                      value={addOn.description || ''}
+                                      onChange={(e) => updateSpecificAddOn(index, 'description', e.target.value)}
+                                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Description de l'add-on"
+                                    />
+                                  </div>
+                                </div>
+                                
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
+                                    <label className="block text-sm text-gray-600 mb-1">Prix (€)</label>
                                     <input
                                       type="number"
                                       step="0.01"
-                                      value={formData.vehicle_size_variations[size.id]?.price || 0}
-                                      onChange={(e) => updateVehicleSizeVariation(size.id, 'price', parseFloat(e.target.value) || 0)}
+                                      value={addOn.price}
+                                      onChange={(e) => updateSpecificAddOn(index, 'price', parseFloat(e.target.value) || 0)}
                                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                       placeholder="0.00"
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm text-gray-600 mb-1">Supplément durée (min)</label>
+                                    <label className="block text-sm text-gray-600 mb-1">Durée (min)</label>
                                     <input
                                       type="number"
-                                      value={formData.vehicle_size_variations[size.id]?.duration || 0}
-                                      onChange={(e) => updateVehicleSizeVariation(size.id, 'duration', parseInt(e.target.value) || 0)}
+                                      value={addOn.duration}
+                                      onChange={(e) => updateSpecificAddOn(index, 'duration', parseInt(e.target.value) || 0)}
                                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                       placeholder="0"
                                     />
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Aucun add-on ajouté</p>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Actions */}
