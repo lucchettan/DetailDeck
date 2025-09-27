@@ -233,7 +233,6 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );
