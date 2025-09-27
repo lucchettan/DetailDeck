@@ -852,12 +852,15 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 {/* Actions principales - TOUJOURS VISIBLES quand des services sont sélectionnés */}
                 {selectedServices.length > 0 && (
                   <>
-                    <button
-                      onClick={() => setCurrentStep('categorySelection')}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                    >
-                      Ajouter un autre service
-                    </button>
+                    {/* Boutons pour les étapes intermédiaires */}
+                    {currentStep !== 'clientInfo' && (
+                      <button
+                        onClick={() => setCurrentStep('categorySelection')}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                      >
+                        Ajouter un autre service
+                      </button>
+                    )}
 
                     {currentStep === 'serviceSelection' && (
                       <button
@@ -886,22 +889,15 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       </button>
                     )}
 
+                    {/* Dernière étape - seulement le bouton de confirmation */}
                     {currentStep === 'clientInfo' && (
-                      <>
-                        <button
-                          onClick={() => setCurrentStep('datetime')}
-                          className="bg-gray-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                        >
-                          Modifier RDV
-                        </button>
-                        <button
-                          onClick={handleReservationSubmit}
-                          disabled={isSubmitting}
-                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                        >
-                          {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
-                        </button>
-                      </>
+                      <button
+                        onClick={handleReservationSubmit}
+                        disabled={isSubmitting}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 text-lg"
+                      >
+                        {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                      </button>
                     )}
                   </>
                 )}
