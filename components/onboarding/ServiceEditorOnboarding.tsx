@@ -258,9 +258,15 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       }
 
       // Gérer les add-ons spécifiques dans la table addons
+      console.log('🔍 [DEBUG] formData.specific_addons:', formData.specific_addons);
+      console.log('🔍 [DEBUG] formData.specific_addons.length:', formData.specific_addons.length);
+      
       if (formData.specific_addons.length > 0) {
+        console.log('🔍 [DEBUG] Sauvegarde des add-ons...');
+        
         // Supprimer les anciens add-ons si on édite
         if (editingService) {
+          console.log('🔍 [DEBUG] Suppression des anciens add-ons pour service:', serviceId);
           await supabase
             .from('add_ons')
             .delete()
@@ -277,14 +283,20 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           is_active: true
         }));
 
+        console.log('🔍 [DEBUG] Données des add-ons à insérer:', addOnsData);
+
         const { error: addOnsError } = await supabase
           .from('add_ons')
           .insert(addOnsData);
 
         if (addOnsError) {
-          console.error('Erreur lors de la sauvegarde des add-ons:', addOnsError);
+          console.error('🔍 [DEBUG] Erreur lors de la sauvegarde des add-ons:', addOnsError);
           // Ne pas faire échouer la sauvegarde du service pour les add-ons
+        } else {
+          console.log('🔍 [DEBUG] Add-ons sauvegardés avec succès!');
         }
+      } else {
+        console.log('🔍 [DEBUG] Aucun add-on à sauvegarder');
       }
 
       await loadExistingServices(shopId);
@@ -413,16 +425,20 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
 
   // Gestion des add-ons spécifiques
   const addSpecificAddOn = () => {
+    console.log('🔍 [DEBUG] addSpecificAddOn appelée');
     setFormData({
       ...formData,
       specific_addons: [...formData.specific_addons, { name: '', price: 0, duration: 0, description: '' }]
     });
+    console.log('🔍 [DEBUG] Nouveaux add-ons après ajout:', [...formData.specific_addons, { name: '', price: 0, duration: 0, description: '' }]);
   };
 
   const updateSpecificAddOn = (index: number, field: string, value: string | number) => {
+    console.log('🔍 [DEBUG] updateSpecificAddOn appelée:', { index, field, value });
     const updatedAddOns = [...formData.specific_addons];
     updatedAddOns[index] = { ...updatedAddOns[index], [field]: value };
     setFormData({ ...formData, specific_addons: updatedAddOns });
+    console.log('🔍 [DEBUG] Add-ons mis à jour:', updatedAddOns);
   };
 
   const removeSpecificAddOn = (index: number) => {
