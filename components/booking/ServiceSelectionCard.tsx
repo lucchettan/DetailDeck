@@ -62,12 +62,12 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
   // Calculer le prix total avec la taille de véhicule
   const getTotalPrice = () => {
     let price = service.base_price;
-    
+
     // Ajouter la variation par taille
     if (vehicleSize && service.vehicle_size_variations?.[vehicleSize.id]) {
       price += service.vehicle_size_variations[vehicleSize.id].price;
     }
-    
+
     // Ajouter la formule
     if (localSelectedFormula && service.formulas) {
       const formula = service.formulas.find(f => f.name === localSelectedFormula);
@@ -75,23 +75,23 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
         price += formula.additionalPrice;
       }
     }
-    
+
     // Ajouter les add-ons
     const selectedAddOnObjects = addOns.filter(addon => localSelectedAddOns.includes(addon.id));
     price += selectedAddOnObjects.reduce((sum, addon) => sum + addon.price, 0);
-    
+
     return price;
   };
 
   // Calculer la durée totale
   const getTotalDuration = () => {
     let duration = service.base_duration;
-    
+
     // Ajouter la variation par taille
     if (vehicleSize && service.vehicle_size_variations?.[vehicleSize.id]) {
       duration += service.vehicle_size_variations[vehicleSize.id].duration;
     }
-    
+
     // Ajouter la formule
     if (localSelectedFormula && service.formulas) {
       const formula = service.formulas.find(f => f.name === localSelectedFormula);
@@ -99,11 +99,11 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
         duration += formula.additionalDuration;
       }
     }
-    
+
     // Ajouter les add-ons
     const selectedAddOnObjects = addOns.filter(addon => localSelectedAddOns.includes(addon.id));
     duration += selectedAddOnObjects.reduce((sum, addon) => sum + addon.duration, 0);
-    
+
     return duration;
   };
 
@@ -111,7 +111,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
     const newSelectedAddOns = localSelectedAddOns.includes(addOnId)
       ? localSelectedAddOns.filter(id => id !== addOnId)
       : [...localSelectedAddOns, addOnId];
-    
+
     setLocalSelectedAddOns(newSelectedAddOns);
     onSelect(newSelectedAddOns, localSelectedFormula);
   };
@@ -133,9 +133,8 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
   const serviceAddOns = addOns.filter(addon => addon.service_id === service.id);
 
   return (
-    <div className={`bg-white rounded-lg shadow-md border-2 transition-all duration-200 ${
-      isSelected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300'
-    }`}>
+    <div className={`bg-white rounded-lg shadow-md border-2 transition-all duration-200 ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300'
+      }`}>
       {/* Header du service */}
       <div className="p-4">
         <div className="flex items-start justify-between">
@@ -147,11 +146,10 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
           </div>
           <button
             onClick={handleToggleSelection}
-            className={`ml-4 px-4 py-2 rounded-lg font-medium transition-colors ${
-              isSelected
+            className={`ml-4 px-4 py-2 rounded-lg font-medium transition-colors ${isSelected
                 ? 'bg-red-500 text-white hover:bg-red-600'
                 : 'bg-blue-500 text-white hover:bg-blue-600'
-            }`}
+              }`}
           >
             {isSelected ? 'Retirer' : 'Ajouter'}
           </button>

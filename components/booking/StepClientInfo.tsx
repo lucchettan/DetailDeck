@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-// FIX: Corrected the import path to BookingFlow.tsx where the types are actually exported.
-import { ClientInfo, ClientInfoErrors } from './BookingFlow';
+// Import types from BookingFlowNew
+import { ClientInfo, ClientInfoErrors } from './BookingFlowNew';
 import { UserCircleIcon, EnvelopeIcon, PhoneIcon } from '../Icons';
 
 interface StepClientInfoProps {
