@@ -28,9 +28,9 @@ const SignInPage: React.FC = () => {
   };
 
   const handleOnboardingSuccess = () => {
-    // In a real app, this could trigger a welcome tour or other actions.
-    // For now, the router will handle redirecting to the dashboard.
-    console.log("Sign up and onboarding successful");
+    // Redirect to dashboard after successful signup
+    console.log("Sign up successful, redirecting to dashboard");
+    window.location.href = '/dashboard';
   };
 
   const handleResend = async () => {
@@ -82,7 +82,11 @@ const SignInPage: React.FC = () => {
           setError(loginError.message);
         }
       }
-      // On success, the AuthContext updates, and the App router will redirect.
+      // On success, redirect to dashboard
+      if (!loginError) {
+        console.log("Login successful, redirecting to dashboard");
+        window.location.href = '/dashboard';
+      }
     } else { // forgotPassword view
       const { error: resetError } = await resetPasswordForEmail(email);
       if (resetError) {
