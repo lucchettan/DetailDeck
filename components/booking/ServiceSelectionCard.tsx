@@ -55,7 +55,6 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
   isSelected
 }) => {
   const { t } = useLanguage();
-  const [showDetails, setShowDetails] = useState(false);
   const [localSelectedAddOns, setLocalSelectedAddOns] = useState<string[]>(selectedAddOns);
   const [localSelectedFormula, setLocalSelectedFormula] = useState<string | undefined>(selectedFormula);
 
@@ -156,24 +155,17 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
         </div>
 
         {/* Prix et durée */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3">
           <div className="text-sm text-gray-600">
             <span className="font-medium">{getTotalPrice()}€</span>
             <span className="mx-2">•</span>
             <span>{formatDuration(getTotalDuration())}</span>
           </div>
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
-          >
-            {showDetails ? 'Masquer détails' : 'Voir détails'}
-          </button>
         </div>
       </div>
 
-      {/* Détails dépliables */}
-      {showDetails && (
-        <div className="border-t border-gray-100 p-4 space-y-4">
+      {/* Détails toujours visibles */}
+      <div className="border-t border-gray-100 p-4 space-y-4">
           {/* Formules */}
           {service.formulas && service.formulas.length > 0 && (
             <div>
@@ -196,9 +188,12 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
                         </span>
                       </div>
                       {formula.includedItems.length > 0 && (
-                        <ul className="mt-1 text-xs text-gray-500">
+                        <ul className="mt-1 text-xs text-gray-500 space-y-1">
                           {formula.includedItems.map((item, index) => (
-                            <li key={index}>• {item}</li>
+                            <li key={index} className="flex items-center space-x-2">
+                              <CheckIcon className="w-3 h-3 text-green-500 flex-shrink-0" />
+                              <span>{item}</span>
+                            </li>
                           ))}
                         </ul>
                       )}
@@ -239,7 +234,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
