@@ -268,9 +268,7 @@ const Dashboard: React.FC = () => {
           });
 
           const isComplete = hasBasicInfo && hasSchedule && hasCategories && hasVehicleSizes && hasServices;
-          // TEMPORAIRE: Désactiver l'onboarding pour debug
-          setNeedsOnboarding(false);
-          console.log('🚨 TEMPORAIRE: Onboarding désactivé pour debug');
+          setNeedsOnboarding(!isComplete);
 
         } catch (error) {
           console.error('Error checking onboarding status:', error);
