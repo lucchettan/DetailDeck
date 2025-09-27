@@ -18,7 +18,7 @@ CREATE TEMP TABLE temp_addons AS SELECT * FROM add_ons;
 -- ========================================
 
 -- Ajouter les colonnes JSONB si elles n'existent pas
-ALTER TABLE services 
+ALTER TABLE services
 ADD COLUMN IF NOT EXISTS vehicle_size_variations jsonb DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS formulas jsonb DEFAULT '[]',
 ADD COLUMN IF NOT EXISTS image_urls text[] DEFAULT '{}';
@@ -28,7 +28,7 @@ ADD COLUMN IF NOT EXISTS image_urls text[] DEFAULT '{}';
 -- ========================================
 
 -- Migrer les formules vers le JSONB
-UPDATE services 
+UPDATE services
 SET formulas = (
     SELECT jsonb_agg(
         jsonb_build_object(
@@ -39,13 +39,13 @@ SET formulas = (
             'includedItems', COALESCE(f.description, '')::text[]
         )
     )
-    FROM temp_formulas f 
+    FROM temp_formulas f
     WHERE f.service_id = services.id
 )
 WHERE EXISTS (SELECT 1 FROM temp_formulas WHERE service_id = services.id);
 
 -- Migrer les variations de taille vers le JSONB
-UPDATE services 
+UPDATE services
 SET vehicle_size_variations = (
     SELECT jsonb_object_agg(
         vs.id::text,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS addons (
 
 -- Migrer les add-ons vers la nouvelle structure
 INSERT INTO addons (service_id, name, description, price, duration)
-SELECT 
+SELECT
     NULL as service_id, -- Les add-ons génériques n'ont pas de service_id spécifique
     name,
     description,
@@ -100,10 +100,10 @@ DROP TABLE IF EXISTS add_ons CASCADE;
 -- ========================================
 
 -- Index pour les recherches JSONB
-CREATE INDEX IF NOT EXISTS idx_services_vehicle_size_variations 
+CREATE INDEX IF NOT EXISTS idx_services_vehicle_size_variations
 ON services USING GIN (vehicle_size_variations);
 
-CREATE INDEX IF NOT EXISTS idx_services_formulas 
+CREATE INDEX IF NOT EXISTS idx_services_formulas
 ON services USING GIN (formulas);
 
 -- ========================================
@@ -111,24 +111,24 @@ ON services USING GIN (formulas);
 -- ========================================
 
 -- Vérifier que la migration s'est bien passée
-SELECT 
+SELECT
     'Services avec formules' as check_type,
     COUNT(*) as count
-FROM services 
+FROM services
 WHERE jsonb_array_length(formulas) > 0
 
 UNION ALL
 
-SELECT 
+SELECT
     'Services avec variations de taille' as check_type,
     COUNT(*) as count
-FROM services 
-WHERE jsonb_typeof(vehicle_size_variations) = 'object' 
+FROM services
+WHERE jsonb_typeof(vehicle_size_variations) = 'object'
 AND jsonb_array_length(jsonb_object_keys(vehicle_size_variations)) > 0
 
 UNION ALL
 
-SELECT 
+SELECT
     'Add-ons migrés' as check_type,
     COUNT(*) as count
 FROM addons;
