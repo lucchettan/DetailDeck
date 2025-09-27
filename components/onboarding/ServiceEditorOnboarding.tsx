@@ -125,20 +125,41 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   };
 
   const loadExistingServices = async (shopId: string) => {
-    const { data } = await supabase
+    // Charger les services
+    const { data: servicesData } = await supabase
       .from('services')
-      .select(`
-        *,
-        addons:addons(*)
-      `)
+      .select('*')
       .eq('shop_id', shopId);
 
+    if (!servicesData) {
+      setServices([]);
+      return;
+    }
+
+    // Charger tous les add-ons pour ces services
+    const serviceIds = servicesData.map(s => s.id);
+    const { data: addonsData } = await supabase
+      .from('addons')
+      .select('*')
+      .in('service_id', serviceIds)
+      .eq('is_active', true);
+
+    // Grouper les add-ons par service_id
+    const addonsByService: Record<string, any[]> = {};
+    (addonsData || []).forEach(addon => {
+      if (!addonsByService[addon.service_id]) {
+        addonsByService[addon.service_id] = [];
+      }
+      addonsByService[addon.service_id].push(addon);
+    });
+
     // Transformer les données pour inclure les add-ons dans chaque service
-    const servicesWithAddOns = (data || []).map(service => ({
+    const servicesWithAddOns = servicesData.map(service => ({
       ...service,
-      specific_addons: service.addons || []
+      specific_addons: addonsByService[service.id] || []
     }));
 
+    console.log('Services chargés avec add-ons:', servicesWithAddOns);
     setServices(servicesWithAddOns);
   };
 
