@@ -145,7 +145,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           const addOnsByService: Record<string, Array<{ name: string; price: number; duration: number; description?: string }>> = {};
           try {
             const { data: addonsData, error: addonsError } = await supabase
-              .from('add_ons')
+              .from('addons')
               .select('id, name, description, price, duration, service_id')
               .eq('is_active', true)
               .not('service_id', 'is', null);

@@ -139,7 +139,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
     // Charger tous les add-ons pour ces services
     const serviceIds = servicesData.map(s => s.id);
     const { data: addonsData } = await supabase
-      .from('add_ons')
+      .from('addons')
       .select('*')
       .in('service_id', serviceIds)
       .eq('is_active', true);
@@ -261,22 +261,26 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       console.log('🔍 [DEBUG] formData.specific_addons:', formData.specific_addons);
       console.log('🔍 [DEBUG] formData.specific_addons.length:', formData.specific_addons.length);
       
-      if (formData.specific_addons.length > 0) {
+      // Filtrer les add-ons valides (avec un nom non vide)
+      const validAddOns = formData.specific_addons.filter(addon => addon.name && addon.name.trim() !== '');
+      console.log('🔍 [DEBUG] Add-ons valides après filtrage:', validAddOns);
+      
+      if (validAddOns.length > 0) {
         console.log('🔍 [DEBUG] Sauvegarde des add-ons...');
         
         // Supprimer les anciens add-ons si on édite
         if (editingService) {
           console.log('🔍 [DEBUG] Suppression des anciens add-ons pour service:', serviceId);
           await supabase
-            .from('add_ons')
+            .from('addons')
             .delete()
             .eq('service_id', serviceId);
         }
 
         // Insérer les nouveaux add-ons
-        const addOnsData = formData.specific_addons.map(addon => ({
+        const addOnsData = validAddOns.map(addon => ({
           service_id: serviceId,
-          name: addon.name,
+          name: addon.name.trim(),
           description: addon.description || '',
           price: addon.price,
           duration: addon.duration,
@@ -286,7 +290,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         console.log('🔍 [DEBUG] Données des add-ons à insérer:', addOnsData);
 
         const { error: addOnsError } = await supabase
-          .from('add_ons')
+          .from('addons')
           .insert(addOnsData);
 
         if (addOnsError) {
@@ -296,7 +300,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           console.log('🔍 [DEBUG] Add-ons sauvegardés avec succès!');
         }
       } else {
-        console.log('🔍 [DEBUG] Aucun add-on à sauvegarder');
+        console.log('🔍 [DEBUG] Aucun add-on valide à sauvegarder');
       }
 
       await loadExistingServices(shopId);
@@ -359,8 +363,8 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           image_urls: [...formData.image_urls, publicUrl]
         });
       } else {
-        const { data: { publicUrl } } = supabase.storage
-          .from('service-images')
+      const { data: { publicUrl } } = supabase.storage
+        .from('service-images')
           .getPublicUrl(fileName);
 
         setFormData({
@@ -536,12 +540,12 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                   >
                     Modifier
                   </button>
-                  <button
+          <button
                     onClick={() => handleDeleteService(service.id!)}
                     className="text-red-500 hover:text-red-700 p-1"
-                  >
+          >
                     <TrashIcon className="w-4 h-4" />
-                  </button>
+          </button>
                 </div>
               </div>
             </div>
@@ -553,26 +557,26 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                 <h4 className="text-lg font-medium text-gray-900">
                   {editingService ? 'Modifier le service' : 'Nouveau service'}
                 </h4>
-              </div>
+      </div>
 
               <div className="space-y-6">
                 {/* Informations de base */}
-                <div className="space-y-4">
+      <div className="space-y-4">
                   <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Informations de base</h5>
 
-                  {/* Nom du service */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Nom du service *
-                    </label>
-                    <input
-                      type="text"
+        {/* Nom du service */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Nom du service *
+          </label>
+          <input
+            type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Ex: Nettoyage intérieur complet"
-                    />
-                  </div>
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Ex: Nettoyage intérieur complet"
+          />
+        </div>
 
                   {/* Description */}
                   <div>
@@ -588,54 +592,54 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                     />
                   </div>
 
-                  {/* Catégorie, Prix, Durée */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        Catégorie *
-                      </label>
-                      <select
+        {/* Catégorie, Prix, Durée */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Catégorie *
+            </label>
+            <select
                         value={formData.category_id}
                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        Prix de base (€) *
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Prix de base (€) *
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
                         value={formData.base_price}
                         onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="20.00"
-                      />
-                    </div>
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="20.00"
+            />
+          </div>
 
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        Durée (minutes) *
-                      </label>
-                      <input
-                        type="number"
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Durée (minutes) *
+            </label>
+            <input
+              type="number"
                         min="1"
                         value={formData.base_duration}
                         onChange={(e) => setFormData({ ...formData, base_duration: parseInt(e.target.value) || 30 })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="30"
-                      />
-                    </div>
-                  </div>
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="30"
+            />
+          </div>
+        </div>
                 </div>
 
                 {/* Images */}
@@ -683,56 +687,56 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                             </svg>
                           )}
                           <p className="text-sm text-gray-500">Ajouter image</p>
-                        </label>
+          </label>
                       </div>
                     )}
                   </div>
-                </div>
+        </div>
 
                 {/* Options avancées */}
                 <div className="space-y-4">
                   <h5 className="text-lg font-semibold text-gray-900 border-b pb-2">Options avancées</h5>
 
                   <div className="space-y-6">
-                    {/* Variations par taille de véhicule */}
+        {/* Variations par taille de véhicule */}
                     {vehicleSizes.length > 0 && (
-                      <div>
+          <div>
                         <h6 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h6>
-                        <div className="space-y-3">
+            <div className="space-y-3">
                           {vehicleSizes.map((size) => (
                             <div key={size.id} className="bg-gray-50 rounded-lg p-4 border">
                               <h6 className="font-medium text-gray-900 mb-3 block">{size.name}</h6>
                               <div className="grid grid-cols-2 gap-4">
-                                <div>
+                  <div>
                                   <label className="block text-sm text-gray-600 mb-1">Supplément prix (€)</label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
+                    <input
+                      type="number"
+                      step="0.01"
                                     value={formData.vehicle_size_variations[size.id]?.price || 0}
                                     onChange={(e) => updateVehicleSizeVariation(size.id, 'price', parseFloat(e.target.value) || 0)}
                                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="0.00"
-                                  />
-                                </div>
-                                <div>
+                    />
+                  </div>
+                  <div>
                                   <label className="block text-sm text-gray-600 mb-1">Supplément durée (min)</label>
-                                  <input
-                                    type="number"
+                    <input
+                      type="number"
                                     value={formData.vehicle_size_variations[size.id]?.duration || 0}
                                     onChange={(e) => updateVehicleSizeVariation(size.id, 'duration', parseInt(e.target.value) || 0)}
                                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="0"
                                   />
                                 </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
                     {/* Formules */}
-                    <div>
+        <div>
                       <div className="flex justify-between items-center mb-3">
                         <h6 className="text-md font-semibold text-gray-800">Formules</h6>
                         <button
@@ -761,40 +765,40 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
 
                             <div className="space-y-4">
                               {/* Nom de la formule */}
-                              <div>
+                <div>
                                 <label className="block text-sm text-gray-600 mb-1">Nom de la formule</label>
-                                <input
-                                  type="text"
+                  <input
+                    type="text"
                                   value={formula.name}
                                   onChange={(e) => updateFormula(formulaIndex, 'name', e.target.value)}
                                   className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                   placeholder="Ex: Formule Premium"
-                                />
-                              </div>
+                  />
+                </div>
 
                               {/* Prix et durée additionnels */}
                               <div className="grid grid-cols-2 gap-4">
-                                <div>
+                <div>
                                   <label className="block text-sm text-gray-600 mb-1">Prix additionnel (€)</label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
+                  <input
+                    type="number"
+                    step="0.01"
                                     value={formula.additionalPrice}
                                     onChange={(e) => updateFormula(formulaIndex, 'additionalPrice', parseFloat(e.target.value) || 0)}
                                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="0.00"
-                                  />
-                                </div>
-                                <div>
+                  />
+                </div>
+                <div>
                                   <label className="block text-sm text-gray-600 mb-1">Durée additionnelle (min)</label>
-                                  <input
-                                    type="number"
+                  <input
+                    type="number"
                                     value={formula.additionalDuration}
                                     onChange={(e) => updateFormula(formulaIndex, 'additionalDuration', parseInt(e.target.value) || 0)}
                                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="0"
-                                  />
-                                </div>
+                  />
+                </div>
                               </div>
 
                               {/* Points forts inclus */}
@@ -815,32 +819,32 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                         className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="Ex: Aspiration complète"
                                       />
-                                      <button
-                                        type="button"
+                  <button
+                    type="button"
                                         onClick={() => removeIncludedItem(formulaIndex, itemIndex)}
                                         className="text-red-500 hover:text-red-700 p-1"
-                                      >
-                                        <TrashIcon className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                  <button
-                                    type="button"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+              </div>
+            ))}
+            <button
+              type="button"
                                     onClick={() => addIncludedItem(formulaIndex)}
                                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                   >
                                     + Ajouter un point fort
-                                  </button>
+            </button>
                                 </div>
                               </div>
                             </div>
                           </div>
                         ))}
-                      </div>
-                    </div>
+          </div>
+        </div>
 
                     {/* Add-ons spécifiques */}
-                    <div>
+        <div>
                       <div className="flex justify-between items-center mb-3">
                         <h6 className="text-md font-semibold text-gray-800">Add-ons spécifiques</h6>
                         <button
@@ -859,14 +863,14 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                             <div key={index} className="bg-gray-50 rounded-lg p-4 border">
                               <div className="flex justify-between items-start mb-3">
                                 <h6 className="font-medium text-gray-900">Add-on {index + 1}</h6>
-                                <button
-                                  type="button"
+                    <button
+                      type="button"
                                   onClick={() => removeSpecificAddOn(index)}
                                   className="text-red-500 hover:text-red-700"
-                                >
+                    >
                                   <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </div>
+                    </button>
+                  </div>
 
                               <div className="space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -906,7 +910,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
                                   </div>
                                   <div>
                                     <label className="block text-sm text-gray-600 mb-1">Durée (min)</label>
-                                    <input
+                    <input
                                       type="number"
                                       value={addOn.duration}
                                       onChange={(e) => updateSpecificAddOn(index, 'duration', parseInt(e.target.value) || 0)}
@@ -950,18 +954,18 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           )}
 
           {!showServiceForm && (
-            <button
+              <button
               onClick={handleCreateService}
               className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
-            >
+              >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               {services.length === 0 ? 'Créer votre premier service' : 'Ajouter un autre service'}
-            </button>
-          )}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
       <div className="flex justify-between items-center mt-8 pt-6 border-t">
         <button

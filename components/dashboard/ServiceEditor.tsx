@@ -155,7 +155,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
           // Load existing add-ons for this service (simplified structure)
           const { data: addOns, error: addOnsError } = await supabase
-            .from('add_ons')
+            .from('addons')
             .select('id, name, description, price, duration')
             .eq('service_id', serviceId)
             .eq('is_active', true);
@@ -361,7 +361,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
       // First, delete existing add-ons for this service
       await supabase
-        .from('add_ons')
+        .from('addons')
         .delete()
         .eq('service_id', currentServiceId);
 
