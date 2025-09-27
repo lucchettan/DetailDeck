@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import ServiceEditor from '../dashboard/ServiceEditor';
-import { Service, Formula, VehicleSizeSupplement, AddOn, ShopVehicleSize, ShopServiceCategory } from '../Dashboard';
+import { Service, ShopVehicleSize, ShopServiceCategory } from '../Dashboard';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface ServiceEditorOnboardingProps {
   onBack: () => void;
@@ -12,6 +12,17 @@ interface ServiceEditorOnboardingProps {
   categories?: any[];
   vehicleSizes?: any[];
   onDataUpdate?: (data: any[]) => void;
+}
+
+interface ServiceFormData {
+  name: string;
+  description: string;
+  category_id: string;
+  base_price: number;
+  base_duration: number;
+  image_urls: string[];
+  vehicle_size_variations: { [key: string]: { price: number; duration: number } };
+  specific_addons: Array<{ name: string; price: number; duration: number; description?: string }>;
 }
 
 const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
@@ -30,8 +41,21 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   const [vehicleSizes, setVehicleSizes] = useState<ShopVehicleSize[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showServiceEditor, setShowServiceEditor] = useState(false);
-  const [editingServiceId, setEditingServiceId] = useState<string>('new');
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Formulaire de service
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: '',
+    description: '',
+    category_id: '',
+    base_price: 0,
+    base_duration: 30,
+    image_urls: [],
+    vehicle_size_variations: {},
+    specific_addons: []
+  });
 
   useEffect(() => {
     if (propShopId && propCategories && propVehicleSizes) {
@@ -94,31 +118,103 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
     setServices(data || []);
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      category_id: categories[0]?.id || '',
+      base_price: 0,
+      base_duration: 30,
+      image_urls: [],
+      vehicle_size_variations: {},
+      specific_addons: []
+    });
+    setEditingService(null);
+  };
+
   const handleCreateService = () => {
-    setEditingServiceId('new');
-    setShowServiceEditor(true);
+    resetForm();
+    setShowServiceForm(true);
   };
 
-  const handleEditService = (serviceId: string) => {
-    setEditingServiceId(serviceId);
-    setShowServiceEditor(true);
+  const handleEditService = (service: Service) => {
+    setFormData({
+      name: service.name || '',
+      description: service.description || '',
+      category_id: service.category_id || categories[0]?.id || '',
+      base_price: service.base_price || 0,
+      base_duration: service.base_duration || 30,
+      image_urls: service.image_urls || [],
+      vehicle_size_variations: service.vehicle_size_variations || {},
+      specific_addons: service.specific_addons || []
+    });
+    setEditingService(service);
+    setShowServiceForm(true);
   };
 
-  const handleServiceEditorBack = () => {
-    setShowServiceEditor(false);
-  };
+  const handleSaveService = async () => {
+    if (!shopId || !formData.name.trim() || !formData.category_id || formData.base_price <= 0) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
 
-  const handleServiceEditorSave = async () => {
-    setShowServiceEditor(false);
-    if (shopId) {
+    setSaving(true);
+    try {
+      const serviceData = {
+        shop_id: shopId,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        category_id: formData.category_id,
+        base_price: formData.base_price,
+        base_duration: formData.base_duration,
+        image_urls: formData.image_urls,
+        vehicle_size_variations: formData.vehicle_size_variations,
+        specific_addons: formData.specific_addons
+      };
+
+      if (editingService) {
+        // Mettre à jour
+        const { error } = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', editingService.id);
+        
+        if (error) throw error;
+      } else {
+        // Créer
+        const { error } = await supabase
+          .from('services')
+          .insert([serviceData]);
+        
+        if (error) throw error;
+      }
+
       await loadExistingServices(shopId);
+      setShowServiceForm(false);
+      resetForm();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde du service');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleServiceEditorDelete = async () => {
-    setShowServiceEditor(false);
-    if (shopId) {
-      await loadExistingServices(shopId);
+  const handleDeleteService = async (serviceId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', serviceId);
+      
+      if (error) throw error;
+      
+      await loadExistingServices(shopId!);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression du service');
     }
   };
 
@@ -128,29 +224,6 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
     }
     onNext();
   };
-
-  if (showServiceEditor && shopId) {
-    const serviceData = services.find(s => s.id === editingServiceId);
-    
-    return (
-      <ServiceEditor
-        serviceId={editingServiceId}
-        shopId={shopId}
-        supportedVehicleSizes={[]} // Deprecated
-        vehicleSizes={vehicleSizes}
-        serviceCategories={categories}
-        onBack={handleServiceEditorBack}
-        onSave={handleServiceEditorSave}
-        onDelete={handleServiceEditorDelete}
-        initialData={serviceData ? {
-          ...serviceData,
-          formulas: [],
-          supplements: [],
-          specificAddOns: []
-        } : null}
-      />
-    );
-  }
 
   if (loading) {
     return (
@@ -182,7 +255,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           Créer votre premier service
         </h2>
         <p className="text-gray-600">
-          Définissez votre premier service avec toutes ses options. Vous pourrez en ajouter d'autres plus tard.
+          Définissez votre premier service. Vous pourrez en ajouter d'autres plus tard.
         </p>
       </div>
 
@@ -197,32 +270,149 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
             <h3 className="text-xl font-semibold text-gray-900">Vos services</h3>
           </div>
         </div>
-        <p className="text-gray-600 mb-6">Créez votre premier service avec toutes ses options (formules, tailles, add-ons)</p>
+        <p className="text-gray-600 mb-6">Créez votre premier service avec les informations de base</p>
 
-        {services.length > 0 ? (
-          <div className="space-y-4">
-            {services.map((service) => (
-              <div key={service.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900">{service.name}</h4>
-                    <p className="text-sm text-gray-600">{service.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                      <span>Prix: {service.base_price}€</span>
-                      <span>Durée: {service.base_duration}min</span>
-                      <span>Catégorie: {categories.find(c => c.id === service.category_id)?.name}</span>
-                    </div>
+        <div className="space-y-4">
+          {services.map((service) => (
+            <div key={service.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900">{service.name}</h4>
+                  <p className="text-sm text-gray-600">{service.description}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <span>Prix: {service.base_price}€</span>
+                    <span>Durée: {service.base_duration}min</span>
+                    <span>Catégorie: {categories.find(c => c.id === service.category_id)?.name}</span>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleEditService(service.id!)}
+                    onClick={() => handleEditService(service)}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     Modifier
                   </button>
+                  <button
+                    onClick={() => handleDeleteService(service.id!)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            ))}
-            
+            </div>
+          ))}
+
+          {showServiceForm && (
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <div className="mb-4">
+                <h4 className="text-lg font-medium text-gray-900">
+                  {editingService ? 'Modifier le service' : 'Nouveau service'}
+                </h4>
+              </div>
+
+              <div className="space-y-4">
+                {/* Nom du service */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Nom du service *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: Nettoyage intérieur complet"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Décrivez ce que comprend ce service..."
+                  />
+                </div>
+
+                {/* Catégorie, Prix, Durée */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Catégorie *
+                    </label>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Prix de base (€) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.base_price}
+                      onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="20.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Durée (minutes) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.base_duration}
+                      onChange={(e) => setFormData({ ...formData, base_duration: parseInt(e.target.value) || 30 })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="30"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    onClick={() => setShowServiceForm(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSaveService}
+                    disabled={saving || !formData.name.trim() || !formData.category_id || formData.base_price <= 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : null}
+                    {editingService ? 'Mettre à jour' : 'Créer le service'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!showServiceForm && (
             <button
               onClick={handleCreateService}
               className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
@@ -230,32 +420,10 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              Ajouter un autre service
+              {services.length === 0 ? 'Créer votre premier service' : 'Ajouter un autre service'}
             </button>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="mb-6">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">Aucun service créé</h4>
-              <p className="text-gray-600 mb-6">
-                Créez votre premier service pour commencer à recevoir des réservations
-              </p>
-            </div>
-            
-            <button
-              onClick={handleCreateService}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 mx-auto"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Créer mon premier service
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex justify-between items-center mt-8 pt-6 border-t">
