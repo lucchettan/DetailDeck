@@ -7,7 +7,7 @@ import ShopInfoStep from './onboarding/ShopInfoStep';
 import ScheduleStep from './onboarding/ScheduleStep';
 import CategoriesStep from './onboarding/CategoriesStep';
 import VehicleSizesStep from './onboarding/VehicleSizesStep';
-import ServicesStepEnhanced from './onboarding/ServicesStepEnhanced';
+import ServiceEditorOnboarding from './onboarding/ServiceEditorOnboarding';
 
 interface NewOnboardingProps {
   onComplete: () => void;
@@ -185,12 +185,11 @@ const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
 
       case 'services':
         return (
-          <ServicesStepEnhanced
+          <ServiceEditorOnboarding
             onBack={handleBack}
             onNext={handleNext}
             shopId={onboardingData.shopId}
             categories={onboardingData.categories}
-            services={onboardingData.services}
             vehicleSizes={onboardingData.vehicleSizes}
             onDataUpdate={(data) => updateOnboardingData('services', data)}
           />
