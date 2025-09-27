@@ -434,10 +434,10 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       </div>
 
       {/* Contenu principal */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Panneau de gauche - Étapes */}
-          <div className="lg:col-span-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
+        <div className="max-w-4xl mx-auto">
+          {/* Étapes */}
+          <div>
             {currentStep === 'vehicleSize' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Sélectionnez la taille de votre véhicule</h2>
@@ -548,16 +548,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       />
                     ))}
                 </div>
-                {selectedServices.length > 0 && (
-                  <div className="mt-6">
-                    <button
-                      onClick={() => setCurrentStep('datetime')}
-                      className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                    >
-                      Continuer vers la réservation
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -592,16 +582,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     />
                   </div>
                 </div>
-                {selectedDate && selectedTimeSlot && (
-                  <div className="mt-6">
-                    <button
-                      onClick={() => setCurrentStep('clientInfo')}
-                      className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                    >
-                      Continuer vers vos informations
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -653,69 +633,77 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Panneau de droite - Résumé */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Résumé de votre réservation</h3>
-
-              {selectedVehicleSize && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600">Véhicule:</p>
-                  <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
-                </div>
-              )}
-
-              {selectedServices.length > 0 && (
-                <div className="space-y-3 mb-4">
-                  <p className="text-sm text-gray-600">Services sélectionnés:</p>
-                  {totalCalculation.breakdown.map((item, index) => (
-                    <div key={index} className="border-l-2 border-blue-500 pl-3">
-                      <p className="font-medium text-sm">{item.serviceName}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.totalPrice}€ • {formatDuration(item.totalDuration)}
-                      </p>
-                      <div className="text-xs text-gray-500 ml-2">
-                        <p>Base: {item.basePrice}€</p>
-                        {item.variationPrice > 0 && (
-                          <p>+ Taille: {item.variationPrice}€</p>
-                        )}
-                        {item.formulaPrice > 0 && (
-                          <p>+ Formule: {item.formulaPrice}€</p>
-                        )}
-                      </div>
-                      {item.addOns.length > 0 && (
-                        <div className="mt-1">
-                          {item.addOns.map(addOn => (
-                            <p key={addOn.id} className="text-xs text-gray-500 ml-2">
-                              + {addOn.name} ({addOn.price}€)
-                            </p>
-                          ))}
-                        </div>
-                      )}
+      {/* Footer fixe avec résumé */}
+      {totalCalculation.totalPrice > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-6">
+                  {selectedVehicleSize && (
+                    <div>
+                      <p className="text-xs text-gray-500">Véhicule</p>
+                      <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {totalCalculation.totalPrice > 0 && (
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">Total:</span>
-                    <span className="font-bold text-lg text-blue-600">
-                      {totalCalculation.totalPrice.toFixed(2)}€
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>Durée totale:</span>
-                    <span>{formatDuration(totalCalculation.totalDuration)}</span>
+                  )}
+                  
+                  {selectedServices.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500">Services</p>
+                      <p className="text-sm font-medium">{selectedServices.length} service{selectedServices.length > 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <p className="text-xs text-gray-500">Durée totale</p>
+                    <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
                   </div>
                 </div>
-              )}
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Total</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {totalCalculation.totalPrice.toFixed(2)}€
+                  </p>
+                </div>
+                
+                {currentStep === 'services' && selectedServices.length > 0 && (
+                  <button
+                    onClick={() => setCurrentStep('dateTime')}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Continuer
+                  </button>
+                )}
+                
+                {currentStep === 'dateTime' && selectedTimeSlot && (
+                  <button
+                    onClick={() => setCurrentStep('clientInfo')}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Continuer
+                  </button>
+                )}
+                
+                {currentStep === 'clientInfo' && (
+                  <button
+                    onClick={handleReservationSubmit}
+                    disabled={isSubmitting}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
