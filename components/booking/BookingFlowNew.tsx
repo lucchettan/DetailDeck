@@ -282,9 +282,40 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
     setSelectedServices(selectedServices.filter(s => s.serviceId !== serviceId));
   };
 
+  // Valider les informations client
+  const validateClientInfo = () => {
+    const errors: ClientInfoErrors = {};
+    
+    if (!clientInfo.firstName.trim()) {
+      errors.firstName = 'Le prénom est requis';
+    }
+    
+    if (!clientInfo.lastName.trim()) {
+      errors.lastName = 'Le nom est requis';
+    }
+    
+    if (!clientInfo.email.trim()) {
+      errors.email = 'L\'email est requis';
+    } else if (!/\S+@\S+\.\S+/.test(clientInfo.email)) {
+      errors.email = 'L\'email n\'est pas valide';
+    }
+    
+    if (!clientInfo.phone.trim()) {
+      errors.phone = 'Le téléphone est requis';
+    }
+    
+    setClientInfoErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Gérer la soumission de la réservation
   const handleReservationSubmit = async () => {
-    if (!shopData || !selectedDate || !selectedTimeSlot) return;
+    if (!shopData || !selectedDate) return;
+    
+    // Valider les informations client
+    if (!validateClientInfo()) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -298,7 +329,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
       };
 
-      const endTime = calculateEndTime(selectedTimeSlot, totalCalculation.totalDuration);
+      // Utiliser le créneau sélectionné ou un créneau par défaut
+      const timeSlot = selectedTimeSlot || '14:00';
+      const endTime = calculateEndTime(timeSlot, totalCalculation.totalDuration);
 
       // Créer la réservation avec la nouvelle structure JSONB
       const { data: reservation, error: reservationError } = await supabase
@@ -310,7 +343,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
           customer_phone: clientInfo.phone,
           vehicle_size_id: selectedVehicleSize,
           date: selectedDate.toISOString().split('T')[0],
-          start_time: selectedTimeSlot,
+          start_time: timeSlot,
           end_time: endTime,
           total_price: totalCalculation.totalPrice,
           total_duration: totalCalculation.totalDuration,
@@ -583,13 +616,19 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-4">Heure</h3>
-                    <TimeSlotPicker
-                      selectedDate={selectedDate}
-                      selectedTimeSlot={selectedTimeSlot}
-                      onTimeSlotSelect={setSelectedTimeSlot}
-                      shopId={shopId}
-                      duration={totalCalculation.totalDuration}
-                    />
+                    {selectedDate ? (
+                      <TimeSlotPicker
+                        selectedDate={selectedDate}
+                        selectedTimeSlot={selectedTimeSlot}
+                        onTimeSlotSelect={setSelectedTimeSlot}
+                        shopId={shopId}
+                        duration={totalCalculation.totalDuration}
+                      />
+                    ) : (
+                      <div className="text-center p-8 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500">Veuillez d'abord sélectionner une date</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -606,14 +645,84 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900">Vos informations</h2>
                 </div>
-                <StepClientInfo
-                  clientInfo={clientInfo}
-                  setClientInfo={setClientInfo}
-                  clientInfoErrors={clientInfoErrors}
-                  setClientInfoErrors={setClientInfoErrors}
-                  onSubmit={handleReservationSubmit}
-                  onLeadSubmit={handleLeadSubmit}
-                />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={clientInfo.firstName}
+                        onChange={(e) => setClientInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Votre prénom"
+                        required
+                      />
+                      {clientInfoErrors.firstName && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.firstName}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={clientInfo.lastName}
+                        onChange={(e) => setClientInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Votre nom"
+                        required
+                      />
+                      {clientInfoErrors.lastName && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.lastName}</p>}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={clientInfo.email}
+                      onChange={(e) => setClientInfo(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="votre@email.com"
+                      required
+                    />
+                    {clientInfoErrors.email && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.email}</p>}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={clientInfo.phone}
+                      onChange={(e) => setClientInfo(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0123456789"
+                      required
+                    />
+                    {clientInfoErrors.phone && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.phone}</p>}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="vehicleInfo" className="block text-sm font-medium text-gray-700 mb-1">Informations véhicule</label>
+                    <input
+                      type="text"
+                      id="vehicleInfo"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Marque, modèle, plaque d'immatriculation (optionnel)"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notes supplémentaires</label>
+                    <textarea
+                      id="notes"
+                      rows={3}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Instructions spéciales, localisation précise, etc."
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -759,7 +868,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       </button>
                     )}
 
-                    {currentStep === 'datetime' && selectedTimeSlot && (
+                    {currentStep === 'datetime' && selectedDate && (
                       <button
                         onClick={() => setCurrentStep('clientInfo')}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -768,7 +877,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       </button>
                     )}
 
-                    {currentStep === 'datetime' && !selectedTimeSlot && (
+                    {currentStep === 'datetime' && !selectedDate && (
                       <button
                         onClick={() => setCurrentStep('serviceSelection')}
                         className="bg-gray-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"

@@ -1,5 +1,5 @@
 import React from 'react';
-import BookingFlowNew from './booking/BookingFlowNew';
+import BookingFlow from './booking/BookingFlow';
 
 interface BookingPageProps {
   shopId: string;
