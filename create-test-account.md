@@ -4,11 +4,11 @@
 
 ### 1. Créer le compte utilisateur
 1. Aller sur http://localhost:5174
-2. Cliquer sur "Se connecter" 
+2. Cliquer sur "Se connecter"
 3. Cliquer sur "Créer un compte"
 4. Utiliser les informations suivantes :
    - **Email** : `hello@nomad-lab.io`
-   - **Mot de passe** : `nomadlab123`
+   - **Mot de passe** : `Potager12`
 
 ### 2. Compléter l'onboarding
 1. **Informations du shop** :
@@ -24,7 +24,7 @@
 
 3. **Catégories de services** :
    - `Nettoyage Intérieur` (avec image)
-   - `Nettoyage Extérieur` (avec image)  
+   - `Nettoyage Extérieur` (avec image)
    - `Prestations Premium` (avec image)
 
 4. **Tailles de véhicules** :
@@ -102,4 +102,4 @@
 ## URLs de test
 - **Page publique** : http://localhost:5174/nomad-lab-auto-care
 - **Dashboard** : http://localhost:5174/dashboard
-- **Connexion** : hello@nomad-lab.io / nomadlab123
+- **Connexion** : hello@nomad-lab.io / Potager12

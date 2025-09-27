@@ -169,10 +169,10 @@ const Dashboard: React.FC = () => {
 
       if (shopError) {
         if (shopError.code === 'PGRST116') {
-          // No shop found - user might have been deleted
-          console.warn('🚨 No shop found for user:', user.email);
-          // Force logout to clear invalid session
-          await logOut();
+          // No shop found - redirect to onboarding
+          console.log('ℹ️ No shop found for user, redirecting to onboarding:', user.email);
+          setShowOnboarding(true);
+          setLoadingShopData(false);
           return;
         }
         throw shopError;

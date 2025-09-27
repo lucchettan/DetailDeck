@@ -33,7 +33,7 @@ async function seedNomadLabData() {
   try {
     // 1. Vérifier si l'utilisateur existe déjà
     console.log('1️⃣ Vérification de l\'utilisateur hello@nomad-lab.io...');
-    
+
     // Essayer de se connecter avec l'utilisateur
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: 'hello@nomad-lab.io',

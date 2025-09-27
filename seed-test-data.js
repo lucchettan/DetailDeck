@@ -52,7 +52,7 @@ async function seedTestData() {
       console.log('✅ Utilisateur créé:', authUser.user.email);
     }
 
-    const userId = authError ? 
+    const userId = authError ?
       (await supabase.auth.admin.listUsers()).data.users.find(u => u.email === 'test@detaildeck.com').id :
       authUser.user.id;
 
@@ -92,7 +92,7 @@ async function seedTestData() {
         .select('*')
         .eq('owner_user_id', userId)
         .single();
-      
+
       if (existingShop) {
         console.log('✅ Shop existant récupéré:', existingShop.name);
         shop = existingShop;
