@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, ChevronLeftIcon, StorefrontIcon, CloseIcon, CheckCircleIcon, PhoneIcon, SparklesIcon, ChevronUpIcon, XCircleIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, CloseIcon, CheckCircleIcon, SparklesIcon, XCircleIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -420,15 +420,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
-              {shopData.business_type === 'mobile' ? (
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-blue-600 font-bold text-lg">🚗</span>
-                </div>
-              ) : (
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <StorefrontIcon className="w-6 h-6 text-blue-600" />
-                </div>
-              )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{shopData.name}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -441,9 +432,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <PhoneIcon className="w-5 h-5 text-gray-400" />
-              <span className="text-sm text-gray-600">{shopData.phone}</span>
+            <div className="text-sm text-gray-600">
+              {shopData.phone}
             </div>
           </div>
         </div>
@@ -489,9 +479,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 <div className="flex items-center space-x-4 mb-6">
                   <button
                     onClick={() => setCurrentStep('vehicleSize')}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <ChevronLeftIcon className="w-5 h-5" />
+                    ← Retour
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900">Choisissez une catégorie</h2>
                 </div>
@@ -541,9 +531,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 <div className="flex items-center space-x-4 mb-6">
                   <button
                     onClick={() => setCurrentStep('categorySelection')}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <ChevronLeftIcon className="w-5 h-5" />
+                    ← Retour
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900">Sélectionnez vos services</h2>
                 </div>
@@ -572,9 +562,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 <div className="flex items-center space-x-4 mb-6">
                   <button
                     onClick={() => setCurrentStep('serviceSelection')}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <ChevronLeftIcon className="w-5 h-5" />
+                    ← Retour
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900">Choisissez votre créneau</h2>
                 </div>
@@ -606,9 +596,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 <div className="flex items-center space-x-4 mb-6">
                   <button
                     onClick={() => setCurrentStep('datetime')}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <ChevronLeftIcon className="w-5 h-5" />
+                    ← Retour
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900">Vos informations</h2>
                 </div>
@@ -741,10 +731,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 {/* Bouton pour expander/réduire le détail */}
                 <button
                   onClick={() => setIsCartExpanded(!isCartExpanded)}
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                 >
-                  <span>{isCartExpanded ? "Masquer le détail" : "Voir le détail"}</span>
-                  <ChevronUpIcon className={`w-4 h-4 transition-transform ${isCartExpanded ? 'rotate-180' : ''}`} />
+                  {isCartExpanded ? "Masquer le détail" : "Voir le détail"}
                 </button>
 
                 {/* Actions principales quand des services sont sélectionnés */}
