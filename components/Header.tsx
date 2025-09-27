@@ -141,7 +141,7 @@ const Header: React.FC<{ onDemoClick: () => void; isDemoLoading: boolean; }> = (
                   {t.login}
                 </a>
                 <a
-                  href="/signin"
+                  href="/signin?view=signup"
                   className="btn btn-primary text-sm sm:text-base"
                 >
                   {t.signUp}

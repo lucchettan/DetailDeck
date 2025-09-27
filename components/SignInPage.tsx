@@ -17,6 +17,15 @@ const SignInPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [showResend, setShowResend] = useState(false);
 
+  // Check URL parameters on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    if (viewParam === 'signup') {
+      setView('signup');
+    }
+  }, []);
+
   const cleanState = (clearEmail = false) => {
     if (clearEmail) setEmail('');
     setPassword('');
