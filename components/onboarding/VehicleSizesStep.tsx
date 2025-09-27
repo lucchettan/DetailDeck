@@ -228,7 +228,7 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({
               </div>
             </div>
           ))}
-          
+
           {/* Bouton d'ajout à l'intérieur de la liste */}
           <button
             onClick={addVehicleSize}

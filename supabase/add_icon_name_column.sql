@@ -8,3 +8,4 @@ ADD COLUMN IF NOT EXISTS icon_name TEXT DEFAULT 'detailing';
 COMMENT ON COLUMN shop_service_categories.icon_name IS 'Icon name for the service category (e.g., detailing, cleaning, etc.)';
 
 
+

@@ -7,7 +7,7 @@ import TimeSlotPicker from './TimeSlotPicker';
 import { formatDuration } from '../../lib/utils';
 import StepClientInfo from './StepClientInfo';
 import BookingPageSkeleton from './BookingPageSkeleton';
-import BookingServiceCard from './BookingServiceCard';
+import ServiceSelectionCard from './ServiceSelectionCard';
 import { ASSET_URLS } from '../../constants';
 
 // Types simplifiés pour la nouvelle structure
@@ -64,6 +64,7 @@ type BookingStep = 'vehicleSize' | 'categorySelection' | 'serviceSelection' | 'd
 
 export interface SelectedService {
   serviceId: string;
+  formulaId?: string; // ID de la formule sélectionnée (optionnel)
   addOnIds: string[];
 }
 
@@ -88,9 +89,11 @@ interface DetailsBreakdownItem {
   vehicleSizeLabel: string;
   basePrice: number;
   variationPrice: number;
+  formulaPrice: number;
   totalPrice: number;
   baseDuration: number;
   variationDuration: number;
+  formulaDuration: number;
   totalDuration: number;
   addOns: Array<{
     id: string;
@@ -149,12 +152,13 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
       if (servicesError) throw servicesError;
 
-      // Charger les add-ons actifs
+      // Charger les add-ons liés aux services (nouvelle structure)
       const { data: addOnsData, error: addOnsError } = await supabase
         .from('addons')
         .select('*')
         .eq('shop_id', shopId)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .not('service_id', 'is', null);
 
       if (addOnsError) throw addOnsError;
 
@@ -202,10 +206,23 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       const service = services.find(s => s.id === selectedService.serviceId);
       if (!service) return;
 
+      // Prix et durée de base du service
       const variation = service.vehicle_size_variations[selectedVehicleSize] || { price: 0, duration: 0 };
-      const servicePrice = service.base_price + variation.price;
-      const serviceDuration = service.base_duration + variation.duration;
+      let servicePrice = service.base_price + variation.price;
+      let serviceDuration = service.base_duration + variation.duration;
 
+      // Ajouter le prix et la durée de la formule si sélectionnée
+      let formulaPrice = 0;
+      let formulaDuration = 0;
+      if (selectedService.formulaId && service.formulas) {
+        const formula = service.formulas.find(f => f.name === selectedService.formulaId);
+        if (formula) {
+          formulaPrice = formula.additionalPrice || 0;
+          formulaDuration = formula.additionalDuration || 0;
+        }
+      }
+
+      // Ajouter les add-ons spécifiques au service
       const serviceAddOns = selectedService.addOnIds
         .map(addOnId => addOns.find(a => a.id === addOnId))
         .filter(Boolean) as AddOn[];
@@ -213,8 +230,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       const addOnsPrice = serviceAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
       const addOnsDuration = serviceAddOns.reduce((sum, addOn) => sum + addOn.duration, 0);
 
-      const itemTotalPrice = servicePrice + addOnsPrice;
-      const itemTotalDuration = serviceDuration + addOnsDuration;
+      const itemTotalPrice = servicePrice + formulaPrice + addOnsPrice;
+      const itemTotalDuration = serviceDuration + formulaDuration + addOnsDuration;
 
       totalPrice += itemTotalPrice;
       totalDuration += itemTotalDuration;
@@ -225,9 +242,11 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         vehicleSizeLabel: vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || '',
         basePrice: service.base_price,
         variationPrice: variation.price,
+        formulaPrice: formulaPrice,
         totalPrice: itemTotalPrice,
         baseDuration: service.base_duration,
         variationDuration: variation.duration,
+        formulaDuration: formulaDuration,
         totalDuration: itemTotalDuration,
         addOns: serviceAddOns.map(addOn => ({
           id: addOn.id,
@@ -242,17 +261,17 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   }, [selectedServices, selectedVehicleSize, services, addOns, vehicleSizes]);
 
   // Gérer la sélection d'un service
-  const handleServiceSelect = (serviceId: string, addOnIds: string[] = []) => {
+  const handleServiceSelect = (serviceId: string, addOnIds: string[] = [], formulaId?: string) => {
     const existingIndex = selectedServices.findIndex(s => s.serviceId === serviceId);
 
     if (existingIndex >= 0) {
       // Mettre à jour le service existant
       const updated = [...selectedServices];
-      updated[existingIndex] = { serviceId, addOnIds };
+      updated[existingIndex] = { serviceId, addOnIds, formulaId };
       setSelectedServices(updated);
     } else {
       // Ajouter un nouveau service
-      setSelectedServices([...selectedServices, { serviceId, addOnIds }]);
+      setSelectedServices([...selectedServices, { serviceId, addOnIds, formulaId }]);
     }
   };
 
@@ -266,7 +285,19 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
     if (!shopData || !selectedDate || !selectedTimeSlot) return;
 
     try {
-      // Créer la réservation
+      // Calculer l'heure de fin
+      const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const startMinutes = hours * 60 + minutes;
+        const endMinutes = startMinutes + durationMinutes;
+        const endHours = Math.floor(endMinutes / 60);
+        const endMins = endMinutes % 60;
+        return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+      };
+
+      const endTime = calculateEndTime(selectedTimeSlot, totalCalculation.totalDuration);
+
+      // Créer la réservation avec la nouvelle structure JSONB
       const { data: reservation, error: reservationError } = await supabase
         .from('reservations')
         .insert({
@@ -277,56 +308,57 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
           vehicle_size_id: selectedVehicleSize,
           date: selectedDate.toISOString().split('T')[0],
           start_time: selectedTimeSlot,
+          end_time: endTime,
           total_price: totalCalculation.totalPrice,
           total_duration: totalCalculation.totalDuration,
-          status: 'pending'
+          status: 'pending',
+          // Structure JSONB pour les services
+          services: selectedServices.map(selectedService => {
+            const service = services.find(s => s.id === selectedService.serviceId);
+            if (!service) return null;
+
+            // Calculer le prix et la durée pour ce service
+            const variation = service.vehicle_size_variations[selectedVehicleSize] || { price: 0, duration: 0 };
+            let servicePrice = service.base_price + variation.price;
+            let serviceDuration = service.base_duration + variation.duration;
+
+            // Ajouter la formule si sélectionnée
+            if (selectedService.formulaId && service.formulas) {
+              const formula = service.formulas.find(f => f.name === selectedService.formulaId);
+              if (formula) {
+                servicePrice += formula.additionalPrice || 0;
+                serviceDuration += formula.additionalDuration || 0;
+              }
+            }
+
+            // Ajouter les add-ons
+            const serviceAddOns = selectedService.addOnIds
+              .map(addOnId => addOns.find(a => a.id === addOnId))
+              .filter(Boolean) as AddOn[];
+
+            const addOnsPrice = serviceAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+            const addOnsDuration = serviceAddOns.reduce((sum, addOn) => sum + addOn.duration, 0);
+
+            return {
+              serviceId: service.id,
+              serviceName: service.name,
+              formulaId: selectedService.formulaId,
+              vehicleSizeId: selectedVehicleSize,
+              addOns: serviceAddOns.map(addOn => ({
+                id: addOn.id,
+                name: addOn.name,
+                price: addOn.price,
+                duration: addOn.duration
+              })),
+              totalPrice: servicePrice + addOnsPrice,
+              duration: serviceDuration + addOnsDuration
+            };
+          }).filter(Boolean)
         })
         .select()
         .single();
 
       if (reservationError) throw reservationError;
-
-      // Ajouter les services à la réservation
-      for (const selectedService of selectedServices) {
-        const service = services.find(s => s.id === selectedService.serviceId);
-        if (!service) continue;
-
-        const variation = service.vehicle_size_variations[selectedVehicleSize] || { price: 0, duration: 0 };
-        const servicePrice = service.base_price + variation.price;
-        const serviceDuration = service.base_duration + variation.duration;
-
-        const { error: serviceError } = await supabase
-          .from('reservation_services')
-          .insert({
-            reservation_id: reservation.id,
-            service_id: service.id,
-            quantity: 1,
-            unit_price: servicePrice,
-            total_price: servicePrice,
-            duration: serviceDuration
-          });
-
-        if (serviceError) throw serviceError;
-
-        // Ajouter les add-ons
-        for (const addOnId of selectedService.addOnIds) {
-          const addOn = addOns.find(a => a.id === addOnId);
-          if (!addOn) continue;
-
-          const { error: addOnError } = await supabase
-            .from('reservation_addons')
-            .insert({
-              reservation_id: reservation.id,
-              addon_id: addOnId,
-              quantity: 1,
-              unit_price: addOn.price,
-              total_price: addOn.price,
-              duration: addOn.duration
-            });
-
-          if (addOnError) throw addOnError;
-        }
-      }
 
       setReservationId(reservation.id);
       setCurrentStep('confirmed');
@@ -479,13 +511,14 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   {services
                     .filter(service => service.category_id === selectedCategory)
                     .map(service => (
-                      <BookingServiceCard
+                      <ServiceSelectionCard
                         key={service.id}
                         service={service}
                         vehicleSize={vehicleSizes.find(vs => vs.id === selectedVehicleSize)}
                         addOns={addOns}
                         selectedAddOns={selectedServices.find(s => s.serviceId === service.id)?.addOnIds || []}
-                        onSelect={(addOnIds) => handleServiceSelect(service.id, addOnIds)}
+                        selectedFormula={selectedServices.find(s => s.serviceId === service.id)?.formulaId}
+                        onSelect={(addOnIds, formulaId) => handleServiceSelect(service.id, addOnIds, formulaId)}
                         onRemove={() => handleServiceRemove(service.id)}
                         isSelected={selectedServices.some(s => s.serviceId === service.id)}
                       />
@@ -618,6 +651,15 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       <p className="text-xs text-gray-500">
                         {item.totalPrice}€ • {formatDuration(item.totalDuration)}
                       </p>
+                      <div className="text-xs text-gray-500 ml-2">
+                        <p>Base: {item.basePrice}€</p>
+                        {item.variationPrice > 0 && (
+                          <p>+ Taille: {item.variationPrice}€</p>
+                        )}
+                        {item.formulaPrice > 0 && (
+                          <p>+ Formule: {item.formulaPrice}€</p>
+                        )}
+                      </div>
                       {item.addOns.length > 0 && (
                         <div className="mt-1">
                           {item.addOns.map(addOn => (

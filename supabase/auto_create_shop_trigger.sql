@@ -40,7 +40,7 @@ CREATE OR REPLACE TRIGGER create_shop_on_user_signup
 
 -- Create empty shops for existing users who don't have one
 INSERT INTO shops (email, name, business_type, opening_hours, booking_rules)
-SELECT 
+SELECT
   u.email,
   'Mon Entreprise',
   'local',

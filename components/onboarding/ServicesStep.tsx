@@ -458,285 +458,285 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
                   )}
                 </div>
 
-              <div className="space-y-4">
-                {/* Nom du service en premier */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Nom du service *
-                  </label>
-                  <input
-                    type="text"
-                    value={service.name}
-                    onChange={(e) => updateService(index, 'name', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ex: Nettoyage intérieur complet"
-                  />
-                </div>
-
-                {/* Catégorie, Prix, Durée dans la même row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-4">
+                  {/* Nom du service en premier */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Catégorie *
-                    </label>
-                    <select
-                      value={service.category_id}
-                      onChange={(e) => updateService(index, 'category_id', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Prix de base (€) *
+                      Nom du service *
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={service.base_price}
-                      onChange={(e) => updateService(index, 'base_price', parseFloat(e.target.value) || 0)}
+                      type="text"
+                      value={service.name}
+                      onChange={(e) => updateService(index, 'name', e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="20.00"
+                      placeholder="Ex: Nettoyage intérieur complet"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Durée (minutes) *
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      step="5"
-                      value={service.base_duration}
-                      onChange={(e) => updateService(index, 'base_duration', parseInt(e.target.value) || 30)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="30"
-                    />
-                  </div>
-                </div>
-
-                {/* Description en pleine largeur */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={service.description}
-                    onChange={(e) => updateService(index, 'description', e.target.value)}
-                    rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Décrivez ce service en détail..."
-                  />
-                </div>
-
-                {/* Photos */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    {t.servicePhoto} {service.image_urls && service.image_urls.length > 0 && `(${service.image_urls.length}/4)`}
-                  </label>
-
-                  {/* Affichage des images existantes avec carré + */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {/* Carré + pour ajouter une image */}
-                    {(!service.image_urls || service.image_urls.length < 4) && !uploadingImages[index] && (
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                        onClick={() => document.getElementById(`image-upload-${index}`)?.click()}>
-                      </div>
-                    )}
-
-                    {/* Loader pendant l'upload/conversion */}
-                    {uploadingImages[index] && (
-                      <div className="w-20 h-20 bg-blue-50 rounded-lg border-2 border-dashed border-blue-300 flex flex-col items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-1"></div>
-                        <span className="text-xs text-blue-600 font-medium">Conversion...</span>
-                      </div>
-                    )}
-
-                    {/* Images existantes */}
-                    {service.image_urls && service.image_urls.map((imageUrl, imageIndex) => (
-                      <div key={imageIndex} className="relative">
-                        <img
-                          src={imageUrl}
-                          alt={`${service.name} - Image ${imageIndex + 1}`}
-                          className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImageFromService(index, imageIndex)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Input file caché */}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(index, file);
-                    }}
-                    className="hidden"
-                    id={`image-upload-${index}`}
-                    disabled={uploadingImages[index]}
-                  />
-
-                  {/* Message d'information */}
-                  <p className="text-xs text-gray-500">
-                    Tous formats d'images jusqu'à 10MB (JPEG, PNG, WebP) • Max 4 photos
-                    <br />
-                    <span className="text-xs text-gray-500">
-                      Pour les photos iPhone :
-                      <button
-                        onClick={() => setShowHeicInstructions(true)}
-                        className="text-blue-600 hover:text-blue-800 underline ml-1"
+                  {/* Catégorie, Prix, Durée dans la même row */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Catégorie *
+                      </label>
+                      <select
+                        value={service.category_id}
+                        onChange={(e) => updateService(index, 'category_id', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        convertir vos photos en JPEG (i)
-                      </button>
-                    </span>
-                  </p>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  {/* Message si limite atteinte */}
-                  {service.image_urls && service.image_urls.length >= 4 && (
-                    <p className="text-xs text-green-600 font-medium">
-                      ✅ Maximum de 4 photos atteint
-                    </p>
-                  )}
-                </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Prix de base (€) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={service.base_price}
+                        onChange={(e) => updateService(index, 'base_price', parseFloat(e.target.value) || 0)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="20.00"
+                      />
+                    </div>
 
-                {/* Variations par taille de véhicule */}
-                {vehicleSizes.length > 0 && (
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {vehicleSizes.map(vehicleSize => {
-                        const variation = service.vehicle_size_variations?.[vehicleSize.id] || { price: 0, duration: 0 };
-                        return (
-                          <div key={vehicleSize.id} className="bg-white p-4 rounded-lg border border-gray-200">
-                            <h5 className="font-medium text-gray-700 mb-3">
-                              {vehicleSize.name}
-                              {vehicleSize.subtitle && <span className="text-sm text-gray-500 block">{vehicleSize.subtitle}</span>}
-                            </h5>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs text-gray-500 mb-1">Prix additionnel (€)</label>
-                                <input
-                                  type="number"
-                                  value={variation.price}
-                                  onChange={(e) => updateServiceVehicleSizeVariation(index, vehicleSize.id, 'price', parseFloat(e.target.value) || 0)}
-                                  className="w-full p-2 border border-gray-200 rounded text-sm"
-                                  placeholder="0"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-500 mb-1">Durée additionnelle (min)</label>
-                                <input
-                                  type="number"
-                                  value={variation.duration}
-                                  onChange={(e) => updateServiceVehicleSizeVariation(index, vehicleSize.id, 'duration', parseInt(e.target.value) || 0)}
-                                  className="w-full p-2 border border-gray-200 rounded text-sm"
-                                  placeholder="0"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Durée (minutes) *
+                      </label>
+                      <input
+                        type="number"
+                        min="5"
+                        step="5"
+                        value={service.base_duration}
+                        onChange={(e) => updateService(index, 'base_duration', parseInt(e.target.value) || 30)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="30"
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Add-ons spécifiques */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-md font-semibold text-gray-800">Add-ons spécifiques</h4>
-                    <button
-                      type="button"
-                      onClick={() => addAddOnToService(index)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
-                    >
-                      Ajouter un add-on
-                    </button>
+                  {/* Description en pleine largeur */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={service.description}
+                      onChange={(e) => updateService(index, 'description', e.target.value)}
+                      rows={3}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Décrivez ce service en détail..."
+                    />
                   </div>
 
-                  {service.specific_addons && service.specific_addons.length > 0 ? (
-                    <div className="space-y-3">
-                      {service.specific_addons.map((addOn, addOnIndex) => (
-                        <div key={addOnIndex} className="bg-white p-4 rounded-lg border border-gray-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div>
-                              <label className="block text-xs text-gray-500 mb-1">Nom de l'add-on</label>
-                              <input
-                                type="text"
-                                value={addOn.name}
-                                onChange={(e) => updateServiceAddOn(index, addOnIndex, 'name', e.target.value)}
-                                className="w-full p-2 border border-gray-200 rounded text-sm"
-                                placeholder="Ex: Cire haute qualité"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs text-gray-500 mb-1">Description (optionnel)</label>
-                              <input
-                                type="text"
-                                value={addOn.description || ''}
-                                onChange={(e) => updateServiceAddOn(index, addOnIndex, 'description', e.target.value)}
-                                className="w-full p-2 border border-gray-200 rounded text-sm"
-                                placeholder="Description de l'add-on"
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs text-gray-500 mb-1">Prix (€)</label>
-                              <input
-                                type="number"
-                                value={addOn.price}
-                                onChange={(e) => updateServiceAddOn(index, addOnIndex, 'price', parseFloat(e.target.value) || 0)}
-                                className="w-full p-2 border border-gray-200 rounded text-sm"
-                                placeholder="0"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs text-gray-500 mb-1">Durée (min)</label>
-                              <input
-                                type="number"
-                                value={addOn.duration}
-                                onChange={(e) => updateServiceAddOn(index, addOnIndex, 'duration', parseInt(e.target.value) || 0)}
-                                className="w-full p-2 border border-gray-200 rounded text-sm"
-                                placeholder="0"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-end mt-2">
-                            <button
-                              type="button"
-                              onClick={() => removeAddOnFromService(index, addOnIndex)}
-                              className="text-red-500 hover:text-red-700 text-sm"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
+                  {/* Photos */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      {t.servicePhoto} {service.image_urls && service.image_urls.length > 0 && `(${service.image_urls.length}/4)`}
+                    </label>
+
+                    {/* Affichage des images existantes avec carré + */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {/* Carré + pour ajouter une image */}
+                      {(!service.image_urls || service.image_urls.length < 4) && !uploadingImages[index] && (
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => document.getElementById(`image-upload-${index}`)?.click()}>
+                        </div>
+                      )}
+
+                      {/* Loader pendant l'upload/conversion */}
+                      {uploadingImages[index] && (
+                        <div className="w-20 h-20 bg-blue-50 rounded-lg border-2 border-dashed border-blue-300 flex flex-col items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-1"></div>
+                          <span className="text-xs text-blue-600 font-medium">Conversion...</span>
+                        </div>
+                      )}
+
+                      {/* Images existantes */}
+                      {service.image_urls && service.image_urls.map((imageUrl, imageIndex) => (
+                        <div key={imageIndex} className="relative">
+                          <img
+                            src={imageUrl}
+                            alt={`${service.name} - Image ${imageIndex + 1}`}
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImageFromService(index, imageIndex)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">Aucun add-on spécifique pour ce service</p>
+
+                    {/* Input file caché */}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(index, file);
+                      }}
+                      className="hidden"
+                      id={`image-upload-${index}`}
+                      disabled={uploadingImages[index]}
+                    />
+
+                    {/* Message d'information */}
+                    <p className="text-xs text-gray-500">
+                      Tous formats d'images jusqu'à 10MB (JPEG, PNG, WebP) • Max 4 photos
+                      <br />
+                      <span className="text-xs text-gray-500">
+                        Pour les photos iPhone :
+                        <button
+                          onClick={() => setShowHeicInstructions(true)}
+                          className="text-blue-600 hover:text-blue-800 underline ml-1"
+                        >
+                          convertir vos photos en JPEG (i)
+                        </button>
+                      </span>
+                    </p>
+
+                    {/* Message si limite atteinte */}
+                    {service.image_urls && service.image_urls.length >= 4 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        ✅ Maximum de 4 photos atteint
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Variations par taille de véhicule */}
+                  {vehicleSizes.length > 0 && (
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800 mb-3">Variations par taille de véhicule</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {vehicleSizes.map(vehicleSize => {
+                          const variation = service.vehicle_size_variations?.[vehicleSize.id] || { price: 0, duration: 0 };
+                          return (
+                            <div key={vehicleSize.id} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h5 className="font-medium text-gray-700 mb-3">
+                                {vehicleSize.name}
+                                {vehicleSize.subtitle && <span className="text-sm text-gray-500 block">{vehicleSize.subtitle}</span>}
+                              </h5>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Prix additionnel (€)</label>
+                                  <input
+                                    type="number"
+                                    value={variation.price}
+                                    onChange={(e) => updateServiceVehicleSizeVariation(index, vehicleSize.id, 'price', parseFloat(e.target.value) || 0)}
+                                    className="w-full p-2 border border-gray-200 rounded text-sm"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Durée additionnelle (min)</label>
+                                  <input
+                                    type="number"
+                                    value={variation.duration}
+                                    onChange={(e) => updateServiceVehicleSizeVariation(index, vehicleSize.id, 'duration', parseInt(e.target.value) || 0)}
+                                    className="w-full p-2 border border-gray-200 rounded text-sm"
+                                    placeholder="0"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
+
+                  {/* Add-ons spécifiques */}
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-md font-semibold text-gray-800">Add-ons spécifiques</h4>
+                      <button
+                        type="button"
+                        onClick={() => addAddOnToService(index)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                      >
+                        Ajouter un add-on
+                      </button>
+                    </div>
+
+                    {service.specific_addons && service.specific_addons.length > 0 ? (
+                      <div className="space-y-3">
+                        {service.specific_addons.map((addOn, addOnIndex) => (
+                          <div key={addOnIndex} className="bg-white p-4 rounded-lg border border-gray-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Nom de l'add-on</label>
+                                <input
+                                  type="text"
+                                  value={addOn.name}
+                                  onChange={(e) => updateServiceAddOn(index, addOnIndex, 'name', e.target.value)}
+                                  className="w-full p-2 border border-gray-200 rounded text-sm"
+                                  placeholder="Ex: Cire haute qualité"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Description (optionnel)</label>
+                                <input
+                                  type="text"
+                                  value={addOn.description || ''}
+                                  onChange={(e) => updateServiceAddOn(index, addOnIndex, 'description', e.target.value)}
+                                  className="w-full p-2 border border-gray-200 rounded text-sm"
+                                  placeholder="Description de l'add-on"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Prix (€)</label>
+                                <input
+                                  type="number"
+                                  value={addOn.price}
+                                  onChange={(e) => updateServiceAddOn(index, addOnIndex, 'price', parseFloat(e.target.value) || 0)}
+                                  className="w-full p-2 border border-gray-200 rounded text-sm"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Durée (min)</label>
+                                <input
+                                  type="number"
+                                  value={addOn.duration}
+                                  onChange={(e) => updateServiceAddOn(index, addOnIndex, 'duration', parseInt(e.target.value) || 0)}
+                                  className="w-full p-2 border border-gray-200 rounded text-sm"
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-end mt-2">
+                              <button
+                                type="button"
+                                onClick={() => removeAddOnFromService(index, addOnIndex)}
+                                className="text-red-500 hover:text-red-700 text-sm"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">Aucun add-on spécifique pour ce service</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
             {/* Bouton d'ajout à l'intérieur de la liste */}
             <button

@@ -376,11 +376,11 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
                     onChange={(e) => {
                       const isMobile = e.target.checked;
                       updateField({ isMobile });
-                      
+
                       // Si on active le service mobile et qu'il n'y a pas de zones, en ajouter une
                       if (isMobile && formData.serviceZones.length === 0) {
-                        updateField({ 
-                          serviceZones: [{ city: '', radius: 10, unit: 'km' }] 
+                        updateField({
+                          serviceZones: [{ city: '', radius: 10, unit: 'km' }]
                         });
                       }
                     }}
@@ -441,7 +441,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
                           </button>
                         </div>
                       ))}
-                      
+
                       {/* Bouton d'ajout à l'intérieur de la liste */}
                       <button
                         type="button"

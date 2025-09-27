@@ -328,7 +328,7 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
               </div>
             </div>
           ))}
-          
+
           {/* Bouton d'ajout à l'intérieur de la liste */}
           <button
             onClick={addCategory}

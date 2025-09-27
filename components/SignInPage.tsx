@@ -78,8 +78,38 @@ const SignInPage: React.FC = () => {
       if (signUpError) {
         setError(signUpError.message.includes('User already registered') ? t.emailExistsError : signUpError.message);
       } else if (data.user) {
-        // App's router will detect the user object and redirect to dashboard
-        handleOnboardingSuccess();
+        console.log("Signup successful, user created:", data.user.id);
+
+        // If user was created but no session (email confirmation required), try to login
+        if (!data.session) {
+          console.log("No session after signup, attempting to login...");
+          // Wait a bit for the user to be fully created
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const { data: loginData, error: loginError } = await logIn({ email, password });
+          if (loginError) {
+            console.error("Auto-login failed:", loginError);
+            // Check if it's an email confirmation issue
+            if (loginError.message.includes('Email not confirmed') || loginError.message.includes('email_not_confirmed')) {
+              setError("✅ Inscription réussie ! Un email de confirmation a été envoyé à votre adresse email. Veuillez vérifier votre boîte de réception (et vos spams) et cliquer sur le lien de confirmation. Une fois confirmé, vous pourrez vous connecter.");
+              setMessage("📧 Vérifiez votre email et cliquez sur le lien de confirmation pour activer votre compte.");
+            } else {
+              setError("✅ Inscription réussie ! Veuillez vous connecter manuellement pour continuer.");
+            }
+            setView('login');
+            return;
+          } else if (loginData.session) {
+            console.log("Auto-login successful");
+            // Redirect to dashboard
+            handleOnboardingSuccess();
+            return;
+          }
+        } else {
+          console.log("Session available immediately after signup");
+          // Redirect to dashboard
+          handleOnboardingSuccess();
+          return;
+        }
       }
     } else if (view === 'login') {
       const { error: loginError } = await logIn({ email, password });

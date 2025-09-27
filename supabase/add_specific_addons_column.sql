@@ -8,3 +8,4 @@ ADD COLUMN IF NOT EXISTS specific_addons JSONB DEFAULT '[]';
 COMMENT ON COLUMN services.specific_addons IS 'Add-ons specific to this service in JSONB format: [{"name": "Cire", "price": 25, "duration": 0, "description": "Protection cire"}]';
 
 
+

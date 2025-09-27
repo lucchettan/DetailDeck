@@ -381,7 +381,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
         if (addOnsToInsert.length > 0) {
           const { error: addOnsError } = await supabase
-            .from('add_ons')
+            .from('addons')
             .insert(addOnsToInsert);
 
           if (addOnsError) {
