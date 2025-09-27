@@ -167,7 +167,16 @@ const Dashboard: React.FC = () => {
         .eq('email', user.email)
         .single();
 
-      if (shopError && shopError.code !== 'PGRST116') throw shopError;
+      if (shopError) {
+        if (shopError.code === 'PGRST116') {
+          // No shop found - user might have been deleted
+          console.warn('🚨 No shop found for user:', user.email);
+          // Force logout to clear invalid session
+          await logOut();
+          return;
+        }
+        throw shopError;
+      }
 
       if (shop) {
         const camelCasedShop = toCamelCase(shop) as Shop;
@@ -226,11 +235,18 @@ const Dashboard: React.FC = () => {
         if (!user?.id) return;
 
         try {
-          const { data: shop } = await supabase
+          const { data: shop, error: shopError } = await supabase
             .from('shops')
             .select('id, name, address_line1, opening_hours')
             .eq('email', user.email)
             .single();
+
+          if (shopError && shopError.code === 'PGRST116') {
+            // No shop found - user might have been deleted
+            console.warn('🚨 No shop found during onboarding check for user:', user.email);
+            await logOut();
+            return;
+          }
 
           const { data: categories } = await supabase
             .from('shop_service_categories')
