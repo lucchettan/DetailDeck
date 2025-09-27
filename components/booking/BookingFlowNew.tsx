@@ -125,6 +125,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   });
   const [clientInfoErrors, setClientInfoErrors] = useState<ClientInfoErrors>({});
   const [reservationId, setReservationId] = useState<string>('');
+  const [isCartExpanded, setIsCartExpanded] = useState(false);
 
   // Charger les données du shop
   useEffect(() => {
@@ -434,7 +435,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       </div>
 
       {/* Contenu principal */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isCartExpanded ? 'pb-80' : 'pb-32'}`}>
         <div className="max-w-4xl mx-auto">
           {/* Étapes */}
           <div>
@@ -639,6 +640,68 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       {/* Footer fixe avec résumé */}
       {totalCalculation.totalPrice > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          {/* Section expandable avec détail du panier */}
+          {isCartExpanded && (
+            <div className="border-b bg-gray-50 p-4">
+              <div className="max-w-7xl mx-auto">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Détail de votre réservation</h3>
+                
+                {selectedVehicleSize && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">Véhicule:</p>
+                    <p className="font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
+                  </div>
+                )}
+
+                {selectedServices.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    <p className="text-sm text-gray-600">Services sélectionnés:</p>
+                    {totalCalculation.breakdown.map((item, index) => (
+                      <div key={index} className="border-l-2 border-blue-500 pl-3">
+                        <p className="font-medium text-sm">{item.serviceName}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.totalPrice}€ • {formatDuration(item.totalDuration)}
+                        </p>
+                        <div className="text-xs text-gray-500 ml-2">
+                          <p>Base: {item.basePrice}€</p>
+                          {item.variationPrice > 0 && (
+                            <p>+ Taille: {item.variationPrice}€</p>
+                          )}
+                          {item.formulaPrice > 0 && (
+                            <p>+ Formule: {item.formulaPrice}€</p>
+                          )}
+                        </div>
+                        {item.addOns.length > 0 && (
+                          <div className="mt-1">
+                            {item.addOns.map(addOn => (
+                              <p key={addOn.id} className="text-xs text-gray-500 ml-2">
+                                + {addOn.name} ({addOn.price}€)
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Total:</span>
+                    <span className="font-bold text-lg text-blue-600">
+                      {totalCalculation.totalPrice.toFixed(2)}€
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm text-gray-600">
+                    <span>Durée totale:</span>
+                    <span>{formatDuration(totalCalculation.totalDuration)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Barre principale du footer */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -672,12 +735,21 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </p>
                 </div>
                 
+                {/* Bouton pour expander/réduire le détail */}
+                <button
+                  onClick={() => setIsCartExpanded(!isCartExpanded)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title={isCartExpanded ? "Masquer le détail" : "Voir le détail"}
+                >
+                  <ChevronUpIcon className={`w-5 h-5 text-gray-600 transition-transform ${isCartExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                
                 {currentStep === 'services' && selectedServices.length > 0 && (
                   <button
                     onClick={() => setCurrentStep('dateTime')}
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   >
-                    Continuer
+                    Planifier un RDV
                   </button>
                 )}
                 
@@ -690,14 +762,31 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </button>
                 )}
                 
-                {currentStep === 'clientInfo' && (
+                {currentStep === 'dateTime' && (
                   <button
-                    onClick={handleReservationSubmit}
-                    disabled={isSubmitting}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                    onClick={() => setCurrentStep('services')}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
                   >
-                    {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                    Modifier services
                   </button>
+                )}
+                
+                {currentStep === 'clientInfo' && (
+                  <>
+                    <button
+                      onClick={() => setCurrentStep('dateTime')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                    >
+                      Modifier RDV
+                    </button>
+                    <button
+                      onClick={handleReservationSubmit}
+                      disabled={isSubmitting}
+                      className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
