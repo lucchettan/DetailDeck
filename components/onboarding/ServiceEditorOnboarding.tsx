@@ -139,7 +139,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
     // Charger tous les add-ons pour ces services
     const serviceIds = servicesData.map(s => s.id);
     const { data: addonsData } = await supabase
-      .from('addons')
+      .from('add_ons')
       .select('*')
       .in('service_id', serviceIds)
       .eq('is_active', true);
@@ -186,7 +186,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   const handleEditService = (service: Service) => {
     console.log('Service à éditer:', service);
     console.log('Add-ons du service:', service.specific_addons);
-    
+
     // Transformer les add-ons pour le formulaire
     const addOnsForForm = (service.specific_addons || []).map(addon => ({
       name: addon.name || '',
@@ -194,7 +194,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       duration: addon.duration || 0,
       description: addon.description || ''
     }));
-    
+
     console.log('Add-ons transformés pour le formulaire:', addOnsForForm);
 
     setFormData({
@@ -262,7 +262,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         // Supprimer les anciens add-ons si on édite
         if (editingService) {
           await supabase
-            .from('addons')
+            .from('add_ons')
             .delete()
             .eq('service_id', serviceId);
         }
@@ -278,7 +278,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         }));
 
         const { error: addOnsError } = await supabase
-          .from('addons')
+          .from('add_ons')
           .insert(addOnsData);
 
         if (addOnsError) {
