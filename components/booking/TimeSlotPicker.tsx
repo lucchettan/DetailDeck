@@ -17,26 +17,22 @@ interface ExistingReservation {
     total_duration: number; // in minutes
 }
 
-// FIX: Updated props to accept shopId and fetch its own data, removing the dependency on a passed-in reservations list.
 interface TimeSlotPickerProps {
     shopId: string;
-    schedule: any;
-    serviceDuration: number;
-    selectedDate: Date;
-    selectedTime: string | null;
-    onSelectTime: (time: string) => void;
-    editingReservationId?: string;
-    minBookingNotice: string;
+    selectedDate: Date | null;
+    selectedTimeSlot: string;
+    onTimeSlotSelect: (time: string) => void;
+    duration: number;
 }
 
-const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, serviceDuration, selectedDate, selectedTime, onSelectTime, editingReservationId, minBookingNotice }) => {
+const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, selectedTimeSlot, onTimeSlotSelect, duration }) => {
     const { t } = useLanguage();
     const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchReservationsForDay = async () => {
-            if (!selectedDate || serviceDuration <= 0) {
+            if (!selectedDate || duration <= 0) {
                 setExistingReservations([]);
                 setIsLoading(false);
                 return;
@@ -56,18 +52,12 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
 
             const dateString = toYYYYMMDD(selectedDate);
 
-            let query = supabase
+            const { data, error } = await supabase
                 .from('reservations')
                 .select('start_time, total_duration')
                 .eq('shop_id', shopId)
                 .eq('date', dateString)
                 .neq('status', 'cancelled');
-
-            if (editingReservationId) {
-                query = query.neq('id', editingReservationId);
-            }
-
-            const { data, error } = await query;
 
             if (error) {
                 console.error("Error fetching reservations for day:", error);
@@ -79,40 +69,35 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             setIsLoading(false);
         };
         fetchReservationsForDay();
-    }, [selectedDate, shopId, serviceDuration, editingReservationId]);
+    }, [selectedDate, shopId, duration]);
 
 
     const availableSlots = useMemo(() => {
-        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const dayOfWeek = dayNames[selectedDate.getDay()];
-        const daySchedule = schedule[dayOfWeek];
-
-        if (!daySchedule || !daySchedule.isOpen || serviceDuration <= 0) {
+        if (!selectedDate || duration <= 0) {
             return [];
         }
 
-        const { minDate } = getBookingBoundaries(minBookingNotice, '0w');
-        const isToday = toYYYYMMDD(selectedDate) === toYYYYMMDD(new Date());
+        // Horaires par défaut (9h-18h)
+        const startTime = 9 * 60; // 9h00 en minutes
+        const endTime = 18 * 60; // 18h00 en minutes
 
         const initialSlots: string[] = [];
-        daySchedule.timeframes.forEach((frame: { from: string, to: string }) => {
-            let currentTime = timeToMinutes(frame.from);
-            const endTime = timeToMinutes(frame.to);
+        let currentTime = startTime;
 
-            if (isToday) {
-                const minTimeToday = minDate.getHours() * 60 + minDate.getMinutes();
-                if (currentTime < minTimeToday) {
-                    currentTime = Math.ceil(minTimeToday / 15) * 15;
-                }
-            }
+        // Vérifier si c'est aujourd'hui pour éviter les créneaux passés
+        const isToday = toYYYYMMDD(selectedDate) === toYYYYMMDD(new Date());
+        if (isToday) {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            currentTime = Math.max(currentTime, Math.ceil(currentMinutes / 15) * 15);
+        }
 
-            while (currentTime + serviceDuration <= endTime) {
-                const hours = Math.floor(currentTime / 60).toString().padStart(2, '0');
-                const minutes = (currentTime % 60).toString().padStart(2, '0');
-                initialSlots.push(`${hours}:${minutes}`);
-                currentTime += 15; // Booking interval of 15 minutes
-            }
-        });
+        while (currentTime + duration <= endTime) {
+            const hours = Math.floor(currentTime / 60).toString().padStart(2, '0');
+            const minutes = (currentTime % 60).toString().padStart(2, '0');
+            initialSlots.push(`${hours}:${minutes}`);
+            currentTime += 15; // Booking interval of 15 minutes
+        }
 
         if (!existingReservations || existingReservations.length === 0) {
             return initialSlots;
@@ -124,11 +109,11 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
         });
 
         console.log('🔍 Reservation intervals:', reservationIntervals);
-        console.log('🔍 Service duration:', serviceDuration);
+        console.log('🔍 Service duration:', duration);
 
         const filteredSlots = initialSlots.filter(slot => {
             const slotStart = timeToMinutes(slot);
-            const slotEnd = slotStart + serviceDuration;
+            const slotEnd = slotStart + duration;
 
             // Check for overlap with any existing reservation
             const hasOverlap = reservationIntervals.some(interval =>
@@ -145,14 +130,14 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
         console.log('🔍 Available slots after filtering:', filteredSlots);
         return filteredSlots;
 
-    }, [selectedDate, schedule, serviceDuration, existingReservations, minBookingNotice]);
+    }, [selectedDate, duration, existingReservations]);
 
     if (isLoading) {
-        return <div className="text-center p-4 bg-gray-50 rounded-lg">{t.loadingReservations}</div>;
+        return <div className="text-center p-4 bg-gray-50 rounded-lg">Chargement des créneaux...</div>;
     }
 
     if (availableSlots.length === 0) {
-        return <div className="text-center p-4 bg-gray-50 rounded-lg">{t.noSlotsAvailable}</div>;
+        return <div className="text-center p-4 bg-gray-50 rounded-lg">Aucun créneau disponible</div>;
     }
 
     return (
@@ -161,9 +146,9 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
                 <button
                     key={time}
                     type="button"
-                    onClick={() => onSelectTime(time)}
+                    onClick={() => onTimeSlotSelect(time)}
                     className={`p-2 rounded-lg border-2 font-semibold transition-colors
-                        ${selectedTime === time ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-brand-dark border-gray-300 hover:border-brand-blue'}
+                        ${selectedTimeSlot === time ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-900 border-gray-300 hover:border-blue-600'}
                     `}
                 >
                     {time}

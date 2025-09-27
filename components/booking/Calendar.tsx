@@ -9,24 +9,18 @@ const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1
 
 interface CalendarProps {
     shopId: string;
-    schedule: any;
-    serviceDuration: number;
     selectedDate: Date | null;
-    onSelectDate: (date: Date) => void;
-    minBookingNotice: string;
-    maxBookingHorizon: string;
-    disableBounds?: boolean;
+    onDateSelect: (date: Date) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDate, minBookingNotice, maxBookingHorizon, disableBounds }) => {
+const Calendar: React.FC<CalendarProps> = ({ shopId, selectedDate, onDateSelect }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    const { minDate, maxDate } = useMemo(
-        () => disableBounds
-            ? { minDate: new Date(0), maxDate: new Date(8640000000000000) }
-            : getBookingBoundaries(minBookingNotice, maxBookingHorizon),
-        [minBookingNotice, maxBookingHorizon, disableBounds]
-    );
+    // Dates limites simples (aujourd'hui + 30 jours)
+    const minDate = new Date();
+    minDate.setHours(0, 0, 0, 0);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -38,7 +32,6 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
 
     const disabledDays = useMemo(() => {
         const disabled = new Set<number>();
-        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
         for (let day = 1; day <= numDays; day++) {
             const dayToCheckStart = new Date(year, month, day);
@@ -50,19 +43,10 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
             // or its start is after the last bookable moment.
             if (dayToCheckEnd < minDate || dayToCheckStart > maxDate) {
                 disabled.add(day);
-                continue;
-            }
-
-            // Check against static weekly schedule
-            const dayOfWeek = dayNames[dayToCheckStart.getDay()];
-            const daySchedule = schedule[dayOfWeek];
-
-            if (!daySchedule || !daySchedule.isOpen) {
-                disabled.add(day);
             }
         }
         return disabled;
-    }, [year, month, numDays, schedule, minDate, maxDate]);
+    }, [year, month, numDays, minDate, maxDate]);
 
     const handlePrevMonth = () => {
         setCurrentDate(new Date(year, month - 1, 1));
@@ -95,7 +79,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
                         <button
                             key={dayNumber}
                             type="button"
-                            onClick={() => !isDisabled && onSelectDate(new Date(year, month, dayNumber))}
+                            onClick={() => !isDisabled && onDateSelect(new Date(year, month, dayNumber))}
                             disabled={isDisabled}
                             className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center
                                 ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-100'}
