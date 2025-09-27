@@ -132,13 +132,13 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
         addons:addons(*)
       `)
       .eq('shop_id', shopId);
-    
+
     // Transformer les données pour inclure les add-ons dans chaque service
     const servicesWithAddOns = (data || []).map(service => ({
       ...service,
       specific_addons: service.addons || []
     }));
-    
+
     setServices(servicesWithAddOns);
   };
 
@@ -163,6 +163,19 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
   };
 
   const handleEditService = (service: Service) => {
+    console.log('Service à éditer:', service);
+    console.log('Add-ons du service:', service.specific_addons);
+    
+    // Transformer les add-ons pour le formulaire
+    const addOnsForForm = (service.specific_addons || []).map(addon => ({
+      name: addon.name || '',
+      price: addon.price || 0,
+      duration: addon.duration || 0,
+      description: addon.description || ''
+    }));
+    
+    console.log('Add-ons transformés pour le formulaire:', addOnsForForm);
+
     setFormData({
       name: service.name || '',
       description: service.description || '',
@@ -172,7 +185,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       image_urls: service.image_urls || [],
       vehicle_size_variations: service.vehicle_size_variations || {},
       formulas: service.formulas || [{ name: 'Basique', additionalPrice: 0, additionalDuration: 0, includedItems: [] }],
-      specific_addons: service.specific_addons || []
+      specific_addons: addOnsForForm
     });
     setEditingService(service);
     setShowServiceForm(true);
@@ -201,14 +214,14 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
       };
 
       let serviceId: string;
-      
+
       if (editingService) {
         // Mettre à jour
         const { error } = await supabase
           .from('services')
           .update(serviceData)
           .eq('id', editingService.id);
-        
+
         if (error) throw error;
         serviceId = editingService.id;
       } else {
@@ -218,7 +231,7 @@ const ServiceEditorOnboarding: React.FC<ServiceEditorOnboardingProps> = ({
           .insert([serviceData])
           .select('id')
           .single();
-        
+
         if (error) throw error;
         serviceId = data.id;
       }
