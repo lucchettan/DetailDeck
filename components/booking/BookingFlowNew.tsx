@@ -285,25 +285,25 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   // Valider les informations client
   const validateClientInfo = () => {
     const errors: ClientInfoErrors = {};
-    
+
     if (!clientInfo.firstName.trim()) {
       errors.firstName = 'Le prénom est requis';
     }
-    
+
     if (!clientInfo.lastName.trim()) {
       errors.lastName = 'Le nom est requis';
     }
-    
+
     if (!clientInfo.email.trim()) {
       errors.email = 'L\'email est requis';
     } else if (!/\S+@\S+\.\S+/.test(clientInfo.email)) {
       errors.email = 'L\'email n\'est pas valide';
     }
-    
+
     if (!clientInfo.phone.trim()) {
       errors.phone = 'Le téléphone est requis';
     }
-    
+
     setClientInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -311,7 +311,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   // Gérer la soumission de la réservation
   const handleReservationSubmit = async () => {
     if (!shopData || !selectedDate) return;
-    
+
     // Valider les informations client
     if (!validateClientInfo()) {
       return;
@@ -674,7 +674,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       {clientInfoErrors.lastName && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.lastName}</p>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                     <input
@@ -688,7 +688,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     />
                     {clientInfoErrors.email && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.email}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
                     <input
@@ -702,7 +702,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     />
                     {clientInfoErrors.phone && <p className="text-red-500 text-sm mt-1">{clientInfoErrors.phone}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="vehicleInfo" className="block text-sm font-medium text-gray-700 mb-1">Informations véhicule</label>
                     <input
@@ -712,7 +712,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       placeholder="Marque, modèle, plaque d'immatriculation (optionnel)"
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notes supplémentaires</label>
                     <textarea

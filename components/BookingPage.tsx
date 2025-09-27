@@ -6,7 +6,7 @@ interface BookingPageProps {
 }
 
 const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
-  return <BookingFlowNew shopId={shopId} />;
+  return <BookingFlow shopId={shopId} />;
 };
 
 export default BookingPage;
