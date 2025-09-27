@@ -15,11 +15,11 @@ interface StepClientInfoProps {
     onClientVehicleChange: (value: string) => void;
 }
 
-const StepClientInfo: React.FC<StepClientInfoProps> = ({ 
-    clientInfo, 
-    setClientInfo, 
-    errors, 
-    specialInstructions, 
+const StepClientInfo: React.FC<StepClientInfoProps> = ({
+    clientInfo,
+    setClientInfo,
+    errors,
+    specialInstructions,
     onSpecialInstructionsChange,
     clientVehicle,
     onClientVehicleChange
@@ -35,7 +35,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
         <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-brand-dark mb-4">{t.yourInformation}</h2>
             <div className="space-y-4">
-                 <div>
+                <div>
                     <label htmlFor="clientVehicle" className="block text-sm font-medium text-brand-dark mb-1">{t.whatIsYourVehicle}</label>
                     <input
                         id="clientVehicle"
@@ -82,7 +82,7 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                 </div>
                 <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-brand-dark mb-1">{t.phoneNumber}</label>
-                     <div className="relative">
+                    <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <PhoneIcon className="h-5 w-5 text-gray-400" />
                         </div>
@@ -91,15 +91,15 @@ const StepClientInfo: React.FC<StepClientInfoProps> = ({
                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
                 <div>
-                     <label htmlFor="specialInstructions" className="block text-sm font-medium text-brand-dark mb-1">{t.specialInstructions}</label>
-                     <textarea 
+                    <label htmlFor="specialInstructions" className="block text-sm font-medium text-brand-dark mb-1">{t.specialInstructions}</label>
+                    <textarea
                         id="specialInstructions"
                         value={specialInstructions}
                         onChange={(e) => onSpecialInstructionsChange(e.target.value)}
                         rows={3}
                         placeholder={t.specialInstructionsPlaceholder}
                         className="w-full p-2 bg-white rounded-lg border border-gray-300 shadow-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition"
-                     />
+                    />
                 </div>
             </div>
         </div>

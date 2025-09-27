@@ -480,18 +480,42 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   <h2 className="text-2xl font-bold text-gray-900">Choisissez une catégorie</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {serviceCategories.map(category => (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        setSelectedCategory(category.id);
-                        setCurrentStep('serviceSelection');
-                      }}
-                      className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
-                    >
-                      <h3 className="font-semibold text-gray-900">{category.name}</h3>
-                    </button>
-                  ))}
+                  {(() => {
+                    const categoriesWithServices = serviceCategories.filter(category => {
+                      const servicesInCategory = services.filter(service => service.category_id === category.id);
+                      return servicesInCategory.length > 0;
+                    });
+
+                    if (categoriesWithServices.length === 0) {
+                      return (
+                        <div className="col-span-full text-center py-8">
+                          <p className="text-gray-500 text-lg">Aucun service disponible pour le moment.</p>
+                          <p className="text-gray-400 text-sm mt-2">Veuillez contacter le professionnel pour plus d'informations.</p>
+                        </div>
+                      );
+                    }
+
+                    return categoriesWithServices.map(category => {
+                      const servicesInCategory = services.filter(service => service.category_id === category.id);
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            setSelectedCategory(category.id);
+                            setCurrentStep('serviceSelection');
+                          }}
+                          className="p-4 border-2 rounded-lg text-left transition-colors border-gray-200 hover:border-gray-300"
+                        >
+                          <h3 className="font-semibold text-gray-900">
+                            {category.name}
+                            <span className="text-sm font-normal text-gray-500 ml-2">
+                              ({servicesInCategory.length} service{servicesInCategory.length > 1 ? 's' : ''})
+                            </span>
+                          </h3>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             )}

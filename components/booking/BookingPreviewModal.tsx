@@ -41,19 +41,19 @@ const BookingPreviewModal: React.FC<BookingPreviewModalProps> = ({ isOpen, onClo
         style={{ animationFillMode: 'forwards' }}
       >
         <header className="flex justify-between items-center p-4 border-b bg-white rounded-t-xl flex-shrink-0">
-            <h2 className="text-lg font-bold text-brand-dark">{t.previewPage}</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <CloseIcon className="w-6 h-6" />
-            </button>
+          <h2 className="text-lg font-bold text-brand-dark">{t.previewPage}</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <CloseIcon className="w-6 h-6" />
+          </button>
         </header>
         <div className="overflow-y-auto flex-grow">
-            <BookingFlowNew shopId={shopId} />
+          <BookingFlowNew shopId={shopId} />
         </div>
       </div>
-       <style>{`
+      <style>{`
         @keyframes fade-in-scale {
           from { transform: scale(0.95); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
