@@ -418,12 +418,27 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <StorefrontIcon className="w-8 h-8 text-blue-600" />
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
+              {shopData.business_type === 'mobile' ? (
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-600 font-bold text-lg">🚗</span>
+                </div>
+              ) : (
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <StorefrontIcon className="w-6 h-6 text-blue-600" />
+                </div>
+              )}
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{shopData.name}</h1>
-                <p className="text-sm text-gray-600">{shopData.address_city}</p>
+                <h1 className="text-2xl font-bold text-gray-900">{shopData.name}</h1>
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <span>{shopData.address_city}</span>
+                  {shopData.business_type === 'mobile' && (
+                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                      Service mobile
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -685,18 +700,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </div>
                 )}
 
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">Total:</span>
-                    <span className="font-bold text-lg text-blue-600">
-                      {totalCalculation.totalPrice.toFixed(2)}€
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>Durée totale:</span>
-                    <span>{formatDuration(totalCalculation.totalDuration)}</span>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -744,48 +747,61 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   <ChevronUpIcon className={`w-4 h-4 transition-transform ${isCartExpanded ? 'rotate-180' : ''}`} />
                 </button>
 
-                {currentStep === 'services' && selectedServices.length > 0 && (
-                  <button
-                    onClick={() => setCurrentStep('dateTime')}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Planifier un RDV
-                  </button>
-                )}
-
-                {currentStep === 'dateTime' && selectedTimeSlot && (
-                  <button
-                    onClick={() => setCurrentStep('clientInfo')}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Continuer
-                  </button>
-                )}
-
-                {currentStep === 'dateTime' && (
-                  <button
-                    onClick={() => setCurrentStep('services')}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                  >
-                    Modifier services
-                  </button>
-                )}
-
-                {currentStep === 'clientInfo' && (
+                {/* Actions principales quand des services sont sélectionnés */}
+                {selectedServices.length > 0 && (
                   <>
-                    <button
-                      onClick={() => setCurrentStep('dateTime')}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                    >
-                      Modifier RDV
-                    </button>
-                    <button
-                      onClick={handleReservationSubmit}
-                      disabled={isSubmitting}
-                      className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                      {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
-                    </button>
+                    {currentStep === 'services' && (
+                      <>
+                        <button
+                          onClick={() => setCurrentStep('categorySelection')}
+                          className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                        >
+                          Ajouter un autre service
+                        </button>
+                        <button
+                          onClick={() => setCurrentStep('dateTime')}
+                          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                        >
+                          Réserver un RDV
+                        </button>
+                      </>
+                    )}
+
+                    {currentStep === 'dateTime' && selectedTimeSlot && (
+                      <button
+                        onClick={() => setCurrentStep('clientInfo')}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Continuer
+                      </button>
+                    )}
+
+                    {currentStep === 'dateTime' && (
+                      <button
+                        onClick={() => setCurrentStep('services')}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                      >
+                        Modifier services
+                      </button>
+                    )}
+
+                    {currentStep === 'clientInfo' && (
+                      <>
+                        <button
+                          onClick={() => setCurrentStep('dateTime')}
+                          className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                        >
+                          Modifier RDV
+                        </button>
+                        <button
+                          onClick={handleReservationSubmit}
+                          disabled={isSubmitting}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                          {isSubmitting ? 'Envoi...' : 'Confirmer la réservation'}
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
