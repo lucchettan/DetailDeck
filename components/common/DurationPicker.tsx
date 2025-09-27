@@ -3,6 +3,8 @@ import React from 'react';
 // Helper function to generate duration options
 const generateDurationOptions = () => {
   const options = [];
+  // 0min (aucune durée additionnelle)
+  options.push({ value: 0, label: 'Aucune' });
   // 15min to 45min (15min increments)
   for (let i = 15; i <= 45; i += 15) {
     options.push({ value: i, label: `${i}min` });

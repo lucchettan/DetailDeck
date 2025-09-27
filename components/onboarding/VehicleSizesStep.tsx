@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface VehicleSize {
   id?: string;
@@ -13,9 +13,18 @@ interface VehicleSize {
 interface VehicleSizesStepProps {
   onBack: () => void;
   onNext: () => void;
+  shopId?: string | null;
+  vehicleSizes?: any[];
+  onDataUpdate?: (data: any[]) => void;
 }
 
-const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) => {
+const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({
+  onBack,
+  onNext,
+  shopId: propShopId,
+  vehicleSizes: propVehicleSizes,
+  onDataUpdate
+}) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [vehicleSizes, setVehicleSizes] = useState<VehicleSize[]>([
@@ -28,8 +37,17 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
   const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchShopData();
-  }, [user]);
+    // Si on a des props, les utiliser directement
+    if (propShopId && propVehicleSizes) {
+      console.log('📦 VehicleSizesStep: Using props data');
+      setShopId(propShopId);
+      setVehicleSizes(propVehicleSizes);
+    } else {
+      // Fallback: fetch si pas de props
+      console.log('🔄 VehicleSizesStep: No props, fetching data...');
+      fetchShopData();
+    }
+  }, [propShopId, propVehicleSizes]);
 
   const fetchShopData = async () => {
     if (!user) return;
@@ -38,7 +56,7 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
       const { data: shopData, error } = await supabase
         .from('shops')
         .select('id')
-        .eq('owner_id', user.id)
+        .eq('email', user.email)
         .single();
 
       if (error) throw error;
@@ -114,6 +132,12 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
         .insert(sizesToInsert);
 
       if (error) throw error;
+
+      // Notifier le parent des nouvelles données
+      if (onDataUpdate) {
+        onDataUpdate(sizesToInsert);
+      }
+
       onNext();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -130,25 +154,50 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
         <p className="text-gray-600">Définissez les différentes tailles de véhicules pour adapter vos tarifs</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Vos tailles de véhicules</h3>
+      {/* Exemple de configuration - au-dessus du formulaire */}
+      <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 shadow-sm">
+        <h4 className="font-bold text-gray-900 mb-3">💡 Exemple de configuration</h4>
+        <ul className="space-y-2 text-sm text-gray-700 list-none">
+          <li><strong>• Citadine:</strong> Petites voitures urbaines (Clio, 208, Polo, etc.)</li>
+          <li><strong>• Berline:</strong> Voitures de taille moyenne (Mégane, 308, Golf, etc.)</li>
+          <li><strong>• Break/SUV:</strong> Breaks et SUV compacts (Scenic, 3008, Tiguan, etc.)</li>
+          <li><strong>• 4x4/Minivan:</strong> Gros véhicules (Espace, X5, Sharan, etc.)</li>
+        </ul>
+        <p className="text-xs text-gray-600 mt-2">
+          Ces 4 catégories couvrent la plupart des véhicules et permettent une tarification adaptée.
+        </p>
+      </div>
+
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-100">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="8" width="18" height="8" rx="2" strokeWidth={2} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 8V6a2 2 0 012-2h2a2 2 0 012 2v2" />
+                <circle cx="7" cy="18" r="2" strokeWidth={2} />
+                <circle cx="17" cy="18" r="2" strokeWidth={2} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">Vos tailles de véhicules</h3>
+          </div>
           <button
             onClick={addVehicleSize}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
-            <PlusIcon className="w-4 h-4" />
             Ajouter une taille
           </button>
         </div>
+        <p className="text-gray-600 mb-6">Définissez les différentes tailles pour adapter vos tarifs selon le type de véhicule</p>
 
         <div className="space-y-4">
           {vehicleSizes.map((size, index) => (
-            <div key={index} className="p-4 border border-gray-200 rounded-lg">
+            <div key={index} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-1 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
                       Nom de la taille
                     </label>
                     <input
@@ -159,8 +208,9 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
                       Description
                     </label>
                     <textarea
@@ -176,7 +226,7 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
                 {vehicleSizes.length > 1 && (
                   <button
                     onClick={() => removeVehicleSize(index)}
-                    className="text-red-500 hover:text-red-700 p-1 mt-1"
+                    className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center mt-6"
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -186,18 +236,6 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({ onBack, onNext }) =
           ))}
         </div>
 
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h4 className="font-medium text-green-900 mb-2">💡 Configuration recommandée</h4>
-          <div className="space-y-2 text-sm text-green-700">
-            <div><strong>Citadine:</strong> Petites voitures urbaines (Clio, 208, Polo, etc.)</div>
-            <div><strong>Berline:</strong> Voitures de taille moyenne (Mégane, 308, Golf, etc.)</div>
-            <div><strong>Break/SUV:</strong> Breaks et SUV compacts (Scenic, 3008, Tiguan, etc.)</div>
-            <div><strong>4x4/Minivan:</strong> Gros véhicules (Espace, X5, Sharan, etc.)</div>
-          </div>
-          <p className="text-xs text-green-600 mt-2">
-            Ces 4 catégories couvrent la plupart des véhicules et permettent une tarification adaptée.
-          </p>
-        </div>
       </div>
 
       <div className="flex justify-between">

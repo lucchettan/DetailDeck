@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { ImageIcon, SaveIcon } from '../Icons';
+import { ImageIcon } from '../Icons';
 import { useFormPersistence } from '../../hooks/useFormPersistence';
 
 interface ShopInfoData {
@@ -36,20 +36,24 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
 
   // Persistance du formulaire
   const {
-    formData,
-    setFormData,
-    handleSubmitSuccess
-  } = useFormPersistence<ShopInfoData>('onboarding_shop_info', {
-    name: '',
-    phone: '',
-    email: user?.email || '',
-    isLocal: true,
-    isMobile: false,
-    addressLine1: '',
-    addressCity: '',
-    addressPostalCode: '',
-    addressCountry: 'France',
-    serviceZones: []
+    data: formData,
+    setData: setFormData,
+    updateData: updateField,
+    clearData: clearFormData
+  } = useFormPersistence<ShopInfoData>({
+    key: 'onboarding_shop_info',
+    defaultData: {
+      name: '',
+      phone: '',
+      email: user?.email || '',
+      isLocal: true,
+      isMobile: false,
+      addressLine1: '',
+      addressCity: '',
+      addressPostalCode: '',
+      addressCountry: 'France',
+      serviceZones: []
+    }
   });
 
   useEffect(() => {
@@ -57,14 +61,14 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
   }, [user]);
 
   const loadExistingData = async () => {
-    if (!user?.id) return;
+    if (!user?.email) return;
 
     setLoading(true);
     try {
       const { data: shop } = await supabase
         .from('shops')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('email', user.email)
         .single();
 
       if (shop) {
@@ -89,7 +93,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
   };
 
   const handleSave = async () => {
-    if (!user?.id) return;
+    if (!user?.email) return;
 
     setSaving(true);
     setError('');
@@ -113,7 +117,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       const { data: existingShop } = await supabase
         .from('shops')
         .select('id')
-        .eq('owner_id', user.id)
+        .eq('email', user.email)
         .single();
 
       // Déterminer le type de business
@@ -125,10 +129,9 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       }
 
       const shopData = {
-        owner_id: user.id,
+        email: user.email,
         name: formData.name.trim(),
         phone: formData.phone.trim() || null,
-        email: formData.email.trim() || null,
         business_type: businessType,
         address_line1: formData.isLocal ? formData.addressLine1.trim() : null,
         address_city: formData.isLocal ? formData.addressCity.trim() || null : null,
@@ -154,7 +157,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         if (error) throw error;
       }
 
-      handleSubmitSuccess();
+      clearFormData();
       onNext();
 
     } catch (error: any) {
@@ -165,37 +168,37 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
     }
   };
 
-  const updateField = (field: keyof ShopInfoData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
 
   const addServiceZone = () => {
-    setFormData(prev => ({
-      ...prev,
-      serviceZones: [...prev.serviceZones, { city: '', radius: 10, unit: 'km' }]
-    }));
+    updateField({ serviceZones: [...formData.serviceZones, { city: '', radius: 10, unit: 'km' }] });
   };
 
   const removeServiceZone = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      serviceZones: prev.serviceZones.filter((_, i) => i !== index)
-    }));
+    updateField({ serviceZones: formData.serviceZones.filter((_, i) => i !== index) });
   };
 
   const updateServiceZone = (index: number, field: 'city' | 'radius' | 'unit', value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      serviceZones: prev.serviceZones.map((zone, i) =>
+    updateField({
+      serviceZones: formData.serviceZones.map((zone, i) =>
         i === index ? { ...zone, [field]: value } : zone
       )
-    }));
+    });
   };
 
-  if (loading) {
+  if (loading || !formData) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user?.email) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600">Erreur: Utilisateur non connecté</p>
+        </div>
       </div>
     );
   }
@@ -220,218 +223,231 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       )}
 
       {/* Form */}
-      <div className="space-y-6">
-        {/* Nom de l'entreprise */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nom de l'entreprise *
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => updateField('name', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: Auto Clean Pro"
-          />
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
+        <div className="flex items-center mb-6">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900">Informations de l'entreprise</h3>
         </div>
-
-        {/* Téléphone et Email */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Numéro de téléphone
+        <p className="text-gray-600 mb-6">Ces informations apparaîtront sur vos factures et communications</p>
+        <div className="space-y-6">
+          {/* Nom de l'entreprise */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Nom de l'entreprise *
             </label>
             <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => updateField('phone', e.target.value)}
+              type="text"
+              value={formData.name}
+              onChange={(e) => updateField({ name: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="06 12 34 56 78"
+              placeholder="Ex: Auto Clean Pro"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email professionnel
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => updateField('email', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="contact@autoCleanPro.fr"
-            />
-          </div>
-        </div>
 
-        {/* Type d'entreprise */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Type de service
-          </label>
-          <div className="space-y-4">
-            {/* Service Local */}
-            <div className={`
+          {/* Téléphone et Email */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Numéro de téléphone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => updateField({ phone: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="06 12 34 56 78"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Email professionnel
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => updateField({ email: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="contact@autoCleanPro.fr"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Type d'entreprise */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <label className="block text-sm font-bold text-gray-700 mb-3">
+              Type de service
+            </label>
+            <div className="space-y-4">
+              {/* Service Local */}
+              <div className={`
               p-4 border-2 rounded-lg transition-all
               ${formData.isLocal
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200'
-              }
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200'
+                }
             `}>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isLocal}
-                  onChange={(e) => updateField('isLocal', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <div className="ml-3">
-                  <div className="font-medium text-gray-900">Service Local</div>
-                  <div className="text-sm text-gray-500">Vous accueillez vos clients dans un local</div>
-                </div>
-              </label>
-              
-              {formData.isLocal && (
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Adresse du local *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.addressLine1}
-                      onChange={(e) => updateField('addressLine1', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="123 Rue de la Paix"
-                    />
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isLocal}
+                    onChange={(e) => updateField({ isLocal: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900">J'accueille la clientèle dans un local</div>
+                    <div className="text-sm text-gray-500">Vous accueillez vos clients dans un local</div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ville
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.addressCity}
-                        onChange={(e) => updateField('addressCity', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Paris"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Code postal
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.addressPostalCode}
-                        onChange={(e) => updateField('addressPostalCode', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="75001"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Pays
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.addressCountry}
-                        onChange={(e) => updateField('addressCountry', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="France"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                </label>
 
-            {/* Service Mobile */}
-            <div className={`
+                {formData.isLocal && (
+                  <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200 space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Adresse du local *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.addressLine1}
+                        onChange={(e) => updateField({ addressLine1: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="123 Rue de la Paix"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          Ville
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.addressCity}
+                          onChange={(e) => updateField({ addressCity: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Paris"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          Code postal
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.addressPostalCode}
+                          onChange={(e) => updateField({ addressPostalCode: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="75001"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          Pays
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.addressCountry}
+                          onChange={(e) => updateField({ addressCountry: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="France"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Service Mobile */}
+              <div className={`
               p-4 border-2 rounded-lg transition-all
               ${formData.isMobile
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200'
-              }
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200'
+                }
             `}>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isMobile}
-                  onChange={(e) => updateField('isMobile', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <div className="ml-3">
-                  <div className="font-medium text-gray-900">Service Mobile</div>
-                  <div className="text-sm text-gray-500">Vous vous déplacez chez vos clients</div>
-                </div>
-              </label>
-              
-              {formData.isMobile && (
-                <div className="mt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Zones d'intervention *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addServiceZone}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      + Ajouter une zone
-                    </button>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isMobile}
+                    onChange={(e) => updateField({ isMobile: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900">Je me déplace vers la clientèle</div>
+                    <div className="text-sm text-gray-500">Vous vous déplacez chez vos clients</div>
                   </div>
-                  
-                  <div className="space-y-3">
-                    {formData.serviceZones.map((zone, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={zone.city}
-                            onChange={(e) => updateServiceZone(index, 'city', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Ville (ex: Paris)"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={zone.radius}
-                            onChange={(e) => updateServiceZone(index, 'radius', parseInt(e.target.value) || 0)}
-                            className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            min="1"
-                            max="100"
-                          />
-                          <select
-                            value={zone.unit}
-                            onChange={(e) => updateServiceZone(index, 'unit', e.target.value as 'km' | 'miles')}
-                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                </label>
+
+                {formData.isMobile && (
+                  <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex justify-between items-center mb-4">
+                      <label className="block text-sm font-bold text-gray-700">
+                        Zones d'intervention *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addServiceZone}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        + Ajouter une zone
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {formData.serviceZones.map((zone, index) => (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={zone.city}
+                              onChange={(e) => updateServiceZone(index, 'city', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Ville (ex: Paris)"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={zone.radius}
+                              onChange={(e) => updateServiceZone(index, 'radius', parseInt(e.target.value) || 0)}
+                              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              min="1"
+                              max="100"
+                            />
+                            <select
+                              value={zone.unit}
+                              onChange={(e) => updateServiceZone(index, 'unit', e.target.value as 'km' | 'miles')}
+                              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="km">km</option>
+                              <option value="miles">miles</option>
+                            </select>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeServiceZone(index)}
+                            className="text-red-500 hover:text-red-700 p-1"
                           >
-                            <option value="km">km</option>
-                            <option value="miles">miles</option>
-                          </select>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeServiceZone(index)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+
+                    {formData.serviceZones.length === 0 && (
+                      <p className="text-sm text-gray-500 italic">
+                        Ajoutez au moins une zone d'intervention pour votre service mobile
+                      </p>
+                    )}
                   </div>
-                  
-                  {formData.serviceZones.length === 0 && (
-                    <p className="text-sm text-gray-500 italic">
-                      Ajoutez au moins une zone d'intervention pour votre service mobile
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -454,9 +470,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         >
           {saving ? (
             <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-          ) : (
-            <SaveIcon className="w-5 h-5" />
-          )}
+          ) : null}
           Sauvegarder et continuer
         </button>
       </div>

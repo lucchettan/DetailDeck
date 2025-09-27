@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
-import { PlusIcon, ImageIcon, MoneyIcon, CogIcon as SettingsIcon } from '../Icons';
+import { PlusIcon, ImageIcon, MoneyIcon, CogIcon as SettingsIcon, CarIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase } from '../../lib/utils';
 
@@ -10,17 +10,19 @@ import { ShopServiceCategory } from '../../types';
 interface CatalogProps {
   shopId: string;
   onEditService: (serviceId: string) => void;
-  onAddNewService: () => void;
+  onAddNewService: (categoryId?: string) => void;
   onOpenVehicleSizeManager?: () => void;
   onOpenCategoryManager?: () => void;
   onOpenCatalogSettings?: () => void;
   initialServices?: Service[];
   serviceCategories?: ShopServiceCategory[];
+  onNavigateHome?: () => void;
+  refreshTrigger?: number; // Pour forcer le rafraîchissement
 }
 
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
-const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewService, onOpenVehicleSizeManager, onOpenCategoryManager, onOpenCatalogSettings, initialServices, serviceCategories: shopServiceCategories = [] }) => {
+const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewService, onOpenVehicleSizeManager, onOpenCategoryManager, onOpenCatalogSettings, initialServices, serviceCategories: shopServiceCategories = [], onNavigateHome, refreshTrigger }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>(shopServiceCategories[0]?.id || 'default');
   const [services, setServices] = useState<Service[]>(initialServices || []);
@@ -66,12 +68,26 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
     };
   }, [fetchServices]);
 
+  // Rafraîchir quand refreshTrigger change
+  useEffect(() => {
+    if (refreshTrigger) {
+      fetchServices(true); // Force refresh
+    }
+  }, [refreshTrigger, fetchServices]);
+
   // Group services by category dynamically
   const servicesByCategory = useMemo(() => {
+    // Grouping services by category
+    // Categories and services data
+
     const grouped: Record<string, Service[]> = {};
     shopServiceCategories.forEach(category => {
-      grouped[category.id] = services.filter(service => service.categoryId === category.id);
+      const categoryServices = services.filter(service => service.categoryId === category.id);
+      // Category services
+      grouped[category.id] = categoryServices;
     });
+
+    // Grouped services
     return grouped;
   }, [services, shopServiceCategories]);
 
@@ -112,8 +128,8 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
             <div className="flex-grow">
               <div className="flex justify-between items-start">
                 <h3 className="text-lg font-bold text-neutral-dark pr-2">{service.name}</h3>
-                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {t[service.status as 'active' | 'inactive']}
+                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {service.isActive ? 'Actif' : 'Inactif'}
                 </span>
               </div>
               <p className="text-gray-600 mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
@@ -140,58 +156,80 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
 
   return (
     <div>
+      {/* Bouton retour à l'accueil */}
+      <div className="mb-4">
+        <button
+          onClick={onNavigateHome || (() => window.history.back())}
+          className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Retour à l'accueil
+        </button>
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-neutral-dark">{t.catalog}</h2>
           <p className="text-gray-600 mt-1">{t.manageServicesSubtitle}</p>
         </div>
-        <div className="flex items-center space-x-3">
-          {/* Catalog Settings Button */}
-          {onOpenCatalogSettings && (
-            <button
-              onClick={onOpenCatalogSettings}
-              className="btn btn-secondary flex items-center space-x-2"
-              title="Paramètres du Catalogue"
-            >
-              <SettingsIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">Paramètres</span>
-            </button>
-          )}
-        </div>
       </div>
 
       <div className="card p-6 md:p-8">
         <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-            {shopServiceCategories.filter(cat => cat.isActive).map(category => {
-              const isActive = activeTab === category.id;
-              const categoryServices = servicesByCategory[category.id] || [];
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveTab(category.id)}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors
+          <div className="flex justify-between items-center">
+            <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+              {shopServiceCategories.map(category => {
+                const isActive = activeTab === category.id;
+                const categoryServices = servicesByCategory[category.id] || [];
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveTab(category.id)}
+                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors
                                   ${isActive
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-600 hover:text-neutral-dark hover:border-gray-300'
-                    }`
-                  }
-                >
-                  <span className="text-lg">{category.iconName === 'interior' ? '🏠' : category.iconName === 'exterior' ? '✨' : '🔧'}</span>
-                  {category.name}
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}>
-                    {categoryServices.length}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-gray-600 hover:text-neutral-dark hover:border-gray-300'
+                      }`
+                    }
+                  >
+                    <span className="text-lg">{category.iconName === 'interior' ? '🏠' : category.iconName === 'exterior' ? '✨' : '🔧'}</span>
+                    {category.name}
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}>
+                      {categoryServices.length}
+                    </span>
+                  </button>
+                )
+              })}
+
+              {/* Add Category Button */}
+              <button
+                onClick={() => onOpenCategoryManager?.()}
+                className="whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-semibold text-sm flex items-center gap-2 transition-colors text-gray-500 hover:text-primary hover:border-gray-300"
+                title="Gérer vos catégories"
+              >
+                <span className="text-lg">⚙️</span>
+                <span>Gérer vos catégories</span>
+              </button>
+            </nav>
+
+            {/* Vehicle Sizes Button */}
+            <button
+              onClick={() => onOpenVehicleSizeManager?.()}
+              className="whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-semibold text-sm flex items-center gap-2 transition-colors text-gray-500 hover:text-primary hover:border-gray-300"
+              title="Gérer les tailles de véhicules"
+            >
+              <span className="text-lg">🚗</span>
+              <span>Tailles de véhicules</span>
+            </button>
+          </div>
         </div>
 
         <div>
           <ServiceList
             serviceList={currentServices}
-            onAdd={() => onAddNewService()}
+            onAdd={() => onAddNewService(activeTab)}
             addText={currentCategory?.name ? `Créer un service ${currentCategory.name.toLowerCase()}` : t.addNewService}
           />
         </div>

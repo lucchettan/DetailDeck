@@ -82,7 +82,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
 
     try {
       const { error } = await supabase.from('shops').insert({
-        owner_id: user!.id,
+        email: user!.email,
         name: formData.shopName,
         address_line1: formData.address,
       });

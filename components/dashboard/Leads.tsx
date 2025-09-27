@@ -7,6 +7,7 @@ import { toCamelCase } from '../../lib/utils';
 interface LeadsProps {
   shopId: string;
   initialLeads?: Lead[];
+  onNavigateHome?: () => void;
 }
 
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
@@ -20,7 +21,7 @@ const getStatusBadgeStyle = (status: Lead['status']) => {
   }
 };
 
-const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
+const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads, onNavigateHome }) => {
   const { t } = useLanguage();
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
   const [loading, setLoading] = useState(!initialLeads);
@@ -32,21 +33,21 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
 
     const now = Date.now();
     if (!force && lastFetched && (now - lastFetched < CACHE_DURATION)) {
-        return; // Use cached data, do not trigger loading state.
+      return; // Use cached data, do not trigger loading state.
     }
 
     setLoading(true);
     const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('created_at', { ascending: false });
+      .from('leads')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("Error fetching leads:", error);
+      console.error("Error fetching leads:", error);
     } else if (data) {
-        setLeads(toCamelCase(data) as Lead[]);
-        setLastFetched(Date.now());
+      setLeads(toCamelCase(data) as Lead[]);
+      setLastFetched(Date.now());
     }
     setLoading(false);
   }, [shopId, initialLeads, lastFetched]);
@@ -55,17 +56,17 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
     fetchLeads();
 
     const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-            fetchLeads();
-        }
+      if (document.visibilityState === 'visible') {
+        fetchLeads();
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchLeads]);
-  
+
   const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
     const { data, error } = await supabase
       .from('leads')
@@ -78,7 +79,7 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
       console.error('Error updating lead:', error);
       return;
     }
-    
+
     if (data) {
       setLeads(prevLeads => prevLeads.map(lead => lead.id === leadId ? toCamelCase(data) as Lead : lead));
     }
@@ -90,23 +91,36 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
   };
 
   const statusOptions: Lead['status'][] = ['to_call', 'contacted', 'converted', 'lost'];
-  
+
   if (loading) {
     return (
-        <div className="flex-1 flex items-center justify-center h-full flex-col">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
-        </div>
+      <div className="flex-1 flex items-center justify-center h-full flex-col">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+      </div>
     );
   }
 
   return (
     <div>
+      {/* Bouton retour à l'accueil */}
+      <div className="mb-4">
+        <button
+          onClick={onNavigateHome || (() => window.history.back())}
+          className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Retour à l'accueil
+        </button>
+      </div>
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-brand-dark">{t.hotLeads}</h2>
         <p className="text-brand-gray mt-1">{t.hotLeadsSubtitle}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg overflow-hidden border border-blue-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -143,7 +157,7 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads }) => {
                         {lead.selectedServices.services.map(s => s.serviceName).join(', ')}
                       </div>
                       <div className="text-xs text-brand-gray">
-                        {t.forVehicle.replace('{vehicleSize}', t[`size_${lead.selectedServices.vehicleSize as 'S'|'M'|'L'|'XL'}`])}
+                        {t.forVehicle.replace('{vehicleSize}', t[`size_${lead.selectedServices.vehicleSize as 'S' | 'M' | 'L' | 'XL'}`])}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-gray">

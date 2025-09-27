@@ -14,7 +14,7 @@ const timeToMinutes = (time: string) => {
 
 interface ExistingReservation {
     start_time: string;
-    duration: number; // in minutes
+    total_duration: number; // in minutes
 }
 
 // FIX: Updated props to accept shopId and fetch its own data, removing the dependency on a passed-in reservations list.
@@ -46,8 +46,8 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             if (IS_MOCK_MODE) {
                 // Mock mode: simulate some existing reservations
                 const mockReservations: ExistingReservation[] = [
-                    { start_time: '10:00', duration: 90 },
-                    { start_time: '14:30', duration: 60 }
+                    { start_time: '10:00', total_duration: 90 },
+                    { start_time: '14:30', total_duration: 60 }
                 ];
                 setExistingReservations(mockReservations);
                 setIsLoading(false);
@@ -58,7 +58,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
 
             let query = supabase
                 .from('reservations')
-                .select('start_time, duration')
+                .select('start_time, total_duration')
                 .eq('shop_id', shopId)
                 .eq('date', dateString)
                 .neq('status', 'cancelled');
@@ -73,6 +73,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
                 console.error("Error fetching reservations for day:", error);
                 setExistingReservations([]);
             } else {
+                console.log('🔍 Reservations found for', dateString, ':', data);
                 setExistingReservations(data as ExistingReservation[]);
             }
             setIsLoading(false);
@@ -119,18 +120,30 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
 
         const reservationIntervals = existingReservations.map(res => {
             const start = timeToMinutes(res.start_time);
-            return { start, end: start + res.duration };
+            return { start, end: start + (res.total_duration || 0) };
         });
 
-        return initialSlots.filter(slot => {
+        console.log('🔍 Reservation intervals:', reservationIntervals);
+        console.log('🔍 Service duration:', serviceDuration);
+
+        const filteredSlots = initialSlots.filter(slot => {
             const slotStart = timeToMinutes(slot);
             const slotEnd = slotStart + serviceDuration;
 
             // Check for overlap with any existing reservation
-            return !reservationIntervals.some(interval =>
+            const hasOverlap = reservationIntervals.some(interval =>
                 slotStart < interval.end && slotEnd > interval.start
             );
+
+            if (hasOverlap) {
+                console.log(`❌ Slot ${slot} conflicts with existing reservation`);
+            }
+
+            return !hasOverlap;
         });
+
+        console.log('🔍 Available slots after filtering:', filteredSlots);
+        return filteredSlots;
 
     }, [selectedDate, schedule, serviceDuration, existingReservations, minBookingNotice]);
 
@@ -147,6 +160,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, schedule, servi
             {availableSlots.map(time => (
                 <button
                     key={time}
+                    type="button"
                     onClick={() => onSelectTime(time)}
                     className={`p-2 rounded-lg border-2 font-semibold transition-colors
                         ${selectedTime === time ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-brand-dark border-gray-300 hover:border-brand-blue'}

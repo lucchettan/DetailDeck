@@ -43,7 +43,7 @@ const FAQ: React.FC = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">{t.faqTitle}</h2>
           <p className="text-lg text-brand-gray mt-4 max-w-2xl mx-auto">{t.faqSubtitle}</p>
         </div>
-        <div className="max-w-3xl mx-auto bg-white p-4 sm:p-8 rounded-xl border border-gray-200">
+        <div className="max-w-3xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-8 rounded-xl shadow-lg border border-blue-100">
           {faqItems.map((item, index) => (
             <FAQItem key={index} item={item} />
           ))}

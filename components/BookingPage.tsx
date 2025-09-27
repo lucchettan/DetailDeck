@@ -1,4 +1,12 @@
-// This file is intentionally left blank.
-// It was a duplicate of BookingFlow.tsx and was causing build errors.
-// The application now correctly uses components/booking/BookingFlow.tsx for the booking process.
-// This file can be safely deleted.
+import React from 'react';
+import BookingFlowNew from './booking/BookingFlowNew';
+
+interface BookingPageProps {
+  shopId: string;
+}
+
+const BookingPage: React.FC<BookingPageProps> = ({ shopId }) => {
+  return <BookingFlowNew shopId={shopId} />;
+};
+
+export default BookingPage;

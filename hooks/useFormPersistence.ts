@@ -1,131 +1,83 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
-/**
- * Hook pour persister automatiquement les données de formulaire
- * Sauvegarde dans localStorage et restaure automatiquement
- */
-export function useFormPersistence<T>(
-  formKey: string,
-  initialState: T,
-  options: {
-    debounceMs?: number;
-    clearOnSubmit?: boolean;
-  } = {}
-) {
-  const { debounceMs = 500, clearOnSubmit = true } = options;
+interface UseFormPersistenceOptions {
+  key: string;
+  defaultData?: any;
+  debounceMs?: number;
+}
 
-  // Clé unique pour localStorage
-  const storageKey = `form_${formKey}`;
-
-  // État du formulaire
-  const [formData, setFormDataState] = useState<T>(() => {
-    // Restaurer depuis localStorage au démarrage
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          // Merger avec l'état initial pour avoir les nouvelles propriétés
-          return { ...initialState, ...parsed };
-        }
-      } catch (error) {
-        console.warn('Erreur lors de la restauration du formulaire:', error);
-      }
+export const useFormPersistence = <T>({
+  key,
+  defaultData,
+  debounceMs = 1000
+}: UseFormPersistenceOptions) => {
+  const [data, setData] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultData;
+    } catch {
+      return defaultData;
     }
-    return initialState;
   });
 
-  // Debounced save to localStorage
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Save to localStorage with debounce
   useEffect(() => {
+    if (!data) return;
+
     const timeoutId = setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(formData));
-        } catch (error) {
-          console.warn('Erreur lors de la sauvegarde du formulaire:', error);
-        }
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (error) {
+        console.warn('Failed to save form data:', error);
       }
     }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [formData, storageKey, debounceMs]);
+  }, [data, key, debounceMs]);
 
-  // Fonction pour mettre à jour les données du formulaire
-  const setFormData = useCallback((
-    newData: T | ((prevData: T) => T)
-  ) => {
-    setFormDataState(newData);
-  }, []);
-
-  // Fonction pour vider le cache
-  const clearPersistedData = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(storageKey);
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        setData(parsedData);
+      }
+    } catch (error) {
+      console.warn('Failed to load form data:', error);
     }
-    setFormDataState(initialState);
-  }, [storageKey, initialState]);
+  }, [key]);
 
-  // Fonction à appeler lors de la soumission réussie
-  const handleSubmitSuccess = useCallback(() => {
-    if (clearOnSubmit) {
-      clearPersistedData();
-    }
-  }, [clearOnSubmit, clearPersistedData]);
+  const updateData = (newData: Partial<T>) => {
+    setData(prev => ({ ...prev, ...newData }));
+  };
 
-  // Vérifier s'il y a des données persistées
-  const hasPersistedData = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageKey) !== null;
+  const clearData = () => {
+    try {
+      localStorage.removeItem(key);
+      setData(defaultData);
+    } catch (error) {
+      console.warn('Failed to clear form data:', error);
     }
-    return false;
-  }, [storageKey]);
+  };
+
+  const hasUnsavedChanges = () => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved && JSON.stringify(data) !== saved;
+    } catch {
+      return false;
+    }
+  };
 
   return {
-    formData,
-    setFormData,
-    clearPersistedData,
-    handleSubmitSuccess,
-    hasPersistedData: hasPersistedData()
+    data,
+    setData,
+    updateData,
+    clearData,
+    hasUnsavedChanges,
+    isLoading
   };
-}
-
-/**
- * Hook simplifié pour les champs individuels
- */
-export function usePersistedInput(
-  key: string,
-  initialValue: string = '',
-  debounceMs: number = 300
-) {
-  const storageKey = `input_${key}`;
-
-  const [value, setValue] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageKey) || initialValue;
-    }
-    return initialValue;
-  });
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        if (value) {
-          localStorage.setItem(storageKey, value);
-        } else {
-          localStorage.removeItem(storageKey);
-        }
-      }
-    }, debounceMs);
-
-    return () => clearTimeout(timeoutId);
-  }, [value, storageKey, debounceMs]);
-
-  const clearValue = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(storageKey);
-    }
-    setValue(initialValue);
-  }, [storageKey, initialValue]);
-
-  return [value, setValue, clearValue] as const;
-}
+};

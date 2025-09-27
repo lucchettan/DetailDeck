@@ -64,6 +64,8 @@ CREATE TABLE shop_service_categories (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
     name text NOT NULL,
+    icon_name text DEFAULT 'detailing',
+    image_url text,
     created_at timestamptz DEFAULT now() NOT NULL
 );
 
@@ -151,6 +153,8 @@ CREATE TABLE IF NOT EXISTS shop_service_categories (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
     name text NOT NULL,
+    icon_name text DEFAULT 'detailing',
+    image_url text,
     is_active boolean DEFAULT true,
     created_at timestamptz DEFAULT now() NOT NULL
 );

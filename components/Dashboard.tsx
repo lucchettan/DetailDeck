@@ -13,7 +13,7 @@ import VehicleSizeUpdatePrompt from './dashboard/VehicleSizeUpdatePrompt';
 import CatalogSettings from './dashboard/CatalogSettings';
 import { supabase } from '../lib/supabaseClient';
 import ReservationEditor from './dashboard/ReservationEditor';
-import { toCamelCase } from '../lib/utils';
+import { toCamelCase, toSnakeCase } from '../lib/utils';
 import AlertModal from './AlertModal';
 import BookingPreviewModal from './booking/BookingPreviewModal';
 import Leads from './dashboard/Leads';
@@ -87,9 +87,13 @@ const Dashboard: React.FC = () => {
   const [settingsTargetStep, setSettingsTargetStep] = useState(1);
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [loadingShopData, setLoadingShopData] = useState(true);
+  const [catalogRefreshTrigger, setCatalogRefreshTrigger] = useState(0);
+  const [reservationRefreshTrigger, setReservationRefreshTrigger] = useState(0);
+  const [reservationValidationError, setReservationValidationError] = useState<string | null>(null);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const [isReservationEditorOpen, setIsReservationEditorOpen] = useState(false);
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null);
@@ -126,7 +130,14 @@ const Dashboard: React.FC = () => {
   }, []);
 
 
-  const fetchShopData = useCallback(async () => {
+  const fetchShopData = useCallback(async (forceRefresh = false) => {
+    // Cache for 30 seconds to avoid unnecessary refetches
+    const now = Date.now();
+    if (!forceRefresh && now - lastFetchTime < 30000 && shopData && shopData.id) {
+      console.log('🚀 Using cached shop data, skipping fetch');
+      return;
+    }
+
     if (IS_MOCK_MODE) {
       setShopData(mockShop);
       setHasServices(mockServices.length > 0);
@@ -136,16 +147,24 @@ const Dashboard: React.FC = () => {
       setLoadingShopData(false);
       setNeedsOnboarding(false); // Mock mode is always complete
       setCheckingOnboarding(false);
+      setLastFetchTime(now);
       return;
     }
     if (!user) return;
+
+    // Clear cache if shop data is invalid
+    if (shopData && !shopData.id) {
+      console.log('🧹 Clearing invalid shop data cache');
+      setShopData(null);
+    }
+
     setLoadingShopData(true);
 
     try {
       const { data: shop, error: shopError } = await supabase
         .from('shops')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('email', user.email)
         .single();
 
       if (shopError && shopError.code !== 'PGRST116') throw shopError;
@@ -168,12 +187,12 @@ const Dashboard: React.FC = () => {
             .from('shop_vehicle_sizes')
             .select('*')
             .eq('shop_id', shop.id)
-            .order('display_order'),
+            .order('created_at'),
           supabase
             .from('shop_service_categories')
             .select('*')
             .eq('shop_id', shop.id)
-            .order('display_order')
+            .order('created_at')
         ]);
 
         if (vehicleSizesRes.error) {
@@ -185,6 +204,7 @@ const Dashboard: React.FC = () => {
         if (categoriesRes.error) {
           console.error('Error fetching service categories:', categoriesRes.error);
         } else {
+          // Categories loaded
           setServiceCategories(toCamelCase(categoriesRes.data) as ShopServiceCategory[]);
         }
 
@@ -192,11 +212,13 @@ const Dashboard: React.FC = () => {
         const { data: servicesData, error: servicesDataError } = await supabase
           .from('services')
           .select('*')
-          .eq('shop_id', shop.id)
-          .eq('status', 'active');
+          .eq('shop_id', shop.id);
 
         if (!servicesDataError && servicesData) {
+          // Services loaded
           setServices(toCamelCase(servicesData) as Service[]);
+        } else {
+          // Services error or empty
         }
       }
       // Vérifier si l'onboarding est nécessaire
@@ -206,18 +228,18 @@ const Dashboard: React.FC = () => {
         try {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id, name, address_line1, schedule')
-            .eq('owner_id', user.id)
+            .select('id, name, address_line1, opening_hours')
+            .eq('email', user.email)
             .single();
 
           const { data: categories } = await supabase
             .from('shop_service_categories')
-            .select('id')
+            .select('*')
             .eq('shop_id', shop?.id);
 
           const { data: services } = await supabase
             .from('services')
-            .select('id')
+            .select('*')
             .eq('shop_id', shop?.id);
 
           const { data: vehicleSizes } = await supabase
@@ -227,13 +249,28 @@ const Dashboard: React.FC = () => {
 
           // Vérifier si toutes les étapes requises sont complètes
           const hasBasicInfo = !!(shop?.name && shop?.address_line1);
-          const hasSchedule = !!(shop?.schedule);
-          const hasCategories = (categories?.length || 0) >= 2;
-          const hasVehicleSizes = (vehicleSizes?.length || 0) >= 4;
-          const hasServices = (services?.length || 0) >= 2;
+          const hasSchedule = !!(shop?.opening_hours);
+          const hasCategories = (categories?.length || 0) >= 1;
+          const hasVehicleSizes = (vehicleSizes?.length || 0) >= 1;
+          const hasServices = (services?.length || 0) >= 1;
+
+          console.log('🔍 Dashboard: Onboarding check results:', {
+            userEmail: user.email,
+            shop: shop?.id,
+            hasBasicInfo,
+            hasSchedule,
+            hasCategories,
+            hasVehicleSizes,
+            hasServices,
+            categoriesCount: categories?.length,
+            vehicleSizesCount: vehicleSizes?.length,
+            servicesCount: services?.length
+          });
 
           const isComplete = hasBasicInfo && hasSchedule && hasCategories && hasVehicleSizes && hasServices;
-          setNeedsOnboarding(!isComplete);
+          // TEMPORAIRE: Désactiver l'onboarding pour debug
+          setNeedsOnboarding(false);
+          console.log('🚨 TEMPORAIRE: Onboarding désactivé pour debug');
 
         } catch (error) {
           console.error('Error checking onboarding status:', error);
@@ -268,8 +305,9 @@ const Dashboard: React.FC = () => {
       });
     } finally {
       setLoadingShopData(false);
+      setLastFetchTime(Date.now());
     }
-  }, [user]);
+  }, [user, lastFetchTime, shopData]);
 
   // Handler for when a new vehicle size is added
   const handleNewVehicleSizeAdded = (newSize: ShopVehicleSize) => {
@@ -283,14 +321,34 @@ const Dashboard: React.FC = () => {
     setShowVehicleSizeUpdatePrompt(false);
     setNewVehicleSize(null);
     // Optionally refresh services data
-    fetchShopData();
+    fetchShopData(true);
   };
+
 
   useEffect(() => {
     if (!authLoading) {
       fetchShopData();
     }
   }, [user, authLoading, fetchShopData]);
+
+  // Handle visibility change to avoid unnecessary refetches
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && !authLoading) {
+        // User returned to tab, but don't refetch if we have recent data
+        const now = Date.now();
+        if (now - lastFetchTime > 30000) { // Only refetch if data is older than 30 seconds
+          console.log('🔄 Tab became visible, refetching data...');
+          fetchShopData();
+        } else {
+          console.log('🚀 Tab became visible, using cached data');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, authLoading, lastFetchTime, fetchShopData]);
 
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
     if (!user) return;
@@ -310,7 +368,7 @@ const Dashboard: React.FC = () => {
       }
       if (data) setShopData(toCamelCase(data) as Shop);
     } else {
-      const { data, error } = await supabase.from('shops').insert({ ...snakeCasePayload, owner_id: user.id }).select().single();
+      const { data, error } = await supabase.from('shops').insert({ ...snakeCasePayload, email: user.email }).select().single();
       if (error) {
         console.error("Error creating shop info:", error);
         setAlertInfo({ isOpen: true, title: "Creation Error", message: `Error creating shop info: ${error.message}` });
@@ -321,17 +379,82 @@ const Dashboard: React.FC = () => {
   };
 
   const openReservationEditor = (reservationId: string | null) => {
+    // Vérifier que les données nécessaires sont chargées
+    if (!shopData || vehicleSizes.length === 0 || serviceCategories.length === 0) {
+      console.log('⚠️ Cannot open reservation editor: missing required data', {
+        shopData: !!shopData,
+        vehicleSizes: vehicleSizes.length,
+        serviceCategories: serviceCategories.length
+      });
+      setAlertInfo({
+        isOpen: true,
+        title: "Données manquantes",
+        message: "Les données nécessaires ne sont pas encore chargées. Veuillez réessayer dans quelques secondes."
+      });
+      return;
+    }
+
     setEditingReservationId(reservationId);
     setIsReservationEditorOpen(true);
   };
 
   const handleSaveReservation = async (reservationData: Omit<Reservation, 'id'> & { id?: string }) => {
-    const { error } = await supabase.from('reservations').upsert(toCamelCase(reservationData));
+    // Clear previous validation errors
+    setReservationValidationError(null);
+
+    // Validate required fields
+    if (!reservationData.startTime) {
+      setReservationValidationError("Veuillez sélectionner une heure.");
+      return;
+    }
+
+    if (!reservationData.customerName) {
+      setReservationValidationError("Veuillez saisir le nom du client.");
+      return;
+    }
+
+    // Calculate end_time from start_time + total_duration
+    const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const startMinutes = hours * 60 + minutes;
+      const endMinutes = startMinutes + durationMinutes;
+      const endHours = Math.floor(endMinutes / 60);
+      const endMins = endMinutes % 60;
+      return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+    };
+
+    // Transform the data to match database schema
+    const transformedData = toSnakeCase(reservationData);
+    const { price, duration, ...restData } = transformedData;
+    const totalDuration = reservationData.duration || 0;
+    const endTime = calculateEndTime(reservationData.startTime, totalDuration);
+
+    const dbData = {
+      ...restData,
+      shop_id: shopData.id,
+      customer_email: transformedData.customer_email || 'no-email@example.com', // Default email if not provided
+      vehicle_info: transformedData.vehicle_info || '', // Ajouter explicitement vehicle_info
+      end_time: endTime,
+      total_duration: totalDuration,
+      total_price: reservationData.price || 0,
+      // Nouvelles colonnes structurées
+      service_id: reservationData.service_id,
+      formula_id: reservationData.formula_id,
+      vehicle_size_id: reservationData.vehicle_size_id,
+      selected_addons: reservationData.selected_addons || [],
+      // Garder aussi le JSONB pour compatibilité
+      services: reservationData.services || []
+    };
+
+    console.log('Saving reservation with data:', dbData);
+
+    const { error } = await supabase.from('reservations').upsert(dbData);
     if (error) {
       console.error("Error saving reservation", error);
       setAlertInfo({ isOpen: true, title: "Save Error", message: `Could not save reservation: ${error.message}` });
     } else {
       setIsReservationEditorOpen(false);
+      setReservationRefreshTrigger(prev => prev + 1); // Trigger refresh
     }
   };
 
@@ -342,16 +465,10 @@ const Dashboard: React.FC = () => {
       setAlertInfo({ isOpen: true, title: "Delete Error", message: `Could not delete reservation: ${error.message}` });
     } else {
       setIsReservationEditorOpen(false);
+      setReservationRefreshTrigger(prev => prev + 1); // Trigger refresh après suppression
     }
   }
 
-  const handlePreviewClick = () => {
-    if (shopData?.id) {
-      setIsPreviewModalOpen(true);
-    } else {
-      setAlertInfo({ isOpen: true, title: "Preview Unavailable", message: "Please complete your shop setup before previewing." });
-    }
-  };
 
   const handleGetStartedNavigation = (nav: { view: string; step?: number }) => {
     const page = nav.view === 'shop' ? 'settings' : nav.view;
@@ -370,15 +487,7 @@ const Dashboard: React.FC = () => {
   ];
 
 
-  // Debug logs pour la production
-  console.log('Dashboard render state:', {
-    authLoading,
-    loadingShopData,
-    checkingOnboarding,
-    needsOnboarding,
-    user: !!user,
-    shopData: !!shopData
-  });
+  // Debug logs supprimés pour réduire le spam
 
   if (authLoading || loadingShopData || checkingOnboarding) {
     return (
@@ -402,190 +511,196 @@ const Dashboard: React.FC = () => {
       <NewOnboarding
         onComplete={() => {
           setNeedsOnboarding(false);
-          fetchShopData(); // Recharger les données après l'onboarding
+          fetchShopData(true); // Force refresh after onboarding
         }}
       />
     );
   }
 
   if (!shopData) {
-    console.log('Dashboard: No shop data, showing Settings');
+    // No shop data, showing Settings
     return <Settings shopData={null} onSave={handleSaveShop} initialStep={1} />;
   }
 
   return (
     <>
-      <div className="min-h-screen bg-brand-light md:flex">
-        <aside className="hidden md:block w-64 bg-white shadow-md flex-shrink-0">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-brand-dark">
-              <span>Resa</span><span className="text-brand-blue">One</span>
-            </h1>
+      <div className="min-h-screen bg-brand-light">
+        {/* Header avec logo et déconnexion */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-brand-dark">
+                  <span>Resa</span><span className="text-brand-blue">One</span>
+                </h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                  <p className="text-xs text-gray-500">{t.shopOwner}</p>
+                </div>
+                <button
+                  onClick={logOut}
+                  className="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  {t.logout}
+                </button>
+              </div>
+            </div>
           </div>
-          <nav className="mt-6">
+        </header>
+
+        <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
+          <div className={currentView.page === 'home' ? '' : 'hidden'}>
+            <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} />
+          </div>
+          <div className={currentView.page === 'leads' ? '' : 'hidden'}>
+            <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} onNavigateHome={() => navigate('/dashboard')} />
+          </div>
+          <div className={currentView.page === 'catalog' && !currentView.id ? '' : 'hidden'}>
+            <Catalog
+              shopId={shopData.id}
+              onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)}
+              onAddNewService={(categoryId) => navigate(`/dashboard/catalog/new${categoryId ? `?category=${categoryId}` : ''}`)}
+              onOpenVehicleSizeManager={() => setIsVehicleSizeManagerOpen(true)}
+              onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
+              onOpenCatalogSettings={() => setIsCatalogSettingsOpen(true)}
+              initialServices={IS_MOCK_MODE ? mockServices : services}
+              serviceCategories={serviceCategories}
+              refreshTrigger={catalogRefreshTrigger}
+              onNavigateHome={() => navigate('/dashboard')}
+            />
+          </div>
+
+          {currentView.page === 'catalog' && currentView.id && (
+            <ServiceEditor
+              serviceId={currentView.id}
+              shopId={shopData.id}
+              supportedVehicleSizes={vehicleSizes.map(vs => vs.id)}
+              vehicleSizes={vehicleSizes}
+              serviceCategories={serviceCategories}
+              onBack={() => navigate('/dashboard/catalog')}
+              onSave={() => {
+                setCatalogRefreshTrigger(prev => prev + 1);
+                navigate('/dashboard/catalog');
+              }}
+              onDelete={() => navigate('/dashboard/catalog')}
+            />
+          )}
+
+          <div className={currentView.page === 'reservations' ? '' : 'hidden'}>
+            <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} onNavigateHome={() => navigate('/dashboard')} onReservationCreated={reservationRefreshTrigger} />
+          </div>
+          <div className={currentView.page === 'settings' ? '' : 'hidden'}>
+            <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} onNavigateHome={() => navigate('/dashboard')} />
+          </div>
+        </main>
+
+        {isReservationEditorOpen && shopData && vehicleSizes.length > 0 && serviceCategories.length > 0 && (
+          <ReservationEditor
+            isOpen={isReservationEditorOpen}
+            onClose={() => {
+              setIsReservationEditorOpen(false);
+              setEditingReservationId(null);
+              setReservationValidationError(null);
+            }}
+            reservationId={editingReservationId}
+            shopData={shopData}
+            vehicleSizes={vehicleSizes}
+            serviceCategories={serviceCategories}
+            onSave={handleSaveReservation}
+            onDelete={handleDeleteReservation}
+            validationError={reservationValidationError}
+          />
+        )}
+
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
+          <div className="flex justify-around items-center">
             {navigationItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => navigate(item.id === 'home' ? '/dashboard' : `/dashboard/${item.id}`)}
-                className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${currentView.page === item.id ? 'bg-blue-50 text-brand-blue border-r-4 border-brand-blue' : 'text-brand-gray hover:bg-gray-100'}`}
+                className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${currentView.page === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
+                style={{ flexBasis: '0' }}
               >
                 {item.icon}
-                <span className="ml-4 font-semibold">{item.label}</span>
+                <span className="text-xs font-medium text-center mt-1">{item.label}</span>
               </button>
             ))}
-
-            {/* User info and logout at the bottom */}
-            <div className="mt-8 px-6 py-4 border-t border-gray-200">
-              <div className="text-center mb-4">
-                <p className="font-semibold text-brand-dark text-sm">{user?.email}</p>
-                <p className="text-xs text-brand-gray">{t.shopOwner}</p>
-              </div>
-              <button
-                onClick={logOut}
-                className="w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-              >
-                {t.logout}
-              </button>
-            </div>
-          </nav>
-        </aside>
-
-        <div className="flex-1 flex flex-col pb-20 md:pb-0">
-          <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-            <div className={currentView.page === 'home' ? '' : 'hidden'}>
-              <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} onPreview={handlePreviewClick} />
-            </div>
-            <div className={currentView.page === 'leads' ? '' : 'hidden'}>
-              <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} />
-            </div>
-            <div className={currentView.page === 'catalog' && !currentView.id ? '' : 'hidden'}>
-              <Catalog
-                shopId={shopData.id}
-                onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)}
-                onAddNewService={() => navigate('/dashboard/catalog/new')}
-                onOpenVehicleSizeManager={() => setIsVehicleSizeManagerOpen(true)}
-                onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
-                onOpenCatalogSettings={() => setIsCatalogSettingsOpen(true)}
-                initialServices={IS_MOCK_MODE ? mockServices : undefined}
-                serviceCategories={serviceCategories}
-              />
-            </div>
-
-            {currentView.page === 'catalog' && currentView.id && (
-              <ServiceEditor
-                serviceId={currentView.id}
-                shopId={shopData.id}
-                supportedVehicleSizes={shopData.supportedVehicleSizes || []} // Deprecated
-                vehicleSizes={vehicleSizes}
-                serviceCategories={serviceCategories}
-                onBack={() => navigate('/dashboard/catalog')}
-                onSave={() => navigate('/dashboard/catalog')}
-                onDelete={() => navigate('/dashboard/catalog')}
-                initialData={IS_MOCK_MODE ? (mockServices.find(s => s.id === currentView.id) || null) : undefined}
-              />
-            )}
-
-            <div className={currentView.page === 'reservations' ? '' : 'hidden'}>
-              <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} />
-            </div>
-            <div className={currentView.page === 'settings' ? '' : 'hidden'}>
-              <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} />
-            </div>
-          </main>
-
-          {isReservationEditorOpen && shopData && (
-            <ReservationEditor
-              isOpen={isReservationEditorOpen}
-              onClose={() => {
-                setIsReservationEditorOpen(false);
-                setEditingReservationId(null);
-              }}
-              reservationId={editingReservationId}
-              shopData={shopData}
-              vehicleSizes={vehicleSizes}
-              serviceCategories={serviceCategories}
-              onSave={handleSaveReservation}
-              onDelete={handleDeleteReservation}
-            />
-          )}
-
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-t-lg z-20">
-            <div className="flex justify-around items-center">
-              {navigationItems.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.id === 'home' ? '/dashboard' : `/dashboard/${item.id}`)}
-                  className={`flex flex-col items-center justify-center p-2 transition-colors duration-200 flex-grow ${currentView.page === item.id ? 'text-brand-blue' : 'text-brand-gray hover:text-brand-dark'}`}
-                  style={{ flexBasis: '0' }}
-                >
-                  {item.icon}
-                  <span className="text-xs font-medium text-center mt-1">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </nav>
-        </div>
+          </div>
+        </nav>
       </div>
+
       <AlertModal
         isOpen={alertInfo.isOpen}
         onClose={() => setAlertInfo({ isOpen: false, title: '', message: '' })}
         title={alertInfo.title}
         message={alertInfo.message}
       />
-      {isPreviewModalOpen && shopData?.id && (
-        <BookingPreviewModal
-          isOpen={isPreviewModalOpen}
-          onClose={() => setIsPreviewModalOpen(false)}
-          shopId={shopData.id}
-        />
-      )}
+      {
+        isPreviewModalOpen && shopData?.id && (
+          <BookingPreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            shopId={shopData.id}
+          />
+        )
+      }
 
       {/* Vehicle Size Manager Modal */}
-      {shopData?.id && (
-        <VehicleSizeManager
-          isOpen={isVehicleSizeManagerOpen}
-          onClose={() => setIsVehicleSizeManagerOpen(false)}
-          shopId={shopData.id}
-          vehicleSizes={vehicleSizes}
-          onUpdate={setVehicleSizes}
-          onNewVehicleSizeAdded={handleNewVehicleSizeAdded}
-        />
-      )}
+      {
+        shopData?.id && (
+          <VehicleSizeManager
+            isOpen={isVehicleSizeManagerOpen}
+            onClose={() => setIsVehicleSizeManagerOpen(false)}
+            shopId={shopData.id}
+            vehicleSizes={vehicleSizes}
+            onUpdate={setVehicleSizes}
+            onNewVehicleSizeAdded={handleNewVehicleSizeAdded}
+          />
+        )
+      }
 
       {/* Vehicle Size Update Prompt */}
-      {newVehicleSize && (
-        <VehicleSizeUpdatePrompt
-          isOpen={showVehicleSizeUpdatePrompt}
-          onClose={() => setShowVehicleSizeUpdatePrompt(false)}
-          newVehicleSize={newVehicleSize}
-          services={services}
-          onServicesUpdated={handleServicesUpdatedWithNewSize}
-        />
-      )}
+      {
+        newVehicleSize && (
+          <VehicleSizeUpdatePrompt
+            isOpen={showVehicleSizeUpdatePrompt}
+            onClose={() => setShowVehicleSizeUpdatePrompt(false)}
+            newVehicleSize={newVehicleSize}
+            services={services}
+            onServicesUpdated={handleServicesUpdatedWithNewSize}
+          />
+        )
+      }
 
       {/* Service Category Manager Modal */}
-      {shopData?.id && (
-        <ServiceCategoryManager
-          isOpen={isCategoryManagerOpen}
-          onClose={() => setIsCategoryManagerOpen(false)}
-          shopId={shopData.id}
-          serviceCategories={serviceCategories}
-          onUpdate={setServiceCategories}
-        />
-      )}
+      {
+        shopData?.id && (
+          <ServiceCategoryManager
+            isOpen={isCategoryManagerOpen}
+            onClose={() => setIsCategoryManagerOpen(false)}
+            shopId={shopData.id}
+            serviceCategories={serviceCategories}
+            onUpdate={setServiceCategories}
+          />
+        )
+      }
 
       {/* Catalog Settings Modal */}
-      {shopData?.id && (
-        <CatalogSettings
-          isOpen={isCatalogSettingsOpen}
-          onClose={() => setIsCatalogSettingsOpen(false)}
-          shopId={shopData.id}
-          vehicleSizes={vehicleSizes}
-          serviceCategories={serviceCategories}
-          onNewVehicleSizeAdded={handleNewVehicleSizeAdded}
-          onDataUpdated={fetchShopData}
-        />
-      )}
+      {
+        shopData?.id && (
+          <CatalogSettings
+            isOpen={isCatalogSettingsOpen}
+            onClose={() => setIsCatalogSettingsOpen(false)}
+            shopId={shopData.id}
+            vehicleSizes={vehicleSizes}
+            serviceCategories={serviceCategories}
+            onNewVehicleSizeAdded={handleNewVehicleSizeAdded}
+            onDataUpdated={() => fetchShopData(true)}
+          />
+        )
+      }
     </>
   );
 };

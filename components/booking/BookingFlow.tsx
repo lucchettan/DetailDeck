@@ -97,7 +97,7 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
                 const { data: shop, error: shopError } = await supabase.from('shops').select('*').eq('id', shopId).single();
                 if (shopError) throw shopError.code === 'PGRST116' ? new Error(t.shopNotFound) : shopError;
 
-                const { data: services, error: servicesError } = await supabase.from('services').select('*').eq('shop_id', shop.id).eq('status', 'active');
+                const { data: services, error: servicesError } = await supabase.from('services').select('*').eq('shop_id', shop.id);
                 if (servicesError) throw servicesError;
 
                 const serviceIds = services.map(s => s.id);
@@ -255,12 +255,11 @@ const BookingFlow: React.FC<BookingPageProps> = ({ shopId }) => {
             shop_id: shopId,
             date: selectedDate.toISOString().split('T')[0],
             start_time: selectedTime,
-            duration: totalDuration,
-            price: totalPrice,
-            client_name: `${clientInfo.firstName} ${clientInfo.lastName}`,
-            client_email: clientInfo.email,
-            client_phone: clientInfo.phone,
-            payment_status: 'on_site',
+            total_duration: totalDuration,
+            total_price: totalPrice,
+            customer_name: `${clientInfo.firstName} ${clientInfo.lastName}`,
+            customer_email: clientInfo.email,
+            customer_phone: clientInfo.phone,
             status: 'upcoming',
             service_details: {
                 vehicleSize: selectedVehicleSize,

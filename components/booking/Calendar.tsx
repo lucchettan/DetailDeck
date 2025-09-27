@@ -22,15 +22,15 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const { minDate, maxDate } = useMemo(
-        () => disableBounds 
-             ? { minDate: new Date(0), maxDate: new Date(8640000000000000) } 
-             : getBookingBoundaries(minBookingNotice, maxBookingHorizon),
+        () => disableBounds
+            ? { minDate: new Date(0), maxDate: new Date(8640000000000000) }
+            : getBookingBoundaries(minBookingNotice, maxBookingHorizon),
         [minBookingNotice, maxBookingHorizon, disableBounds]
     );
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
+
     const monthName = currentDate.toLocaleString('default', { month: 'long' });
     const numDays = daysInMonth(year, month);
     let firstDayIndex = firstDayOfMonth(year, month);
@@ -42,17 +42,17 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
 
         for (let day = 1; day <= numDays; day++) {
             const dayToCheckStart = new Date(year, month, day);
-            dayToCheckStart.setHours(0,0,0,0);
+            dayToCheckStart.setHours(0, 0, 0, 0);
             const dayToCheckEnd = new Date(year, month, day);
-            dayToCheckEnd.setHours(23,59,59,999);
-            
+            dayToCheckEnd.setHours(23, 59, 59, 999);
+
             // A day is disabled if its end is before the first bookable moment,
             // or its start is after the last bookable moment.
             if (dayToCheckEnd < minDate || dayToCheckStart > maxDate) {
-                 disabled.add(day);
-                 continue;
+                disabled.add(day);
+                continue;
             }
-            
+
             // Check against static weekly schedule
             const dayOfWeek = dayNames[dayToCheckStart.getDay()];
             const daySchedule = schedule[dayOfWeek];
@@ -71,15 +71,15 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
     const handleNextMonth = () => {
         setCurrentDate(new Date(year, month + 1, 1));
     };
-    
+
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
         <div className="bg-white rounded-lg p-4 border relative">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={handlePrevMonth} className="px-2 py-1 rounded-md hover:bg-gray-100">&larr;</button>
+                <button type="button" onClick={handlePrevMonth} className="px-2 py-1 rounded-md hover:bg-gray-100">&larr;</button>
                 <h3 className="font-bold text-lg">{monthName} {year}</h3>
-                <button onClick={handleNextMonth} className="px-2 py-1 rounded-md hover:bg-gray-100">&rarr;</button>
+                <button type="button" onClick={handleNextMonth} className="px-2 py-1 rounded-md hover:bg-gray-100">&rarr;</button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-sm text-gray-500">
                 {weekDays.map(day => <div key={day} className="font-semibold">{day}</div>)}
@@ -90,10 +90,11 @@ const Calendar: React.FC<CalendarProps> = ({ schedule, selectedDate, onSelectDat
                     const dayNumber = day + 1;
                     const isSelected = selectedDate && selectedDate.getDate() === dayNumber && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
                     const isDisabled = disabledDays.has(dayNumber);
-                    
+
                     return (
                         <button
                             key={dayNumber}
+                            type="button"
                             onClick={() => !isDisabled && onSelectDate(new Date(year, month, dayNumber))}
                             disabled={isDisabled}
                             className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center

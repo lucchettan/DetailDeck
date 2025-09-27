@@ -70,10 +70,11 @@ interface SettingsProps {
   shopData: Shop | null;
   onSave: (updatedData: any) => Promise<void>;
   initialStep?: number;
+  onNavigateHome?: () => void;
 }
 
 
-const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) => {
+const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNavigateHome }) => {
   const { t } = useLanguage();
   const { updateUserPassword } = useAuth();
   const [activeStep, setActiveStep] = useState<number>(initialStep || 1);
@@ -272,6 +273,19 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
 
   return (
     <div>
+      {/* Bouton retour à l'accueil */}
+      <div className="mb-4">
+        <button
+          onClick={onNavigateHome || (() => window.history.back())}
+          className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Retour à l'accueil
+        </button>
+      </div>
+
       <h2 className="text-2xl font-bold text-brand-dark mb-2">{t.settings}</h2>
       <p className="text-brand-gray mb-6">{t.settingsSubtitle}</p>
 
@@ -304,7 +318,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep }) =>
         })}
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-md">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl shadow-lg border border-blue-100">
         {activeStep === 1 && (
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">

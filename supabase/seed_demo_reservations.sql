@@ -13,7 +13,7 @@ DECLARE
 BEGIN
     -- Récupérer l'ID du shop démo
     SELECT id INTO demo_shop_id FROM shops WHERE email = 'demo@account.com';
-    
+
     -- Récupérer les IDs des services
     SELECT id INTO interior_service_id FROM services WHERE shop_id = demo_shop_id AND name = 'Nettoyage Intérieur Complet';
     SELECT id INTO premium_service_id FROM services WHERE shop_id = demo_shop_id AND name = 'Détailing Intérieur Premium';
@@ -23,7 +23,7 @@ BEGIN
     -- ========================================
     -- CRÉER DES RÉSERVATIONS PASSÉES
     -- ========================================
-    
+
     INSERT INTO reservations (shop_id, client_name, client_email, client_phone, reservation_date, status, total_price) VALUES
         (demo_shop_id, 'Marie Dupont', 'marie.dupont@email.com', '06 12 34 56 78', (NOW() - INTERVAL '15 days')::timestamptz, 'completed', 104),
         (demo_shop_id, 'Jean Martin', 'jean.martin@gmail.com', '06 23 45 67 89', (NOW() - INTERVAL '12 days')::timestamptz, 'completed', 75),
@@ -34,7 +34,7 @@ BEGIN
     -- ========================================
     -- CRÉER DES RÉSERVATIONS À VENIR
     -- ========================================
-    
+
     INSERT INTO reservations (shop_id, client_name, client_email, client_phone, reservation_date, status, total_price) VALUES
         (demo_shop_id, 'Thomas Leclerc', 'thomas.leclerc@gmail.com', '06 67 89 01 23', (NOW() + INTERVAL '2 days')::timestamptz, 'upcoming', 134),
         (demo_shop_id, 'Emma Petit', 'emma.petit@hotmail.fr', '06 78 90 12 34', (NOW() + INTERVAL '5 days')::timestamptz, 'upcoming', 199),
@@ -44,7 +44,7 @@ BEGIN
     -- ========================================
     -- CRÉER DES LEADS (PROSPECTS)
     -- ========================================
-    
+
     INSERT INTO leads (shop_id, client_name, client_phone, status, created_at) VALUES
         (demo_shop_id, 'Antoine Dubois', '06 01 23 45 67', 'to_call', NOW() - INTERVAL '2 hours'),
         (demo_shop_id, 'Julie Lemoine', '06 12 34 56 78', 'to_call', NOW() - INTERVAL '5 hours'),
@@ -62,7 +62,7 @@ END $$;
 -- VÉRIFICATION DES DONNÉES CRÉÉES
 -- ========================================
 
-SELECT 
+SELECT
     'DEMO_DATA_SUMMARY' as type,
     s.name as shop_name,
     COUNT(DISTINCT r.id) as total_reservations,

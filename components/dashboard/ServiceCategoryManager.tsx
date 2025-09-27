@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon as XMarkIcon, PlusIcon, TrashIcon, PencilIcon, CheckIcon, CloseIcon as CancelIcon } from '../Icons';
-import { ShopServiceCategory, ServiceCategoryFormData, AVAILABLE_CATEGORY_ICONS, CategoryIconName } from "../../types";
+import { CloseIcon as XMarkIcon, TrashIcon, PencilIcon } from '../Icons';
+import { ShopServiceCategory, ServiceCategoryFormData } from "../../types";
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase, toSnakeCase } from '../../lib/utils';
 import { IS_MOCK_MODE } from '../../lib/env';
+import { processImageFile } from '../../lib/heicUtils';
 
 interface ServiceCategoryManagerProps {
   isOpen: boolean;
@@ -13,18 +14,8 @@ interface ServiceCategoryManagerProps {
   serviceCategories: ShopServiceCategory[];
   onUpdate?: (updatedCategories: ShopServiceCategory[]) => void;
   onDataUpdated?: () => void;
-  embedded?: boolean; // New prop for embedded mode
 }
 
-const CATEGORY_ICON_DISPLAY: Record<CategoryIconName, { icon: string; label: string }> = {
-  interior: { icon: '🏠', label: 'Interior' },
-  exterior: { icon: '✨', label: 'Exterior' },
-  engine: { icon: '⚙️', label: 'Engine' },
-  wheels: { icon: '🛞', label: 'Wheels' },
-  detailing: { icon: '🧽', label: 'Detailing' },
-  protection: { icon: '🛡️', label: 'Protection' },
-  maintenance: { icon: '🔧', label: 'Maintenance' },
-};
 
 const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
   isOpen,
@@ -33,7 +24,6 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
   serviceCategories: initialCategories,
   onUpdate,
   onDataUpdated,
-  embedded = false
 }) => {
   const { t } = useLanguage();
   const [serviceCategories, setServiceCategories] = useState<ShopServiceCategory[]>(initialCategories);
@@ -41,27 +31,71 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form state for editing/adding
   const [formData, setFormData] = useState<ServiceCategoryFormData>({
     name: '',
     iconName: 'detailing',
-    iconUrl: '',
-    isActive: true,
-    displayOrder: 0
+    imageUrl: ''
   });
 
   useEffect(() => {
     setServiceCategories(initialCategories);
   }, [initialCategories]);
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      // Process the image file (validation + HEIC conversion)
+      const processedFile = await processImageFile(file);
+
+      // Validation supplémentaire : vérifier que le fichier n'est pas vide
+      if (processedFile.size === 0) {
+        throw new Error('Le fichier image est vide ou corrompu');
+      }
+
+      // Upload to Supabase Storage
+      const fileExt = processedFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `category-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('service-images')
+        .upload(filePath, processedFile);
+
+      if (uploadError) {
+        throw new Error(`Erreur lors de l'upload: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, imageUrl: publicUrl }));
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
       iconName: 'detailing',
-      iconUrl: '',
-      isActive: true,
-      displayOrder: 0
+      imageUrl: ''
     });
     setEditingId(null);
     setIsAddingNew(false);
@@ -71,10 +105,8 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
   const handleEdit = (category: ShopServiceCategory) => {
     setFormData({
       name: category.name,
-      iconName: (category.iconName as CategoryIconName) || 'detailing',
-      iconUrl: category.iconUrl || '',
-      isActive: category.isActive,
-      displayOrder: category.displayOrder
+      iconName: (category.iconName || category.icon_name) || 'detailing',
+      imageUrl: category.imageUrl || category.image_url || ''
     });
     setEditingId(category.id);
     setIsAddingNew(false);
@@ -84,9 +116,7 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
     setFormData({
       name: '',
       iconName: 'detailing',
-      iconUrl: '',
-      isActive: true,
-      displayOrder: Math.max(...serviceCategories.map(c => c.displayOrder), 0) + 1
+      imageUrl: ''
     });
     setEditingId(null);
     setIsAddingNew(true);
@@ -94,7 +124,12 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      setError('Category name is required');
+      setError('Le nom de la catégorie est requis');
+      return;
+    }
+
+    if (editingId && !serviceCategories.find(c => c.id === editingId)) {
+      setError('Catégorie introuvable');
       return;
     }
 
@@ -109,30 +144,29 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
           shopId,
           name: formData.name,
           iconName: formData.iconName,
-          iconUrl: formData.iconUrl,
-          isActive: formData.isActive,
-          displayOrder: formData.displayOrder,
+          imageUrl: formData.imageUrl,
           createdAt: new Date().toISOString()
         };
 
         if (isAddingNew) {
           setServiceCategories(prev => [...prev, newCategory]);
         } else if (editingId) {
-          setServiceCategories(prev => prev.map(c => c.id === editingId ? { ...c, ...formData } : c));
+          setServiceCategories(prev => prev.map(c => c.id === editingId ? newCategory : c));
         }
-
         resetForm();
         return;
       }
 
+      const categoryData = {
+        name: formData.name,
+        icon_name: formData.iconName,
+        image_url: formData.imageUrl,
+      };
+
       if (isAddingNew) {
-        // Create new service category
         const { data, error } = await supabase
           .from('shop_service_categories')
-          .insert([{
-            shop_id: shopId,
-            ...toSnakeCase(formData)
-          }])
+          .insert([{ shop_id: shopId, ...categoryData }])
           .select()
           .single();
 
@@ -140,12 +174,10 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
 
         const newCategory = toCamelCase(data) as ShopServiceCategory;
         setServiceCategories(prev => [...prev, newCategory]);
-
       } else if (editingId) {
-        // Update existing service category
         const { data, error } = await supabase
           .from('shop_service_categories')
-          .update(toSnakeCase(formData))
+          .update(categoryData)
           .eq('id', editingId)
           .select()
           .single();
@@ -157,19 +189,18 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
       }
 
       resetForm();
-
     } catch (err: any) {
       console.error('Error saving service category:', err);
-      setError(err.message || 'Failed to save service category');
+      setError(err.message || 'Erreur lors de la sauvegarde');
     } finally {
       setLoading(false);
+      // Ensure editingId is reset even if there was an error
+      setEditingId(null);
     }
   };
 
   const handleDelete = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This action cannot be undone and may affect existing services.')) {
-      return;
-    }
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) return;
 
     setLoading(true);
     setError(null);
@@ -188,44 +219,9 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
       if (error) throw error;
 
       setServiceCategories(prev => prev.filter(c => c.id !== categoryId));
-
     } catch (err: any) {
       console.error('Error deleting service category:', err);
-      setError(err.message || 'Failed to delete service category');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleToggleActive = async (category: ShopServiceCategory) => {
-    const updatedActive = !category.isActive;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (IS_MOCK_MODE) {
-        setServiceCategories(prev => prev.map(c =>
-          c.id === category.id ? { ...c, isActive: updatedActive } : c
-        ));
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('shop_service_categories')
-        .update({ is_active: updatedActive })
-        .eq('id', category.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const updatedCategory = toCamelCase(data) as ShopServiceCategory;
-      setServiceCategories(prev => prev.map(c => c.id === category.id ? updatedCategory : c));
-
-    } catch (err: any) {
-      console.error('Error toggling service category:', err);
-      setError(err.message || 'Failed to update service category');
+      setError(err.message || 'Erreur lors de la suppression');
     } finally {
       setLoading(false);
     }
@@ -238,205 +234,308 @@ const ServiceCategoryManager: React.FC<ServiceCategoryManagerProps> = ({
     if (onDataUpdated) {
       onDataUpdated();
     }
+    resetForm();
     onClose();
-  };
-
-  const getIconDisplay = (iconName?: string) => {
-    const icon = CATEGORY_ICON_DISPLAY[iconName as CategoryIconName] || CATEGORY_ICON_DISPLAY.detailing;
-    return icon.icon;
   };
 
   if (!isOpen) return null;
 
-  const content = (
-    <>
-      {/* Header - only show in modal mode */}
-      {!embedded && (
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              📋
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Manage Service Categories
-            </h2>
-          </div>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-500 transition-colors"
-            disabled={loading}
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className={embedded ? "" : "p-6 overflow-y-auto max-h-[calc(90vh-140px)]"}>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
           </div>
         )}
 
-        {/* Service Categories List */}
-        <div className="space-y-3 mb-6">
-          {serviceCategories
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((category) => (
-              <div
-                key={category.id}
-                className={`flex items-center justify-between p-4 border rounded-lg ${category.isActive ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
-                  }`}
+        {/* Main Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Vos catégories</h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-500 transition-colors"
+                disabled={loading}
               >
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={category.isActive}
-                      onChange={() => handleToggleActive(category)}
-                      disabled={loading}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">
-                      {getIconDisplay(category.iconName)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-medium ${category.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
-                        {category.name}
-                      </h3>
-                    </div>
-                  </div>
-                </div>
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+          <p className="text-gray-600 mb-6">Organisez vos services par catégories pour une meilleure présentation</p>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    disabled={loading}
-                    className="p-2 text-gray-400 hover:text-purple-600 transition-colors"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    disabled={loading}
-                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
+          {/* Categories List */}
+          <div className="space-y-4">
+            {serviceCategories.map((category) => (
+              <div key={category.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                {editingId === category.id ? (
+                  // Edit mode - inline editing
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900">Modifier la catégorie</h4>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            try {
+                              setEditingId(null);
+                              resetForm();
+                            } catch (error) {
+                              console.error('Error closing edit mode:', error);
+                              setError('Erreur lors de la fermeture de l\'édition');
+                            }
+                          }}
+                          disabled={loading}
+                          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Category Name */}
+                      <div>
+                        <label className="form-label">Nom de la catégorie *</label>
+                        <input
+                          value={formData?.name || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="ex: Lavage Extérieur, Nettoyage Intérieur"
+                          className="form-input"
+                        />
+                      </div>
+
+                      {/* Image Upload */}
+                      <div>
+                        <label className="form-label">Image de la catégorie</label>
+                        <div className="flex items-center gap-4">
+                          {formData?.imageUrl && (
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                              <img
+                                src={formData.imageUrl}
+                                alt="Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <input
+                              type="file"
+                              accept="image/*,.heic,.heif"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                              id={`image-upload-${category.id}`}
+                            />
+                            <label
+                              htmlFor={`image-upload-${category.id}`}
+                              className="btn btn-secondary cursor-pointer"
+                            >
+                              {uploadingImage ? 'Upload...' : formData?.imageUrl ? 'Changer' : 'Ajouter'}
+                            </label>
+                            {formData?.imageUrl && (
+                              <button
+                                type="button"
+                                onClick={removeImage}
+                                className="btn btn-outline text-red-600 hover:bg-red-50"
+                              >
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => setEditingId(null)}
+                          disabled={loading}
+                          className="btn btn-outline"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          disabled={loading || !formData?.name?.trim()}
+                          className="btn btn-primary"
+                        >
+                          {loading ? 'Sauvegarde...' : 'Sauvegarder'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // View mode
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {category.imageUrl || category.image_url ? (
+                          <img
+                            src={category.imageUrl || category.image_url}
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl">🔧</span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{category.name}</h4>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          try {
+                            setFormData({
+                              name: category.name || '',
+                              iconName: (category.iconName || category.icon_name) || 'detailing',
+                              imageUrl: category.imageUrl || category.image_url || ''
+                            });
+                            setEditingId(category.id);
+                          } catch (error) {
+                            console.error('Error setting form data:', error);
+                            setError('Erreur lors de l\'ouverture de l\'édition');
+                          }
+                        }}
+                        disabled={loading}
+                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(category.id)}
+                        disabled={loading}
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-        </div>
 
-        {/* Add/Edit Form */}
-        {(isAddingNew || editingId) && (
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {isAddingNew ? t.addNewServiceCategory : 'Edit Service Category'}
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Engine Bay Services, Paint Protection"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+            {/* Add New Button - Now at the end of the list */}
+            {!isAddingNew && (
+              <div className="bg-white rounded-lg p-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+                <button
+                  onClick={handleAddNew}
                   disabled={loading}
-                />
+                  className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-blue-600 py-4 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="font-medium">Ajouter une nouvelle catégorie</span>
+                </button>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Icon
-                </label>
-                <div className="grid grid-cols-4 gap-3">
-                  {AVAILABLE_CATEGORY_ICONS.map((iconKey) => {
-                    const iconInfo = CATEGORY_ICON_DISPLAY[iconKey];
-                    return (
+            {/* Add New Form - Only for adding new categories */}
+            {isAddingNew && (
+              <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                  Ajouter une nouvelle catégorie
+                </h4>
+
+                <div className="space-y-4">
+                  {/* Category Name */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Nom de la catégorie
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Ex: Intérieur, Extérieur, Détailing..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Image Upload and Actions */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {formData.imageUrl ? (
+                          <img
+                            src={formData.imageUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xl">📷</span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept="image/*,.heic,.heif"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="category-image-upload"
+                          disabled={uploadingImage}
+                        />
+                        <label
+                          htmlFor="category-image-upload"
+                          className={`text-sm font-medium px-3 py-1 rounded-lg transition-colors cursor-pointer ${uploadingImage
+                            ? 'text-blue-600 bg-blue-50 cursor-not-allowed'
+                            : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+                            }`}
+                        >
+                          {uploadingImage ? 'Upload...' : '📷 Ajouter une image'}
+                        </label>
+                        {formData.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center space-x-3">
                       <button
-                        key={iconKey}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, iconName: iconKey }))}
-                        className={`p-3 border rounded-lg text-center transition-colors ${formData.iconName === iconKey
-                          ? 'border-purple-500 bg-purple-50'
-                          : 'border-gray-200 hover:border-purple-300'
-                          }`}
+                        onClick={() => {
+                          setIsAddingNew(false);
+                          resetForm();
+                        }}
                         disabled={loading}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                       >
-                        <div className="text-2xl mb-1">{iconInfo.icon}</div>
-                        <div className="text-xs text-gray-600">{iconInfo.label}</div>
+                        Annuler
                       </button>
-                    );
-                  })}
+                      <button
+                        onClick={handleSave}
+                        disabled={loading || !formData.name.trim()}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {loading ? 'Sauvegarde...' : 'Ajouter'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formats supportés: JPEG, PNG, WebP, HEIC • Max 10MB
+                  </p>
                 </div>
               </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="categoryIsActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  disabled={loading}
-                />
-                <label htmlFor="categoryIsActive" className="ml-2 text-sm text-gray-700">
-                  Active (available for new services)
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={resetForm}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                <CancelIcon className="w-4 h-4 mr-2 inline" />
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={loading || !formData.name.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <CheckIcon className="w-4 h-4 mr-2 inline" />
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Add New Button */}
-        {!isAddingNew && !editingId && (
-          <button
-            onClick={handleAddNew}
-            disabled={loading}
-            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-purple-300 hover:text-purple-600 transition-colors flex items-center justify-center space-x-2"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span>{t.addNewServiceCategory}</span>
-          </button>
-        )}
-      </div>
-    </>
-  );
-
-  // Return content wrapped in modal or directly
-  return embedded ? (
-    content
-  ) : (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-        {content}
       </div>
     </div>
   );

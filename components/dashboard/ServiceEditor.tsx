@@ -41,12 +41,19 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   // Persistance automatique du formulaire
   const {
-    formData,
-    setFormData,
-    clearPersistedData,
-    handleSubmitSuccess,
-    hasPersistedData
-  } = useFormPersistence<Partial<Service>>(`service_${serviceId}`, {});
+    data: persistedData,
+    setData: setPersistedData,
+    clearData: clearPersistedData,
+    hasUnsavedChanges
+  } = useFormPersistence<Partial<Service>>({
+    key: `service_${serviceId}`,
+    defaultData: {}
+  });
+
+  const [formData, setFormData] = useState<Partial<Service>>(persistedData);
+  const hasPersistedData = Object.keys(persistedData).length > 0;
+
+  // Synchronisation gérée dans initializeState pour éviter les re-renders multiples
 
   const [formulas, setFormulas] = useState<FormulaWithIncluded[]>([]);
   const [supplements, setSupplements] = useState<Partial<VehicleSizeSupplement>[]>([]);
@@ -54,6 +61,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ isOpen: boolean; title: string; message: string; }>({ isOpen: false, title: '', message: '' });
   const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
@@ -66,6 +74,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   useEffect(() => {
     const initializeState = async () => {
+      // Éviter les initialisations multiples
+      if (isInitialized) return;
+
       setLoading(true);
 
       // Vérifier s'il y a des données persistées pour un nouveau service
@@ -76,15 +87,34 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       const setupNewService = () => {
         // Ne pas écraser si on a des données persistées
         if (!hasPersistedData) {
-          setFormData({ name: '', description: '', status: 'active', category: 'interior', basePrice: 50, baseDuration: 60 });
+          // Utiliser la catégorie de l'URL si disponible, sinon la première catégorie
+          const urlParams = new URLSearchParams(window.location.search);
+          const categoryFromUrl = urlParams.get('category');
+          const defaultCategoryId = categoryFromUrl || serviceCategories[0]?.id || '';
+
+          setFormData({
+            name: '',
+            description: '',
+            is_active: true,
+            category_id: defaultCategoryId,
+            base_price: 50,
+            base_duration: 60
+          });
         }
         setFormulas([{ name: 'Basique', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
         setSupplements([]);
         setSpecificAddOns([]);
         setLoading(false);
+        setIsInitialized(true);
       };
 
       if (serviceId === 'new') {
+        // Attendre que les catégories soient chargées
+        if (serviceCategories.length === 0) {
+          setLoading(false);
+          setIsInitialized(true);
+          return;
+        }
         setupNewService();
         return;
       }
@@ -93,57 +123,100 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (initialData) {
           const { formulas: initialFormulas, supplements: initialSupplements, specificAddOns: initialAddOns, ...serviceData } = initialData;
           setFormData(serviceData);
-          setImagePreviewUrl(serviceData.imageUrl || null);
+          setImagePreviewUrl(serviceData.image_urls?.[0] || null);
           setFormulas(initialFormulas.map(f => ({ ...f, includedItems: f.description ? f.description.split('\n').filter(Boolean) : [] })));
           setSupplements(initialSupplements);
           setSpecificAddOns(initialAddOns);
         }
         setLoading(false);
+        setIsInitialized(true);
       } else {
         // Real mode fetch for editing
         try {
           const { data: service, error: serviceError } = await supabase.from('services').select('*').eq('id', serviceId).single();
           if (serviceError) throw serviceError;
 
-          const [formulasRes, supplementsRes, addOnsRes] = await Promise.all([
-            supabase.from('formulas').select('*').eq('service_id', serviceId),
-            supabase.from('service_vehicle_size_supplements').select('*').eq('service_id', serviceId),
-            supabase.from('add_ons').select('*').eq('service_id', serviceId)
-          ]);
+          // Convert snake_case to camelCase for form data
+          const serviceData = {
+            id: service.id,
+            shop_id: service.shop_id,
+            category_id: service.category_id,
+            name: service.name,
+            description: service.description,
+            base_price: service.base_price,
+            base_duration: service.base_duration,
+            is_active: service.is_active,
+            image_urls: service.image_urls || []
+          };
 
-          if (formulasRes.error || supplementsRes.error || addOnsRes.error) throw new Error("Failed to fetch service details");
+          setFormData(serviceData);
+          setPersistedData(serviceData); // Synchroniser avec persistedData
+          setImagePreviewUrl(service.image_urls?.[0] || null);
 
-          setFormData(toCamelCase(service) as Service);
-          setImagePreviewUrl(service.image_url || null);
+          // Load existing add-ons for this service (simplified structure)
+          const { data: addOns, error: addOnsError } = await supabase
+            .from('addons')
+            .select('id, name, description, price, duration')
+            .eq('service_id', serviceId)
+            .eq('is_active', true);
 
-          const fetchedFormulas = toCamelCase(formulasRes.data) as Formula[];
-          setFormulas((fetchedFormulas.length > 0 ? fetchedFormulas : [{ name: 'Basique', description: '', additionalPrice: 0, additionalDuration: 0 }]).map(f => ({
-            ...f,
-            includedItems: f.description ? f.description.split('\n').filter(line => line.trim() !== '') : []
-          })));
+          if (addOnsError) {
+            console.error('Error loading add-ons:', addOnsError);
+          } else {
+            const loadedAddOns = addOns?.map((addon: any) => ({
+              id: addon.id,
+              name: addon.name,
+              description: addon.description || '',
+              price: parseFloat(addon.price) || 0,
+              duration: addon.duration || 0
+            })) || [];
+            setSpecificAddOns(loadedAddOns);
+          }
 
-          setSupplements(toCamelCase(supplementsRes.data) as VehicleSizeSupplement[]);
-          setSpecificAddOns(toCamelCase(addOnsRes.data) as AddOn[]);
+          // Charger les variations par taille de véhicule
+          if (service.vehicle_size_variations) {
+            const loadedSupplements = vehicleSizes.map(vs => {
+              const variation = service.vehicle_size_variations[vs.id];
+              return {
+                vehicleSizeId: vs.id,
+                additionalPrice: variation?.price || 0,
+                additionalDuration: variation?.duration || 0
+              };
+            });
+            setSupplements(loadedSupplements);
+          } else {
+            setSupplements([]);
+          }
+
+          // Charger les formules
+          if (service.formulas && Array.isArray(service.formulas)) {
+            setFormulas(service.formulas);
+          } else {
+            setFormulas([{ name: 'Basique', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
+          }
         } catch (error: any) {
           console.error("Error fetching service data:", error);
           setAlertInfo({ isOpen: true, title: "Fetch Error", message: `Failed to load service data: ${error.message}` });
           onBack();
         } finally {
           setLoading(false);
+          setIsInitialized(true);
         }
       }
     };
 
     initializeState();
-  }, [serviceId, initialData, onBack]);
+  }, [serviceId, initialData, onBack, serviceCategories, isInitialized]);
 
   const handleInputChange = (field: keyof Service, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const newData = { ...formData, [field]: value };
+    setFormData(newData);
+    setPersistedData(newData);
   };
 
   const handleRemoveImage = () => {
     if (imagePreviewUrl) {
-      if (formData.imageUrl === imagePreviewUrl) {
+      if (formData.image_urls?.includes(imagePreviewUrl)) {
         setImageToDelete(imagePreviewUrl);
       }
       setImagePreviewUrl(null);
@@ -159,6 +232,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
   };
 
   const handleSaveClick = async () => {
+    console.log('🔍 [DEBUG] Starting save process...');
+    console.log('🔍 [DEBUG] Form data:', formData);
+    console.log('🔍 [DEBUG] Service ID:', serviceId);
+    console.log('🔍 [DEBUG] Is editing:', isEditing);
+    console.log('🔍 [DEBUG] IS_MOCK_MODE:', IS_MOCK_MODE);
+    console.log('🔍 [DEBUG] Shop ID:', shopId);
+
     if (IS_MOCK_MODE) {
       console.log('%c[MOCK MODE]%c Simulating save for service.', 'color: purple; font-weight: bold;', 'color: inherit;');
       setIsSaving(true);
@@ -166,7 +246,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         setIsSaving(false);
         setAlertInfo({ isOpen: true, title: 'Démo', message: 'La sauvegarde est simulée en mode démo.' });
         // Nettoyer les données persistées après sauvegarde réussie
-        handleSubmitSuccess();
+        clearPersistedData();
         onSave();
       }, 1000);
       return;
@@ -176,8 +256,29 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       setAlertInfo({ isOpen: true, title: "Error", message: "Shop ID is missing. Cannot save." });
       return;
     }
+
+    // Validation des champs requis
+    if (!formData.name?.trim()) {
+      setAlertInfo({ isOpen: true, title: "Error", message: "Le nom du service est requis." });
+      return;
+    }
+
+    if (!formData.category_id) {
+      setAlertInfo({ isOpen: true, title: "Error", message: "La catégorie est requise." });
+      return;
+    }
+
+    if (!formData.base_price || formData.base_price <= 0) {
+      setAlertInfo({ isOpen: true, title: "Error", message: "Le prix de base doit être supérieur à 0." });
+      return;
+    }
+
+    if (!formData.base_duration || formData.base_duration <= 0) {
+      setAlertInfo({ isOpen: true, title: "Error", message: "La durée de base doit être supérieure à 0." });
+      return;
+    }
     setIsSaving(true);
-    let finalImageUrl = formData.imageUrl;
+    let finalImageUrls = formData.image_urls || [];
 
     try {
       if (imageToDelete) {
@@ -185,12 +286,14 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         if (oldImagePath) {
           await supabase.storage.from('service-images').remove([oldImagePath]);
         }
-        finalImageUrl = '';
+        // Remove the deleted image from the array
+        finalImageUrls = finalImageUrls.filter(url => url !== imageToDelete);
       }
 
       if (imageFile) {
-        if (formData.imageUrl && formData.imageUrl !== imageToDelete) {
-          const oldImagePath = formData.imageUrl.split('/service-images/')[1];
+        // Remove old image if replacing
+        if (finalImageUrls.length > 0) {
+          const oldImagePath = finalImageUrls[0].split('/service-images/')[1];
           if (oldImagePath) await supabase.storage.from('service-images').remove([oldImagePath]);
         }
 
@@ -200,70 +303,96 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const { error: uploadError } = await supabase.storage.from('service-images').upload(filePath, imageFile);
         if (uploadError) throw uploadError;
         const { data } = supabase.storage.from('service-images').getPublicUrl(filePath);
-        finalImageUrl = data.publicUrl;
+        // Replace the first image or add new one
+        finalImageUrls = [data.publicUrl];
       }
 
-      const servicePayload: any = { ...formData, shopId, imageUrl: finalImageUrl };
-      if (!isEditing) delete servicePayload.id;
-      delete servicePayload.createdAt;
+      // Construire les variations par taille de véhicule
+      console.log('🔍 [DEBUG] Supplements before saving:', supplements);
+      const vehicleSizeVariations: { [key: string]: { price: number; duration: number } } = {};
+      supplements.forEach(supplement => {
+        if (supplement.additionalPrice !== undefined && supplement.additionalDuration !== undefined) {
+          vehicleSizeVariations[supplement.vehicleSizeId] = {
+            price: supplement.additionalPrice || 0,
+            duration: supplement.additionalDuration || 0
+          };
+        }
+      });
+      console.log('🔍 [DEBUG] Vehicle size variations:', vehicleSizeVariations);
+
+      const servicePayload: any = {
+        shop_id: shopId,
+        name: formData.name,
+        description: formData.description,
+        category_id: formData.category_id,
+        base_price: formData.base_price,
+        base_duration: formData.base_duration,
+        is_active: formData.is_active,
+        image_urls: finalImageUrls,
+        vehicle_size_variations: vehicleSizeVariations,
+        formulas: formulas
+      };
+      if (isEditing) {
+        servicePayload.id = serviceId;
+      }
+
+      console.log('🔍 [DEBUG] Service payload:', servicePayload);
+      console.log('🔍 [DEBUG] Formulas being saved:', formulas);
+      console.log('🔍 [DEBUG] Final image URLs:', finalImageUrls);
 
       const { data: savedService, error: serviceError } = await supabase
         .from('services')
-        .upsert(toSnakeCase(servicePayload))
+        .upsert(servicePayload)
         .select()
         .single();
 
-      if (serviceError) throw serviceError;
+      console.log('🔍 [DEBUG] Supabase response:', { savedService, serviceError });
+
+      if (serviceError) {
+        console.error('🔍 [DEBUG] Service error details:', serviceError);
+        throw serviceError;
+      }
+
       const currentServiceId = savedService.id;
+      console.log('🔍 [DEBUG] Saved service ID:', currentServiceId);
 
-      // --- DELETION PHASE ---
-      if (isEditing) {
-        const { error: deleteFormulasError } = await supabase.from('formulas').delete().eq('service_id', currentServiceId);
-        if (deleteFormulasError) throw deleteFormulasError;
-        const { error: deleteSupplementsError } = await supabase.from('service_vehicle_size_supplements').delete().eq('service_id', currentServiceId);
-        if (deleteSupplementsError) throw deleteSupplementsError;
-        const { error: deleteAddonsError } = await supabase.from('add_ons').delete().eq('service_id', currentServiceId);
-        if (deleteAddonsError) throw deleteAddonsError;
-      }
+      // Save add-ons (simplified structure)
+      console.log('🔍 [DEBUG] Saving add-ons:', specificAddOns);
 
-      // --- RE-INSERTION PHASE ---
-      const formulasToInsert = formulas.map(f => ({
-        service_id: currentServiceId,
-        name: f.name || 'Nouvelle Formule',
-        description: f.includedItems.join('\n').trim(),
-        additional_price: f.additionalPrice || 0,
-        additional_duration: f.additionalDuration || 0,
-      }));
-      if (formulasToInsert.length > 0) {
-        const { error } = await supabase.from('formulas').insert(formulasToInsert);
-        if (error) throw error;
-      }
+      // First, delete existing add-ons for this service
+      await supabase
+        .from('addons')
+        .delete()
+        .eq('service_id', currentServiceId);
 
-      const supplementsToInsert = supplements.filter(s => s.size).map(s => ({
-        service_id: currentServiceId,
-        size: s.size,
-        additional_price: s.additionalPrice || 0,
-        additional_duration: s.additionalDuration || 0,
-      }));
-      if (supplementsToInsert.length > 0) {
-        const { error } = await supabase.from('service_vehicle_size_supplements').insert(supplementsToInsert);
-        if (error) throw error;
-      }
+      // Create new add-ons for this service
+      if (specificAddOns.length > 0) {
+        const addOnsToInsert = specificAddOns
+          .filter(addOn => addOn.name && addOn.name.trim())
+          .map(addOn => ({
+            shop_id: shopId,
+            service_id: currentServiceId,
+            name: addOn.name,
+            description: addOn.description || '',
+            price: addOn.price || 0,
+            duration: addOn.duration || 0,
+            is_active: true
+          }));
 
-      const addOnsToInsert = specificAddOns.map(a => ({
-        service_id: currentServiceId,
-        shop_id: shopId,
-        name: a.name || 'Nouvelle Option',
-        price: a.price || 0,
-        duration: a.duration || 0,
-      }));
-      if (addOnsToInsert.length > 0) {
-        const { error } = await supabase.from('add_ons').insert(addOnsToInsert);
-        if (error) throw error;
+        if (addOnsToInsert.length > 0) {
+          const { error: addOnsError } = await supabase
+            .from('addons')
+            .insert(addOnsToInsert);
+
+          if (addOnsError) {
+            console.error('🔍 [DEBUG] Add-ons creation error:', addOnsError);
+            throw addOnsError;
+          }
+        }
       }
 
       // Nettoyer les données persistées après sauvegarde réussie
-      handleSubmitSuccess();
+      clearPersistedData();
       onSave();
 
     } catch (error: any) {
@@ -294,10 +423,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
   }
 
-  const addFormula = () => setFormulas(prev => [...prev, { name: '', includedItems: [], additionalPrice: 10, additionalDuration: 15 }]);
+  const addFormula = () => setFormulas(prev => [...prev, { name: '', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
   const updateFormulaField = (index: number, field: keyof FormulaWithIncluded, value: any) => {
     const newFormulas = [...formulas];
-    const val = (field === 'additionalPrice' || field === 'additionalDuration') ? Number(value) : value;
+    let val = value;
+    if (field === 'additionalPrice' || field === 'additionalDuration') {
+      val = value === '' || value === null ? 0 : Number(value) || 0;
+    }
     (newFormulas[index] as any)[field] = val;
     setFormulas(newFormulas);
   };
@@ -336,17 +468,20 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     setFormulas(newFormulas);
   };
 
-  const addSpecificAddOn = () => setSpecificAddOns(prev => [...prev, { name: '', price: 10, duration: 15 }]);
+  const addSpecificAddOn = () => setSpecificAddOns(prev => [...prev, { name: '', price: 0, duration: 0 }]);
   const updateSpecificAddOn = (index: number, field: keyof AddOn, value: any) => {
     const newAddons = [...specificAddOns];
-    const val = (field === 'price' || field === 'duration') ? Number(value) : value;
+    let val = value;
+    if (field === 'price' || field === 'duration') {
+      val = value === '' || value === null ? 0 : Number(value) || 0;
+    }
     (newAddons[index] as any)[field] = val;
     setSpecificAddOns(newAddons);
   };
   const removeSpecificAddOn = (index: number) => setSpecificAddOns(specificAddOns.filter((_, i) => i !== index));
 
   const updateSupplement = (vehicleSizeId: string, field: 'additionalPrice' | 'additionalDuration', value: string) => {
-    const numValue = Number(value);
+    const numValue = value === '' || value === null ? 0 : Number(value) || 0;
     setSupplements(prev => {
       const existingIndex = prev.findIndex(s => s.vehicleSizeId === vehicleSizeId);
       if (existingIndex > -1) {
@@ -390,8 +525,13 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         }}
       />
       <div className="flex justify-between items-center mb-6">
+        <button type="button" onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-medium">Retour au catalogue</span>
+        </button>
         <h2 className="text-2xl font-bold text-brand-dark">{isEditing ? t.editService : t.addNewService}</h2>
-        <button type="button" onClick={onBack} className="text-brand-gray hover:text-brand-dark">&larr; {t.catalog}</button>
       </div>
 
       <div className="bg-white p-8 rounded-lg shadow-md space-y-8">
@@ -417,29 +557,34 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                     Catégorie *
                   </label>
                   <select
-                    value={formData.categoryId || ''}
-                    onChange={(e) => handleInputChange('categoryId', e.target.value)}
+                    value={formData.category_id || ''}
+                    onChange={(e) => handleInputChange('category_id', e.target.value)}
                     className="form-input"
                     required
                   >
                     <option value="" disabled>Choisir une catégorie</option>
-                    {serviceCategories.filter(cat => cat.isActive).map(category => (
+                    {serviceCategories.map(category => (
                       <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="form-label">
-                    Statut du service
-                  </label>
-                  <select
-                    value={formData.status || 'active'}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="form-input"
-                  >
-                    <option value="active">{t.active}</option>
-                    <option value="inactive">{t.inactive}</option>
-                  </select>
+                <div className="flex items-center justify-end">
+                  <div className="flex items-center gap-3">
+                    <span className={`font-bold ${formData.is_active ? 'text-green-600' : 'text-gray-500'}`}>
+                      {formData.is_active ? 'Actif' : 'Inactif'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('is_active', !formData.is_active)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.is_active ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -465,8 +610,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.basePrice || ''}
-                    onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
+                    value={formData.base_price || ''}
+                    onChange={(e) => handleInputChange('base_price', parseFloat(e.target.value) || 0)}
                     placeholder="25"
                     min="0"
                     step="0.01"
@@ -479,8 +624,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                     Durée de base *
                   </label>
                   <DurationPicker
-                    value={formData.baseDuration || ''}
-                    onChange={(value) => handleInputChange('baseDuration', value)}
+                    value={formData.base_duration || ''}
+                    onChange={(value) => handleInputChange('base_duration', value)}
                     className="form-input w-32"
                     required
                   />
@@ -526,30 +671,39 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             {formulas.map((formula, formulaIndex) => (
               <div key={formula.id || `new-${formulaIndex}`} className="p-4 border rounded-lg bg-gray-50">
                 <div className="space-y-4">
-                  {/* Formula Name */}
-                  <div>
-                    <label className="form-label">{t.formulaName}</label>
-                    <input
-                      value={formula.name || ''}
-                      onChange={e => updateFormulaField(formulaIndex, 'name', e.target.value)}
-                      placeholder={t.formulaNamePlaceholder}
-                      className="form-input"
-                    />
+                  {/* Formula Name with Trash button on same line */}
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label className="form-label">{t.formulaName}</label>
+                      <input
+                        value={formula.name || ''}
+                        onChange={e => updateFormulaField(formulaIndex, 'name', e.target.value)}
+                        placeholder={t.formulaNamePlaceholder}
+                        className="form-input"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFormula(formulaIndex)}
+                      className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  {/* Price and Duration Row */}
+                  {/* Price and Duration Row - Compact inputs with aligned labels */}
                   <div className="flex gap-4 items-end">
-                    <div>
+                    <div className="flex-1">
                       <label className="form-label">{t.additionalPrice}</label>
                       <input
                         type="number"
                         value={formula.additionalPrice ?? ''}
                         onChange={e => updateFormulaField(formulaIndex, 'additionalPrice', e.target.value)}
-                        className="form-input w-24 text-center"
+                        className="form-input w-20 text-center"
                         placeholder="0"
                       />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <label className="form-label">{t.additionalDuration}</label>
                       <DurationPicker
                         value={formula.additionalDuration ?? ''}
@@ -557,15 +711,6 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                         className="form-input w-32"
                         placeholder="Aucune"
                       />
-                    </div>
-                    <div className="ml-auto">
-                      <button
-                        type="button"
-                        onClick={() => removeFormula(formulaIndex)}
-                        className="p-2 text-red-500 hover:text-red-700"
-                      >
-                        <TrashIcon className="w-6 h-6" />
-                      </button>
                     </div>
                   </div>
 
@@ -576,16 +721,17 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                         <div
                           key={itemIndex}
                           className="flex items-center gap-2 group"
-                          draggable
-                          onDragStart={() => (dragItem.current = itemIndex)}
-                          onDragEnter={() => (dragOverItem.current = itemIndex)}
-                          onDragEnd={() => handleDragSort(formulaIndex)}
-                          onDragOver={(e) => e.preventDefault()}
                         >
-                          <div className="cursor-grab text-gray-400 group-hover:text-gray-600">
-                            <Bars3Icon className="w-5 h-5" />
+                          <div
+                            className="cursor-grab text-gray-400 group-hover:text-gray-600"
+                            draggable
+                            onDragStart={() => (dragItem.current = itemIndex)}
+                            onDragEnter={() => (dragOverItem.current = itemIndex)}
+                            onDragEnd={() => handleDragSort(formulaIndex)}
+                            onDragOver={(e) => e.preventDefault()}
+                          >
+                            <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
                           </div>
-                          <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
                           <input
                             type="text"
                             value={item}
@@ -596,8 +742,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                           <button type="button" onClick={() => removeIncludedItem(formulaIndex, itemIndex)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-5 h-5" /></button>
                         </div>
                       ))}
-                      <button type="button" onClick={() => addIncludedItem(formulaIndex)} className="text-sm text-brand-blue font-semibold hover:underline flex items-center gap-1">
-                        <PlusIcon className="w-4 h-4" /> {t.addFeature}
+                      <button type="button" onClick={() => addIncludedItem(formulaIndex)} className="text-sm text-brand-blue font-semibold hover:underline">
+                        {t.addFeature}
                       </button>
                     </div>
                   </div>
@@ -612,7 +758,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           <h3 className="font-bold text-lg border-b pb-2 mb-4">{t.vehicleSizeSupplements}</h3>
           <p className="text-sm text-brand-gray mb-4">{t.vehicleSizeSupplementsSubtitle}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {vehicleSizes.filter(vs => vs.isActive).map(vehicleSize => {
+            {vehicleSizes.map(vehicleSize => {
               const supplement = supplements.find(s => s.vehicleSizeId === vehicleSize.id);
               return (
                 <div key={vehicleSize.id} className="bg-gray-50 p-4 rounded-lg border">
@@ -622,7 +768,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                   </h4>
                   <div className="flex gap-3">
                     <div>
-                      <label className="form-label">Prix (€)</label>
+                      <label className="form-label">Prix additionnel (€)</label>
                       <input
                         type="number"
                         value={supplement?.additionalPrice ?? ''}
@@ -632,11 +778,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="form-label">Durée</label>
+                      <label className="form-label">Durée additionnelle</label>
                       <DurationPicker
                         value={supplement?.additionalDuration ?? ''}
                         onChange={(value) => updateSupplement(vehicleSize.id, 'additionalDuration', String(value))}
-                        className="form-input w-28"
+                        className="form-input w-32"
                         placeholder="Aucune"
                       />
                     </div>
@@ -652,21 +798,31 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           <p className="text-sm text-brand-gray mb-4">{t.specificAddOnsSubtitle}</p>
           <div className="space-y-4">
             {specificAddOns.map((addOn, index) => (
-              <div key={addOn.id || `new-add-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">{t.addOnName}</label>
-                  <input value={addOn.name || ''} onChange={e => updateSpecificAddOn(index, 'name', e.target.value)} placeholder={t.addOnName} className="w-full p-2 border-gray-200 border rounded-lg" />
+              <div key={addOn.id || `new-add-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">{t.addOnName}</label>
+                    <input value={addOn.name || ''} onChange={e => updateSpecificAddOn(index, 'name', e.target.value)} placeholder={t.addOnName} className="w-full p-2 border-gray-200 border rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Description (optionnel)</label>
+                    <input value={addOn.description || ''} onChange={e => updateSpecificAddOn(index, 'description', e.target.value)} placeholder="Description de l'add-on" className="w-full p-2 border-gray-200 border rounded-lg" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">{t.priceEUR}</label>
-                  <input type="number" value={addOn.price ?? ''} onChange={e => updateSpecificAddOn(index, 'price', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-grow">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">{t.priceEUR}</label>
+                    <input type="number" value={addOn.price ?? ''} onChange={e => updateSpecificAddOn(index, 'price', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">{t.durationMIN}</label>
                     <input type="number" step="15" value={addOn.duration ?? ''} onChange={e => updateSpecificAddOn(index, 'duration', e.target.value)} className="w-full p-2 border-gray-200 border rounded-lg" />
                   </div>
-                  <button type="button" onClick={() => removeSpecificAddOn(index)} className="p-2 mb-1"><TrashIcon className="text-red-500 w-6 h-6" /></button>
+                  <div className="flex justify-end">
+                    <button type="button" onClick={() => removeSpecificAddOn(index)} className="p-2 text-red-500 hover:text-red-700 transition-colors">
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { CloseIcon as XMarkIcon, PlusIcon, TrashIcon, PencilIcon, CheckIcon, CloseIcon as CancelIcon } from '../Icons';
+import { CloseIcon as XMarkIcon, PlusIcon, TrashIcon, PencilIcon, CheckIcon, CancelIcon } from '../Icons';
 import { ShopVehicleSize, VehicleSizeFormData } from "../../types";
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase, toSnakeCase } from '../../lib/utils';
@@ -36,11 +36,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
   // Form state for editing/adding
   const [formData, setFormData] = useState<VehicleSizeFormData>({
-    name: '',
-    subtitle: '',
-    iconUrl: '',
-    isActive: true,
-    displayOrder: 0
+    name: ''
   });
 
   useEffect(() => {
@@ -49,11 +45,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      subtitle: '',
-      iconUrl: '',
-      isActive: true,
-      displayOrder: 0
+      name: ''
     });
     setEditingId(null);
     setIsAddingNew(false);
@@ -62,11 +54,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
   const handleEdit = (size: ShopVehicleSize) => {
     setFormData({
-      name: size.name,
-      subtitle: size.subtitle || '',
-      iconUrl: size.iconUrl || '',
-      isActive: size.isActive,
-      displayOrder: size.displayOrder
+      name: size.name
     });
     setEditingId(size.id);
     setIsAddingNew(false);
@@ -74,11 +62,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
   const handleAddNew = () => {
     setFormData({
-      name: '',
-      subtitle: '',
-      iconUrl: '',
-      isActive: true,
-      displayOrder: Math.max(...sizes.map(s => s.displayOrder), 0) + 1
+      name: ''
     });
     setEditingId(null);
     setIsAddingNew(true);
@@ -86,7 +70,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      setError('Vehicle size name is required');
+      setError('Le nom de la taille de véhicule est requis');
       return;
     }
 
@@ -100,10 +84,6 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
           id: `mock-${Date.now()}`,
           shopId,
           name: formData.name,
-          subtitle: formData.subtitle,
-          iconUrl: formData.iconUrl,
-          isActive: formData.isActive,
-          displayOrder: formData.displayOrder,
           createdAt: new Date().toISOString()
         };
 
@@ -128,7 +108,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
           .from('shop_vehicle_sizes')
           .insert([{
             shop_id: shopId,
-            ...toSnakeCase(formData)
+            name: formData.name
           }])
           .select()
           .single();
@@ -147,7 +127,9 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
         // Update existing vehicle size
         const { data, error } = await supabase
           .from('shop_vehicle_sizes')
-          .update(toSnakeCase(formData))
+          .update({
+            name: formData.name
+          })
           .eq('id', editingId)
           .select()
           .single();
@@ -162,7 +144,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
     } catch (err: any) {
       console.error('Error saving vehicle size:', err);
-      setError(err.message || 'Failed to save vehicle size');
+      setError(err.message || 'Erreur lors de la sauvegarde de la taille de véhicule');
     } finally {
       setLoading(false);
     }
@@ -193,45 +175,12 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
 
     } catch (err: any) {
       console.error('Error deleting vehicle size:', err);
-      setError(err.message || 'Failed to delete vehicle size');
+      setError(err.message || 'Erreur lors de la suppression de la taille de véhicule');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggleActive = async (size: ShopVehicleSize) => {
-    const updatedActive = !size.isActive;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (IS_MOCK_MODE) {
-        setSizes(prev => prev.map(s =>
-          s.id === size.id ? { ...s, isActive: updatedActive } : s
-        ));
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('shop_vehicle_sizes')
-        .update({ is_active: updatedActive })
-        .eq('id', size.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const updatedSize = toCamelCase(data) as ShopVehicleSize;
-      setSizes(prev => prev.map(s => s.id === size.id ? updatedSize : s));
-
-    } catch (err: any) {
-      console.error('Error toggling vehicle size:', err);
-      setError(err.message || 'Failed to update vehicle size');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleClose = () => {
     if (onUpdate) {
@@ -255,16 +204,18 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
               🚗
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Manage Vehicle Sizes
+              Gérer les tailles de véhicules
             </h2>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-500 transition-colors"
-            disabled={loading}
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-500 transition-colors"
+              disabled={loading}
+            >
+              <XMarkIcon className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -279,103 +230,105 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
         {/* Vehicle Sizes List */}
         <div className="space-y-3 mb-6">
           {sizes
-            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .sort((a, b) => a.name.localeCompare(b.name))
             .map((size) => (
               <div
                 key={size.id}
-                className={`flex items-center justify-between p-4 border rounded-lg ${size.isActive ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
-                  }`}
+                className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-lg"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
+                {editingId === size.id ? (
+                  // Edit mode - inline editing
+                  <div className="flex-1 flex items-center space-x-3">
                     <input
-                      type="checkbox"
-                      checked={size.isActive}
-                      onChange={() => handleToggleActive(size)}
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       disabled={loading}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      autoFocus
                     />
+                    <button
+                      onClick={handleSave}
+                      disabled={loading || !formData.name.trim()}
+                      className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors"
+                    >
+                      <CheckIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={resetForm}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-md transition-colors"
+                    >
+                      <CancelIcon className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex-1">
-                    <h3 className={`font-medium ${size.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
-                      {size.name}
-                    </h3>
-                    {size.subtitle && (
-                      <p className={`text-sm ${size.isActive ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {size.subtitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                ) : (
+                  // View mode
+                  <>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {size.name}
+                        </h3>
+                      </div>
+                    </div>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(size)}
-                    disabled={loading}
-                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(size.id)}
-                    disabled={loading}
-                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEdit(size)}
+                        disabled={loading}
+                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(size.id)}
+                        disabled={loading}
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
         </div>
 
-        {/* Add/Edit Form */}
-        {(isAddingNew || editingId) && (
-          <div className="border-t pt-6">
+        {/* Add New Button - Now at the end of the list */}
+        {!isAddingNew && (
+          <div className="bg-white rounded-lg p-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+            <button
+              onClick={handleAddNew}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-blue-600 py-4 transition-colors"
+            >
+              <PlusIcon className="w-5 h-5" />
+              <span className="font-medium">Ajouter une nouvelle taille de véhicule</span>
+            </button>
+          </div>
+        )}
+
+        {/* Add New Form */}
+        {isAddingNew && (
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {isAddingNew ? t.addNewVehicleSize : 'Edit Vehicle Size'}
+              Ajouter une taille de véhicule
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name *
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nom *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Motorcycle, Truck"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ex: Citadine, Berline, SUV"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subtitle
-                </label>
-                <input
-                  type="text"
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                  placeholder="e.g., Honda CBR, Ford F-150"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  disabled={loading}
-                />
-                <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
-                  Active (available for booking)
-                </label>
               </div>
             </div>
 
@@ -383,34 +336,21 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
               <button
                 onClick={resetForm}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
-                <CancelIcon className="w-4 h-4 mr-2 inline" />
-                Cancel
+                Annuler
               </button>
               <button
                 onClick={handleSave}
                 disabled={loading || !formData.name.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <CheckIcon className="w-4 h-4 mr-2 inline" />
-                {loading ? 'Saving...' : 'Save'}
+                {loading ? 'Sauvegarde...' : 'Ajouter'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Add New Button */}
-        {!isAddingNew && !editingId && (
-          <button
-            onClick={handleAddNew}
-            disabled={loading}
-            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors flex items-center justify-center space-x-2"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span>{t.addNewVehicleSize}</span>
-          </button>
-        )}
       </div>
     </>
   );
@@ -420,7 +360,7 @@ const VehicleSizeManager: React.FC<VehicleSizeManagerProps> = ({
     content
   ) : (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-blue-100">
         {content}
       </div>
     </div>

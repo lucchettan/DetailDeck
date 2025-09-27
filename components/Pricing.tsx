@@ -22,7 +22,7 @@ const Pricing: React.FC = () => {
             const isFeatured = !!plan.isFeatured;
 
             return (
-              <div key={plan.id} className={`card flex flex-col ${isFeatured ? 'border-2 border-primary bg-primary-light' : ''}`}>
+              <div key={plan.id} className={`bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 flex flex-col border ${isFeatured ? 'border-2 border-blue-200 bg-gradient-to-r from-blue-100 to-indigo-100' : 'border-blue-100'}`}>
                 {isFeatured && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="bg-primary text-white px-4 py-1 rounded-full text-sm font-semibold">

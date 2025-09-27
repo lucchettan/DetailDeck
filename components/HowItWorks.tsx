@@ -17,8 +17,8 @@ const HowItWorks: React.FC = () => {
           <div className="hidden md:block absolute top-8 left-0 w-full h-0.5 bg-gray-200"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
             {steps.map((step) => (
-              <div key={step.step} className="text-center">
-                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-white border-2 border-brand-blue rounded-full text-brand-blue text-2xl font-bold z-10 relative">
+              <div key={step.step} className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-200 rounded-full text-blue-600 text-2xl font-bold z-10 relative">
                   {step.step}
                 </div>
                 <h3 className="text-xl font-semibold text-brand-dark mb-2">{step.title}</h3>

@@ -5,6 +5,19 @@ import { PlusIcon, TrashIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import { IS_MOCK_MODE } from '../../lib/env';
 
+// Fonction pour formater la durée en XXhXXmn
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes}min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h${remainingMinutes}min`;
+};
+
 interface SelectedService {
   serviceId: string;
   serviceName: string;
@@ -22,6 +35,7 @@ interface SelectedService {
     id: string;
     name: string;
     price: number;
+    duration: number;
   }>;
 }
 
@@ -43,8 +57,11 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const { t } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
   const [formulas, setFormulas] = useState<Record<string, Formula[]>>({});
+  const [vehicleSizeVariations, setVehicleSizeVariations] = useState<Record<string, Record<string, { price: number; duration: number }>>>({});
+  const [serviceAddOns, setServiceAddOns] = useState<Record<string, Array<{ name: string; price: number; duration: number; description?: string }>>>({});
   const [loading, setLoading] = useState(false);
   const [showCategorySelection, setShowCategorySelection] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Fetch services and formulas
   useEffect(() => {
@@ -55,18 +72,18 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           {
             id: '1',
             name: 'Lavage Extérieur Complet',
-            basePrice: 25,
-            baseDuration: 60,
-            categoryId: 'exterior',
-            status: 'active'
+            base_price: 25,
+            base_duration: 60,
+            category_id: serviceCategories[0]?.id || '',
+            is_active: true
           },
           {
             id: '2',
             name: 'Nettoyage Intérieur Premium',
-            basePrice: 35,
-            baseDuration: 90,
-            categoryId: 'interior',
-            status: 'active'
+            base_price: 35,
+            base_duration: 90,
+            category_id: serviceCategories[1]?.id || '',
+            is_active: true
           }
         ];
         setServices(mockServices);
@@ -90,25 +107,83 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
             .from('services')
             .select('*')
             .eq('shop_id', shopId)
-            .eq('status', 'active');
-
-          // Fetch formulas
-          const { data: formulasData } = await supabase
-            .from('formulas')
-            .select('*')
-            .in('service_id', servicesData?.map(s => s.id) || []);
+            .eq('is_active', true);
 
           setServices(servicesData || []);
 
-          // Group formulas by service ID
+          // Load formulas from services table
           const formulasByService: Record<string, Formula[]> = {};
-          formulasData?.forEach(formula => {
-            if (!formulasByService[formula.service_id]) {
-              formulasByService[formula.service_id] = [];
+          servicesData?.forEach(service => {
+            if (service.formulas && Array.isArray(service.formulas) && service.formulas.length > 0) {
+              formulasByService[service.id] = service.formulas.map((formula: any, index: number) => ({
+                id: formula.id || `formula_${index}`,
+                name: formula.name || 'Formule',
+                additionalPrice: formula.additionalPrice || 0,
+                additionalDuration: formula.additionalDuration || 0,
+                serviceId: service.id
+              }));
+            } else {
+              // Formule par défaut si aucune formule n'est définie
+              formulasByService[service.id] = [
+                { id: 'default', name: 'Standard', additionalPrice: 0, additionalDuration: 0, serviceId: service.id }
+              ];
             }
-            formulasByService[formula.service_id].push(formula);
           });
           setFormulas(formulasByService);
+
+          // Load vehicle size variations from services table
+          const variationsByService: Record<string, Record<string, { price: number; duration: number }>> = {};
+
+          servicesData?.forEach(service => {
+            // Load vehicle size variations
+            if (service.vehicle_size_variations && typeof service.vehicle_size_variations === 'object') {
+              variationsByService[service.id] = service.vehicle_size_variations;
+            }
+          });
+
+          // Load add-ons directly from addons table (simplified structure)
+          const addOnsByService: Record<string, Array<{ name: string; price: number; duration: number; description?: string }>> = {};
+          try {
+            const { data: addonsData, error: addonsError } = await supabase
+              .from('addons')
+              .select('id, name, description, price, duration, service_id')
+              .eq('is_active', true)
+              .not('service_id', 'is', null);
+
+            if (addonsError) {
+              console.error('❌ Error loading add-ons:', addonsError);
+            } else if (addonsData) {
+              addonsData.forEach((addon: any) => {
+                const serviceId = addon.service_id;
+                if (!addOnsByService[serviceId]) {
+                  addOnsByService[serviceId] = [];
+                }
+
+                addOnsByService[serviceId].push({
+                  name: addon.name,
+                  price: parseFloat(addon.price) || 0,
+                  duration: addon.duration || 0,
+                  description: addon.description || ''
+                });
+              });
+            }
+          } catch (error) {
+            console.error('❌ Error loading add-ons:', error);
+          }
+
+          setVehicleSizeVariations(variationsByService);
+          setServiceAddOns(addOnsByService);
+
+          // Debug logs
+          console.log('🔍 ServiceSelector loaded data:', {
+            services: servicesData?.length || 0,
+            formulas: Object.keys(formulasByService).length,
+            vehicleSizeVariations: Object.keys(variationsByService).length,
+            addOns: Object.keys(addOnsByService).length
+          });
+          console.log('📋 Formulas by service:', formulasByService);
+          console.log('🚗 Vehicle size variations:', variationsByService);
+          console.log('➕ Add-ons by service:', addOnsByService);
         } catch (error) {
           console.error('Error fetching services:', error);
         }
@@ -119,34 +194,105 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     fetchData();
   }, [shopId]);
 
-  const addService = (categoryId?: string) => {
-    console.log('addService called', { services, vehicleSizes, categoryId });
+  const selectCategory = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+  };
 
-    const firstVehicleSize = vehicleSizes.find(v => v.isActive);
+  const goBackToCategories = () => {
+    setSelectedCategoryId(null);
+  };
 
+  // Fonction pour calculer le prix et la durée total d'un service
+  const calculateServiceTotal = (service: SelectedService): { totalPrice: number; totalDuration: number } => {
+    // Toujours recalculer depuis la base du service
+    const baseService = services.find(s => s.id === service.serviceId);
+    if (!baseService) {
+      console.error('Service not found for calculation');
+      return { totalPrice: 0, totalDuration: 0 };
+    }
+
+    let totalPrice = parseFloat(baseService.base_price) || 0;
+    let totalDuration = parseInt(baseService.base_duration) || 0;
+
+    console.log(`🧮 Calculating total for service ${service.serviceName}:`, {
+      basePrice: totalPrice,
+      baseDuration: totalDuration,
+      formulaId: service.formulaId,
+      vehicleSizeId: service.vehicleSizeId,
+      addOns: service.addOns.length
+    });
+
+    // Ajouter le prix/durée de la formule
+    if (service.formulaId && service.formulaId !== 'default') {
+      const serviceFormulas = formulas[service.serviceId] || [];
+      const selectedFormula = serviceFormulas.find(f => f.id === service.formulaId);
+      console.log('📋 Formula calculation:', { serviceFormulas, selectedFormula });
+      if (selectedFormula) {
+        totalPrice += selectedFormula.additionalPrice || 0;
+        totalDuration += selectedFormula.additionalDuration || 0;
+        console.log(`➕ Added formula: +${selectedFormula.additionalPrice}€, +${selectedFormula.additionalDuration}min`);
+      }
+    }
+
+    // Ajouter le prix/durée de la taille de véhicule
+    const vehicleSizeVariation = vehicleSizeVariations[service.serviceId]?.[service.vehicleSizeId];
+    console.log('🚗 Vehicle size calculation:', { vehicleSizeVariation });
+    if (vehicleSizeVariation) {
+      totalPrice += vehicleSizeVariation.price || 0;
+      totalDuration += vehicleSizeVariation.duration || 0;
+      console.log(`➕ Added vehicle size: +${vehicleSizeVariation.price}€, +${vehicleSizeVariation.duration}min`);
+    }
+
+    // Ajouter le prix/durée des add-ons sélectionnés
+    service.addOns.forEach(addOn => {
+      totalPrice += addOn.price || 0;
+      totalDuration += addOn.duration || 0;
+      console.log(`➕ Added add-on: +${addOn.price}€, +${addOn.duration}min`);
+    });
+
+    console.log(`🎯 Final totals: ${totalPrice}€, ${totalDuration}min`);
+    return { totalPrice, totalDuration };
+  };
+
+  const addService = (serviceId: string) => {
+    console.log('addService called', { services, vehicleSizes, serviceId });
+
+    const firstVehicleSize = vehicleSizes[0]; // Use first available vehicle size
     if (!firstVehicleSize) {
       console.log('No active vehicle size found');
       return;
     }
 
-    const category = serviceCategories.find(cat => cat.id === categoryId);
+    const service = services.find(s => s.id === serviceId);
+    const category = serviceCategories.find(cat => cat.id === service?.category_id);
+
+    if (!service || !category) {
+      console.error('Service or category not found');
+      return;
+    }
 
     const newService: SelectedService = {
-      serviceId: '',
-      serviceName: '',
-      categoryId: categoryId || '',
-      categoryName: category?.name || '',
+      serviceId: service.id,
+      serviceName: service.name,
+      categoryId: category.id,
+      categoryName: category.name,
       vehicleSizeId: firstVehicleSize.id,
       vehicleSizeName: firstVehicleSize.name,
-      basePrice: 0,
+      basePrice: parseFloat(service.base_price) || 0,
       additionalPrice: 0,
-      totalPrice: 0,
-      duration: 0,
+      totalPrice: parseFloat(service.base_price) || 0,
+      duration: parseInt(service.base_duration) || 0,
       addOns: []
     };
 
+    // Calculer le prix et la durée total avec la taille de véhicule par défaut
+    const { totalPrice, totalDuration } = calculateServiceTotal(newService);
+    newService.totalPrice = totalPrice;
+    newService.duration = totalDuration;
+
     onServicesChange([...selectedServices, newService]);
     setShowCategorySelection(false);
+    setSelectedCategoryId(null);
   };
 
   const openCategorySelection = () => {
@@ -158,9 +304,50 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     onServicesChange(updated);
   };
 
+  // Fonction pour gérer la sélection/désélection des add-ons
+  const toggleAddOn = (serviceIndex: number, addOnName: string) => {
+    const updated = [...selectedServices];
+    const service = updated[serviceIndex];
+    const existingAddOnIndex = service.addOns.findIndex(addOn => addOn.name === addOnName);
+
+    if (existingAddOnIndex >= 0) {
+      // Retirer l'add-on
+      service.addOns.splice(existingAddOnIndex, 1);
+    } else {
+      // Ajouter l'add-on
+      const availableAddOns = serviceAddOns[service.serviceId] || [];
+      const addOnToAdd = availableAddOns.find(addOn => addOn.name === addOnName);
+      if (addOnToAdd) {
+        service.addOns.push({
+          id: addOnName, // Utiliser le nom comme ID pour simplifier
+          name: addOnToAdd.name,
+          price: addOnToAdd.price,
+          duration: addOnToAdd.duration || 0
+        });
+      }
+    }
+
+    // Recalculer le prix et la durée total
+    const { totalPrice, totalDuration } = calculateServiceTotal(service);
+    service.totalPrice = totalPrice;
+    service.duration = totalDuration;
+
+    onServicesChange(updated);
+  };
+
   const updateService = (index: number, field: keyof SelectedService, value: any) => {
     const updated = [...selectedServices];
     updated[index] = { ...updated[index], [field]: value };
+
+    // Debug log
+    console.log(`🔄 Updating service ${index}, field: ${field}, value:`, value);
+
+    // Recalculer le prix et la durée total
+    const { totalPrice, totalDuration } = calculateServiceTotal(updated[index]);
+    updated[index].totalPrice = totalPrice;
+    updated[index].duration = totalDuration;
+
+    console.log(`💰 New totals for service ${index}:`, { totalPrice, totalDuration });
 
     // Update category name
     if (field === 'categoryId') {
@@ -179,21 +366,37 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       updated[index].duration = 0;
     }
 
-    // Recalculate pricing when service or formula changes
-    if (field === 'serviceId' || field === 'formulaId') {
+    // Update vehicle size name when vehicle size changes
+    if (field === 'vehicleSizeId') {
+      const vehicleSize = vehicleSizes.find(vs => vs.id === value);
+      if (vehicleSize) {
+        updated[index].vehicleSizeName = vehicleSize.name;
+      }
+    }
+
+    // Recalculate pricing when service, formula, or vehicle size changes
+    if (field === 'serviceId' || field === 'formulaId' || field === 'vehicleSizeId') {
       const service = services.find(s => s.id === updated[index].serviceId);
       const formula = formulas[updated[index].serviceId]?.find(f => f.id === updated[index].formulaId);
 
       if (service) {
         updated[index].serviceName = service.name;
-        updated[index].basePrice = service.basePrice;
-        updated[index].duration = service.baseDuration;
-        updated[index].additionalPrice = formula?.additionalPrice || 0;
-        updated[index].totalPrice = service.basePrice + (formula?.additionalPrice || 0);
+        updated[index].basePrice = parseFloat(service.base_price) || 0;
+        // Get vehicle size supplement
+        const variation = vehicleSizeVariations[service.id]?.[updated[index].vehicleSizeId];
+        const vehicleSizePrice = variation?.price || 0;
+        const vehicleSizeDuration = variation?.duration || 0;
+
+        // Get formula supplement
+        const formulaPrice = formula?.additionalPrice || 0;
+        const formulaDuration = formula?.additionalDuration || 0;
+
+        updated[index].additionalPrice = formulaPrice;
+        updated[index].totalPrice = (parseFloat(service.base_price) || 0) + vehicleSizePrice + formulaPrice;
+        updated[index].duration = (parseInt(service.base_duration) || 0) + vehicleSizeDuration + formulaDuration;
 
         if (formula) {
           updated[index].formulaName = formula.name;
-          updated[index].duration += formula.additionalDuration || 0;
         } else {
           updated[index].formulaName = undefined;
         }
@@ -222,9 +425,8 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
         <button
           type="button"
           onClick={openCategorySelection}
-          className="btn btn-secondary flex items-center gap-2 text-sm"
+          className="btn btn-secondary text-sm"
         >
-          <PlusIcon className="w-4 h-4" />
           Ajouter un service
         </button>
       </div>
@@ -244,31 +446,74 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
             </div>
 
             <div className="space-y-3">
-              {serviceCategories.filter(cat => cat.isActive).map(category => {
-                const categoryServices = services.filter(s => s.categoryId === category.id);
-                const categoryIcon = category.iconName === 'interior' ? '🏠' :
-                  category.iconName === 'exterior' ? '✨' : '🔧';
+              {selectedCategoryId ? (
+                // Show services for selected category
+                <>
+                  <div className="flex items-center gap-3 mb-4">
+                    <button
+                      onClick={goBackToCategories}
+                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <h4 className="font-semibold text-neutral-dark">
+                      {serviceCategories.find(c => c.id === selectedCategoryId)?.name}
+                    </h4>
+                  </div>
 
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => addService(category.id)}
-                    disabled={categoryServices.length === 0}
-                    className="w-full card p-4 text-left hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{categoryIcon}</div>
-                      <div>
-                        <h5 className="font-semibold text-neutral-dark">{category.name}</h5>
-                        <p className="text-sm text-gray-600">
-                          {categoryServices.length} service{categoryServices.length > 1 ? 's' : ''} disponible{categoryServices.length > 1 ? 's' : ''}
-                        </p>
+                  {services
+                    .filter(service => service.category_id === selectedCategoryId)
+                    .map(service => (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => addService(service.id)}
+                        className="w-full card p-4 text-left hover:border-primary transition-colors border border-gray-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-neutral-dark">{service.name}</h5>
+                            <p className="text-sm text-gray-600">
+                              {service.base_price}€ • {formatDuration(parseInt(service.base_duration) || 0)}
+                            </p>
+                          </div>
+                          <div className="text-green-600 font-semibold">
+                            + Ajouter
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                </>
+              ) : (
+                // Show categories
+                serviceCategories.map(category => {
+                  const categoryServices = services.filter(s => s.category_id === category.id);
+                  const categoryIcon = category.iconName === 'interior' ? '🏠' :
+                    category.iconName === 'exterior' ? '✨' : '🔧';
+
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => selectCategory(category.id)}
+                      disabled={categoryServices.length === 0}
+                      className="w-full card p-4 text-left hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">{categoryIcon}</div>
+                        <div>
+                          <h5 className="font-semibold text-neutral-dark">{category.name}</h5>
+                          <p className="text-sm text-gray-600">
+                            {categoryServices.length} service{categoryServices.length > 1 ? 's' : ''} disponible{categoryServices.length > 1 ? 's' : ''}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -304,10 +549,11 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                       value={selectedService.serviceId}
                       onChange={(e) => updateService(index, 'serviceId', e.target.value)}
                       className="form-input"
+                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
                     >
                       <option value="">Choisir un service</option>
                       {services
-                        .filter(service => service.categoryId === selectedService.categoryId)
+                        .filter(service => service.category_id === selectedService.categoryId)
                         .map(service => (
                           <option key={service.id} value={service.id}>
                             {service.name}
@@ -324,11 +570,12 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                       onChange={(e) => updateService(index, 'formulaId', e.target.value || undefined)}
                       className="form-input"
                       disabled={!selectedService.serviceId}
+                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
                     >
                       <option value="">Formule de base</option>
                       {(formulas[selectedService.serviceId] || []).map(formula => (
                         <option key={formula.id} value={formula.id}>
-                          {formula.name} (+{formula.additionalPrice}€)
+                          {formula.name} {formula.additionalPrice > 0 ? `(+${formula.additionalPrice}€)` : ''} {formula.additionalDuration > 0 ? `(+${formula.additionalDuration}min)` : ''}
                         </option>
                       ))}
                     </select>
@@ -341,22 +588,60 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                       value={selectedService.vehicleSizeId}
                       onChange={(e) => updateService(index, 'vehicleSizeId', e.target.value)}
                       className="form-input"
+                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
                     >
-                      {vehicleSizes.filter(v => v.isActive).map(size => (
-                        <option key={size.id} value={size.id}>
-                          {size.name}
-                        </option>
-                      ))}
+                      {vehicleSizes.map(size => {
+                        const variation = vehicleSizeVariations[selectedService.serviceId]?.[size.id];
+                        const additionalPrice = variation?.price || 0;
+                        const additionalDuration = variation?.duration || 0;
+                        return (
+                          <option key={size.id} value={size.id}>
+                            {size.name} {additionalPrice > 0 ? `(+${additionalPrice}€)` : ''} {additionalDuration > 0 ? `(+${additionalDuration}min)` : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
+
                 </div>
+
+                {/* Add-ons Selection - Full width */}
+                {serviceAddOns[selectedService.serviceId] && serviceAddOns[selectedService.serviceId].length > 0 && (
+                  <div className="mt-4">
+                    <label className="form-label">Add-ons disponibles</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {serviceAddOns[selectedService.serviceId].map((addOn, addOnIndex) => {
+                        const isSelected = selectedService.addOns.some(selectedAddOn => selectedAddOn.name === addOn.name);
+                        return (
+                          <label key={addOnIndex} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleAddOn(index, addOn.name)}
+                              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-neutral-dark">{addOn.name}</div>
+                              {addOn.description && (
+                                <div className="text-sm text-gray-600">{addOn.description}</div>
+                              )}
+                            </div>
+                            <div className="text-sm font-semibold text-primary">
+                              +{addOn.price}€
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between items-center mt-4 pt-4 border-t">
                 <div className="text-sm text-gray-600">
                   <span className="font-semibold text-neutral-dark">{selectedService.totalPrice}€</span>
                   {' • '}
-                  <span>{selectedService.duration}min</span>
+                  <span>{formatDuration(selectedService.duration)}</span>
                 </div>
                 <button
                   type="button"
@@ -379,14 +664,15 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                 </span>
                 {' • '}
                 <span className="text-gray-600">
-                  {selectedServices.reduce((sum, s) => sum + s.duration, 0)}min
+                  {formatDuration(selectedServices.reduce((sum, s) => sum + s.duration, 0))}
                 </span>
               </div>
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 

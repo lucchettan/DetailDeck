@@ -15,7 +15,7 @@ const Features: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="card text-center">
+            <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 text-center border border-blue-100">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-4 mx-auto">
                 <div className="text-white text-2xl">
                   {feature.icon}

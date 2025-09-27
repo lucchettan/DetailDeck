@@ -35,8 +35,8 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
       // Vérifier les informations du shop
       const { data: shop } = await supabase
         .from('shops')
-        .select('id, name, address_line1, schedule')
-        .eq('owner_id', user.id)
+        .select('id, name, address_line1, opening_hours')
+        .eq('email', user.email)
         .single();
 
       // Vérifier les catégories de services
@@ -71,7 +71,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
           title: 'Horaires d\'ouverture',
           description: 'Définissez vos disponibilités et règles de réservation',
           icon: ClockIcon,
-          completed: !!(shop?.schedule),
+          completed: !!(shop?.opening_hours),
           required: true
         },
         {
@@ -79,7 +79,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
           title: 'Catégories de services',
           description: 'Organisez vos services (Intérieur, Extérieur, etc.)',
           icon: CategoryIcon,
-          completed: (categories?.length || 0) >= 2,
+          completed: (categories?.length || 0) >= 1,
           required: true
         },
         {
@@ -87,7 +87,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
           title: 'Tailles de véhicules',
           description: 'Définissez les 4 tailles : Citadine, Berline, Break/SUV, 4x4/Minivan',
           icon: CarIcon,
-          completed: (vehicleSizes?.length || 0) >= 4,
+          completed: (vehicleSizes?.length || 0) >= 1,
           required: true
         },
         {
@@ -95,7 +95,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStepSelect, onC
           title: 'Vos premiers services',
           description: 'Ajoutez au moins un service dans chaque catégorie',
           icon: ServiceIcon,
-          completed: (services?.length || 0) >= 2,
+          completed: (services?.length || 0) >= 1,
           required: true
         }
       ];
