@@ -4,7 +4,7 @@ import { SuccessIcon, ImageIcon, CloseIcon, CheckCircleIcon, SparklesIcon, XCirc
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
-import { formatDuration } from '../../lib/utils';
+import { formatDuration, toCamelCase } from '../../lib/utils';
 import StepClientInfo from './StepClientInfo';
 import BookingPageSkeleton from './BookingPageSkeleton';
 import ServiceSelectionCard from './ServiceSelectionCard';
@@ -21,7 +21,7 @@ interface Service {
   base_duration: number;
   vehicle_size_variations: Record<string, { price: number; duration: number }>;
   is_active: boolean;
-  image_urls: string[];
+  imageUrls: string[];
 }
 
 interface AddOn {
@@ -182,10 +182,10 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       if (categoriesError) throw categoriesError;
 
       setShopData(shop);
-      setServices(servicesData || []);
-      setAddOns(addOnsData || []);
-      setVehicleSizes(vehicleSizesData || []);
-      setServiceCategories(categoriesData || []);
+      setServices(toCamelCase(servicesData || []) as Service[]);
+      setAddOns(toCamelCase(addOnsData || []) as AddOn[]);
+      setVehicleSizes(toCamelCase(vehicleSizesData || []) as VehicleSize[]);
+      setServiceCategories(toCamelCase(categoriesData || []) as ServiceCategory[]);
 
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);

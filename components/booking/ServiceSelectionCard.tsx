@@ -9,7 +9,7 @@ interface Service {
   description: string;
   base_price: number;
   base_duration: number;
-  image_urls: string[];
+  imageUrls: string[];
   formulas?: Array<{
     name: string;
     additionalPrice: number;
@@ -94,6 +94,21 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
             <h3 className="font-semibold text-lg text-gray-900">{service.name}</h3>
             {service.description && (
               <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+            )}
+            
+            {/* Images du service */}
+            {service.imageUrls && service.imageUrls.length > 0 && (
+              <div className="mt-3 flex gap-2 overflow-x-auto">
+                {service.imageUrls.map((imageUrl, index) => (
+                  <img
+                    key={index}
+                    src={imageUrl}
+                    alt={`${service.name} - Image ${index + 1}`}
+                    className="w-20 h-20 object-cover rounded-lg flex-shrink-0 bg-gray-100"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
             )}
           </div>
           <button
