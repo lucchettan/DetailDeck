@@ -728,7 +728,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
             {currentStep === 'confirmed' && (
               <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                <SuccessIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Réservation confirmée !</h2>
                 <p className="text-gray-600 mb-4">
                   Votre réservation a été enregistrée avec succès.
