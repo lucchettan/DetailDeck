@@ -645,7 +645,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             <div className="border-b bg-gray-50 p-4">
               <div className="max-w-7xl mx-auto">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Détail de votre réservation</h3>
-                
+
                 {selectedVehicleSize && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-600">Véhicule:</p>
@@ -665,17 +665,17 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         <div className="text-xs text-gray-500 ml-2">
                           <p>Base: {item.basePrice}€</p>
                           {item.variationPrice > 0 && (
-                            <p>+ Taille: {item.variationPrice}€</p>
+                            <p>Variation taille: {item.variationPrice}€</p>
                           )}
                           {item.formulaPrice > 0 && (
-                            <p>+ Formule: {item.formulaPrice}€</p>
+                            <p>Formule: {item.formulaPrice}€</p>
                           )}
                         </div>
                         {item.addOns.length > 0 && (
                           <div className="mt-1">
                             {item.addOns.map(addOn => (
                               <p key={addOn.id} className="text-xs text-gray-500 ml-2">
-                                + {addOn.name} ({addOn.price}€)
+                                Add-on: {addOn.name} ({addOn.price}€)
                               </p>
                             ))}
                           </div>
@@ -712,21 +712,21 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                       <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
                     </div>
                   )}
-                  
+
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
                       <p className="text-sm font-medium">{selectedServices.length} service{selectedServices.length > 1 ? 's' : ''}</p>
                     </div>
                   )}
-                  
+
                   <div>
                     <p className="text-xs text-gray-500">Durée totale</p>
                     <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Total</p>
@@ -734,16 +734,16 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     {totalCalculation.totalPrice.toFixed(2)}€
                   </p>
                 </div>
-                
+
                 {/* Bouton pour expander/réduire le détail */}
                 <button
                   onClick={() => setIsCartExpanded(!isCartExpanded)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title={isCartExpanded ? "Masquer le détail" : "Voir le détail"}
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                 >
-                  <ChevronUpIcon className={`w-5 h-5 text-gray-600 transition-transform ${isCartExpanded ? 'rotate-180' : ''}`} />
+                  <span>{isCartExpanded ? "Masquer le détail" : "Voir le détail"}</span>
+                  <ChevronUpIcon className={`w-4 h-4 transition-transform ${isCartExpanded ? 'rotate-180' : ''}`} />
                 </button>
-                
+
                 {currentStep === 'services' && selectedServices.length > 0 && (
                   <button
                     onClick={() => setCurrentStep('dateTime')}
@@ -752,7 +752,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     Planifier un RDV
                   </button>
                 )}
-                
+
                 {currentStep === 'dateTime' && selectedTimeSlot && (
                   <button
                     onClick={() => setCurrentStep('clientInfo')}
@@ -761,7 +761,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     Continuer
                   </button>
                 )}
-                
+
                 {currentStep === 'dateTime' && (
                   <button
                     onClick={() => setCurrentStep('services')}
@@ -770,7 +770,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     Modifier services
                   </button>
                 )}
-                
+
                 {currentStep === 'clientInfo' && (
                   <>
                     <button

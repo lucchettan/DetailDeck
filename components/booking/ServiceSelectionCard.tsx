@@ -98,12 +98,12 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
           </div>
           <button
             onClick={handleToggleSelection}
-            className={`ml-4 px-4 py-2 rounded-lg font-medium transition-colors ${isSelected
+            className={`ml-4 px-6 py-3 rounded-lg font-semibold transition-colors text-sm ${isSelected
               ? 'bg-red-500 text-white hover:bg-red-600'
               : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
           >
-            {isSelected ? 'Retirer' : 'Ajouter'}
+            {isSelected ? 'Retirer du panier' : 'Ajouter au panier'}
           </button>
         </div>
 
@@ -138,7 +138,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm">{formula.name}</span>
                       <span className="text-sm text-gray-600">
-                        +{formula.additionalPrice}€ • +{formatDuration(formula.additionalDuration)}
+                        {formula.additionalPrice}€ • {formatDuration(formula.additionalDuration)}
                       </span>
                     </div>
                     {formula.includedItems.length > 0 && (
@@ -175,7 +175,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm">{addon.name}</span>
                       <span className="text-sm text-gray-600">
-                        +{addon.price}€ • +{formatDuration(addon.duration)}
+                        {addon.price}€ • {formatDuration(addon.duration)}
                       </span>
                     </div>
                     {addon.description && (
