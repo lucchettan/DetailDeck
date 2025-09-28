@@ -448,9 +448,21 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                       <div className="space-y-3">
                         {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
                           <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.operatingCity}</label>
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="block text-sm font-medium text-gray-700">{t.operatingCity}</label>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                                      handleInputChange('serviceZones', newZones);
+                                    }}
+                                    className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                                  >
+                                    Supprimer
+                                  </button>
+                                </div>
                                 <input
                                   value={zone.city || ''}
                                   onChange={(e) => {
@@ -475,19 +487,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                 >
                                   {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                                 </select>
-                              </div>
-                              <div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
-                                    handleInputChange('serviceZones', newZones);
-                                  }}
-                                  className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors w-full flex items-center justify-center gap-1"
-                                >
-                                  <span className="text-lg">🗑️</span>
-                                  Supprimer
-                                </button>
                               </div>
                             </div>
                           </div>
