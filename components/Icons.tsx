@@ -116,8 +116,20 @@ export const ChartBarIcon = GenericIcon;
 export const CogIcon = GenericIcon;
 export const UserGroupIcon = GenericIcon;
 export const CurrencyDollarIcon = GenericIcon;
-export const TruckIcon = GenericIcon;
-export const MapPinIcon = GenericIcon;
+export const TruckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="3" width="15" height="13"></rect>
+    <polygon points="16,8 20,8 23,11 23,16 16,16"></polygon>
+    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+  </svg>
+);
+export const MapPinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+    <circle cx="12" cy="10" r="3"></circle>
+  </svg>
+);
 export const PhoneIcon = GenericIcon;
 export const GlobeAltIcon = GenericIcon;
 export const InformationCircleIcon = GenericIcon;
@@ -236,7 +248,17 @@ export const MoneyIcon = GenericIcon;
 export const CalendarPlusIcon = GenericIcon;
 export const Bars3Icon = GenericIcon;
 export const ShieldCheckIcon = GenericIcon;
-export const BuildingOffice2Icon = GenericIcon;
+export const BuildingOffice2Icon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 21h18"></path>
+    <path d="M5 21V7l8-4v18"></path>
+    <path d="M19 21V11l-6-4"></path>
+    <path d="M9 9v.01"></path>
+    <path d="M9 12v.01"></path>
+    <path d="M9 15v.01"></path>
+    <path d="M9 18v.01"></path>
+  </svg>
+);
 export const CarWashIcon = GenericIcon;
 export const CatalogIcon = GenericIcon;
 export const UpsellIcon = GenericIcon;

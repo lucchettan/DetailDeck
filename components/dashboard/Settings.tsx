@@ -39,13 +39,13 @@ const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
     // Migration des anciennes données businessType vers les nouveaux champs
     let hasLocalService = shopData.hasLocalService;
     let hasMobileService = shopData.hasMobileService;
-    
+
     // Si les nouveaux champs n'existent pas, on migre depuis businessType
     if (hasLocalService === undefined && hasMobileService === undefined) {
       hasLocalService = shopData.businessType === 'local' || shopData.businessType === 'hybrid';
       hasMobileService = shopData.businessType === 'mobile' || shopData.businessType === 'hybrid';
     }
-    
+
     return {
       ...defaults,
       ...shopData,
@@ -367,20 +367,20 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
               <p className="text-sm text-gray-600 mb-4">Vous pouvez proposer les deux types de service</p>
               <div className="flex gap-4">
                 <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.hasLocalService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={formData.hasLocalService || false} 
-                    onChange={(e) => handleInputChange('hasLocalService', e.target.checked)} 
-                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                  <input
+                    type="checkbox"
+                    checked={formData.hasLocalService || false}
+                    onChange={(e) => handleInputChange('hasLocalService', e.target.checked)}
+                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
                   />
                   <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><BuildingOffice2Icon className="w-5 h-5" /> Service en atelier</span>
                 </label>
                 <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.hasMobileService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={formData.hasMobileService || false} 
-                    onChange={(e) => handleInputChange('hasMobileService', e.target.checked)} 
-                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                  <input
+                    type="checkbox"
+                    checked={formData.hasMobileService || false}
+                    onChange={(e) => handleInputChange('hasMobileService', e.target.checked)}
+                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
                   />
                   <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><TruckIcon className="w-5 h-5" /> Service mobile</span>
                 </label>

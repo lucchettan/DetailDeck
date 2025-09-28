@@ -181,6 +181,15 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
       if (categoriesError) throw categoriesError;
 
+      console.log('🔍 [DEBUG] Booking data loaded:', {
+        shop: shop?.name,
+        servicesCount: servicesData?.length || 0,
+        servicesData,
+        addOnsCount: addOnsData?.length || 0,
+        vehicleSizesCount: vehicleSizesData?.length || 0,
+        categoriesCount: categoriesData?.length || 0
+      });
+
       setShopData(shop);
       setServices(toCamelCase(servicesData || []) as Service[]);
       setAddOns(toCamelCase(addOnsData || []) as AddOn[]);
