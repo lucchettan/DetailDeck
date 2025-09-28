@@ -287,7 +287,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     let finalImageUrls = formData.image_urls || [];
 
     try {
+      console.log('🔍 [DEBUG] Starting image processing...');
+      
       if (imageToDelete) {
+        console.log('🔍 [DEBUG] Deleting image:', imageToDelete);
         const oldImagePath = imageToDelete.split('/service-images/')[1];
         if (oldImagePath) {
           await supabase.storage.from('service-images').remove([oldImagePath]);
@@ -297,6 +300,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       }
 
       if (imageFile) {
+        console.log('🔍 [DEBUG] Uploading new image:', imageFile.name);
         // Remove old image if replacing
         if (finalImageUrls.length > 0) {
           const oldImagePath = finalImageUrls[0].split('/service-images/')[1];
@@ -307,11 +311,17 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `${shopId}/${fileName}`;
         const { error: uploadError } = await supabase.storage.from('service-images').upload(filePath, imageFile);
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('🔍 [DEBUG] Upload error:', uploadError);
+          throw uploadError;
+        }
         const { data } = supabase.storage.from('service-images').getPublicUrl(filePath);
         // Replace the first image or add new one
         finalImageUrls = [data.publicUrl];
+        console.log('🔍 [DEBUG] Image uploaded successfully:', data.publicUrl);
       }
+      
+      console.log('🔍 [DEBUG] Image processing completed');
 
       // Construire les variations par taille de véhicule
       console.log('🔍 [DEBUG] Supplements before saving:', supplements);
@@ -346,6 +356,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Formulas being saved:', formulas);
       console.log('🔍 [DEBUG] Final image URLs:', finalImageUrls);
 
+      console.log('🔍 [DEBUG] Starting service upsert...');
       const { data: savedService, error: serviceError } = await supabase
         .from('services')
         .upsert(servicePayload)
@@ -366,10 +377,12 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Saving add-ons:', specificAddOns);
 
       // First, delete existing add-ons for this service
+      console.log('🔍 [DEBUG] Deleting existing add-ons...');
       await supabase
         .from('addons')
         .delete()
         .eq('service_id', currentServiceId);
+      console.log('🔍 [DEBUG] Existing add-ons deleted');
 
       // Create new add-ons for this service
       if (specificAddOns.length > 0) {
@@ -386,6 +399,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           }));
 
         if (addOnsToInsert.length > 0) {
+          console.log('🔍 [DEBUG] Inserting new add-ons...');
           const { error: addOnsError } = await supabase
             .from('addons')
             .insert(addOnsToInsert);
@@ -394,9 +408,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
             console.error('🔍 [DEBUG] Add-ons creation error:', addOnsError);
             throw addOnsError;
           }
+          console.log('🔍 [DEBUG] Add-ons inserted successfully');
         }
       }
 
+      console.log('🔍 [DEBUG] Save completed successfully');
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
       onSave();
@@ -405,6 +421,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.error("Save error:", error);
       setAlertInfo({ isOpen: true, title: "Save Error", message: `Error during save: ${error.message}` });
     } finally {
+      console.log('🔍 [DEBUG] Finally block executed - setting isSaving to false');
       setIsSaving(false);
     }
   };
