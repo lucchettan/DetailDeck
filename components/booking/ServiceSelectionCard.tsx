@@ -7,8 +7,8 @@ interface Service {
   id: string;
   name: string;
   description: string;
-  base_price: number;
-  base_duration: number;
+  basePrice: number;
+  baseDuration: number;
   imageUrls: string[];
   formulas?: Array<{
     name: string;
@@ -16,7 +16,7 @@ interface Service {
     additionalDuration: number;
     includedItems: string[];
   }>;
-  vehicle_size_variations?: { [key: string]: { price: number; duration: number } };
+  vehicleSizeVariations?: { [key: string]: { price: number; duration: number } };
 }
 
 interface AddOn {
@@ -25,7 +25,7 @@ interface AddOn {
   description: string;
   price: number;
   duration: number;
-  service_id: string;
+  serviceId: string;
 }
 
 interface VehicleSize {
@@ -82,7 +82,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
     }
   };
 
-  const serviceAddOns = addOns.filter(addon => addon.service_id === service.id);
+  const serviceAddOns = addOns.filter(addon => addon.serviceId === service.id);
 
   return (
     <div className={`overflow-hidden rounded-lg shadow-md border-2 transition-all duration-200 hover:-translate-y-0.5 ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300'
@@ -123,9 +123,9 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
         {/* Prix et durée de base */}
         <div className="mt-3">
           <div className="text-sm text-gray-600">
-            <span className="font-medium">{service.base_price}€</span>
+            <span className="font-medium">{service.basePrice}€</span>
             <span className="mx-2">•</span>
-            <span>{formatDuration(service.base_duration)}</span>
+            <span>{formatDuration(service.baseDuration)}</span>
             <span className="text-xs text-gray-400 ml-2">(prix de base)</span>
           </div>
         </div>

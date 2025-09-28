@@ -26,12 +26,13 @@ interface Service {
 
 interface AddOn {
   id: string;
-  shop_id: string;
+  shopId: string;
   name: string;
   description: string;
   price: number;
   duration: number;
-  is_active: boolean;
+  isActive: boolean;
+  serviceId: string;
 }
 
 interface Shop {
@@ -39,10 +40,10 @@ interface Shop {
   name: string;
   email: string;
   phone: string;
-  address_line1: string;
-  address_city: string;
-  address_postal_code: string;
-  business_type: string;
+  addressLine1: string;
+  addressCity: string;
+  addressPostalCode: string;
+  businessType: string;
 }
 
 interface VehicleSize {
@@ -466,8 +467,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{shopData.name}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <span>{shopData.address_city}</span>
-                  {shopData.business_type === 'mobile' && (
+                  <span>{shopData.addressCity}</span>
+                  {shopData.businessType === 'mobile' && (
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
                       Service mobile
                     </span>
