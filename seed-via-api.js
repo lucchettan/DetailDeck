@@ -60,7 +60,7 @@ async function seedViaAPI() {
         .select('*')
         .eq('email', 'hello@nomad-lab.io')
         .single();
-      
+
       if (existingShop) {
         console.log('✅ Shop existant récupéré:', existingShop.name);
         shop = existingShop;
@@ -101,7 +101,7 @@ async function seedViaAPI() {
       const { error } = await supabase
         .from('shop_vehicle_sizes')
         .upsert(size, { onConflict: 'shop_id,name' });
-      
+
       if (error) {
         console.log('⚠️ Erreur taille véhicule:', error.message);
       }
@@ -141,7 +141,7 @@ async function seedViaAPI() {
         .upsert(category, { onConflict: 'shop_id,name' })
         .select()
         .single();
-      
+
       if (error) {
         console.log('⚠️ Erreur catégorie:', error.message);
       } else {
@@ -199,7 +199,7 @@ async function seedViaAPI() {
         .upsert(service, { onConflict: 'shop_id,name' })
         .select()
         .single();
-      
+
       if (error) {
         console.log('⚠️ Erreur service:', error.message);
       } else {

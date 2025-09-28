@@ -124,8 +124,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           const { formulas: initialFormulas, supplements: initialSupplements, specificAddOns: initialAddOns, ...serviceData } = initialData;
           setFormData(serviceData);
           setImagePreviewUrl(serviceData.image_urls?.[0] || null);
-          setFormulas(initialFormulas.map(f => ({ 
-            ...f, 
+          setFormulas(initialFormulas.map(f => ({
+            ...f,
             includedItems: f.features || (f.description ? f.description.split('\n').filter(Boolean) : [])
           })));
           setSupplements(initialSupplements);
@@ -193,8 +193,8 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
           // Charger les formules
           if (service.formulas && Array.isArray(service.formulas)) {
-            setFormulas(service.formulas.map(f => ({ 
-              ...f, 
+            setFormulas(service.formulas.map(f => ({
+              ...f,
               includedItems: f.features || f.includedItems || []
             })));
           } else {

@@ -95,7 +95,7 @@ async function seedFinal() {
               name: 'Formule Confort',
               additionalPrice: 1500,
               additionalDuration: 20,
-              features: ['Shampoing tapis', 'Plastiques satinés', 'Traitement cuir']
+              includedItems: ['Shampoing tapis', 'Plastiques satinés', 'Traitement cuir']
             }
           ],
           is_active: true
@@ -126,7 +126,7 @@ async function seedFinal() {
               name: 'Céramique 6 mois',
               additionalPrice: 0,
               additionalDuration: 0,
-              features: ['Protection 6 mois', 'Facilité d\'entretien', 'Éclat renforcé']
+              includedItems: ['Protection 6 mois', 'Facilité d\'entretien', 'Éclat renforcé']
             }
           ],
           is_active: true
