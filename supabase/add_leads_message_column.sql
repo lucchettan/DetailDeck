@@ -1,7 +1,7 @@
 -- Migration: Add message column to leads table
 -- This allows storing detailed callback request information
 
-ALTER TABLE leads 
+ALTER TABLE leads
 ADD COLUMN IF NOT EXISTS message text;
 
 -- Add comment for documentation
