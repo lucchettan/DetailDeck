@@ -120,14 +120,14 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
         <div
           key={service.id}
           onClick={() => onEditService(service.id)}
-          className="card cursor-pointer flex flex-col overflow-hidden border border-gray-200 hover:border-primary"
+          className="card cursor-pointer flex flex-col overflow-hidden border border-gray-200 hover:border-primary rounded-lg"
         >
           {(service.imageUrls && service.imageUrls.length > 0) ? (
             <div className="h-40 w-full">
-              <img src={service.imageUrls[0]} alt={service.name} className="w-full h-full object-cover" />
+              <img src={service.imageUrls[0]} alt={service.name} className="w-full h-full object-cover rounded-t-lg" />
             </div>
           ) : (
-            <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
+            <div className="h-40 w-full bg-gray-100 flex items-center justify-center rounded-t-lg">
               <ImageIcon className="w-12 h-12 text-gray-300" />
             </div>
           )}
