@@ -199,22 +199,17 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
     setIsSaving(true);
     let updateData = { ...formData };
 
-    if (updateData.businessType === 'mobile') {
-      updateData.serviceAreas = city ? [{ city, radius: parseInt(radius, 10) }] : [];
-      updateData.addressLine1 = undefined;
-      updateData.addressCity = undefined;
-      updateData.addressPostalCode = undefined;
-      updateData.addressCountry = undefined;
-    } else {
-      updateData.serviceAreas = [];
-    }
-
+    // Nettoyer les données avant envoi
     delete updateData.id;
     delete (updateData as Partial<Shop> & { ownerId?: string }).ownerId;
 
-
-    await onSave(updateData);
-    setIsSaving(false);
+    try {
+      await onSave(updateData);
+    } catch (error) {
+      console.error('Error saving shop data:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -471,45 +466,45 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                   {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                                 </select>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 min-w-[100px]">
                                 {(() => {
-                                  const isLastEmptyRow = index === displayZones.length - 1 && !zone.city.trim();
-                                  const isFilledRow = zone.city.trim();
-                                  const hasMultipleZones = displayZones.filter(z => z.city.trim()).length > 1;
+                                  const isLastRow = index === displayZones.length - 1;
+                                  const hasContent = zone.city && zone.city.trim();
+                                  const filledZonesCount = displayZones.filter(z => z.city && z.city.trim()).length;
                                   
-                                  return (
-                                    <>
-                                      {/* Bouton Supprimer : sur les lignes remplies (sauf s'il n'y en a qu'une) */}
-                                      {isFilledRow && hasMultipleZones && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const newZones = displayZones.filter((_, i) => i !== index);
-                                            handleInputChange('serviceZones', newZones.filter(z => z.city.trim()));
-                                          }}
-                                          className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors px-2 py-2"
-                                          title="Supprimer cette zone"
-                                        >
-                                          Supprimer
-                                        </button>
-                                      )}
-                                      
-                                      {/* Bouton Ajouter : uniquement sur la dernière ligne vide */}
-                                      {isLastEmptyRow && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const newZones = [...displayZones, { city: '', radius: '10' }];
-                                            handleInputChange('serviceZones', newZones);
-                                          }}
-                                          className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors px-2 py-2"
-                                          title="Ajouter une zone"
-                                        >
-                                          + Ajouter
-                                        </button>
-                                      )}
-                                    </>
-                                  );
+                                  if (isLastRow && !hasContent) {
+                                    // Dernière ligne vide : bouton Ajouter
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newZones = [...displayZones, { city: '', radius: '10' }];
+                                          handleInputChange('serviceZones', newZones);
+                                        }}
+                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors px-2 py-2"
+                                        title="Ajouter une zone"
+                                      >
+                                        + Ajouter
+                                      </button>
+                                    );
+                                  } else if (hasContent && filledZonesCount > 1) {
+                                    // Ligne remplie avec plusieurs zones : bouton Supprimer
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newZones = displayZones.filter((_, i) => i !== index);
+                                          handleInputChange('serviceZones', newZones);
+                                        }}
+                                        className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors px-2 py-2"
+                                        title="Supprimer cette zone"
+                                      >
+                                        Supprimer
+                                      </button>
+                                    );
+                                  }
+                                  
+                                  return null; // Pas de bouton
                                 })()}
                               </div>
                             </div>
