@@ -154,11 +154,21 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads, onNavigateHome }) =
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-brand-dark">
-                        {lead.selectedServices.services.map(s => s.serviceName).join(', ')}
+                        {/* Afficher le message pour les nouvelles leads, ou les services pour les anciennes */}
+                        {lead.message ? (
+                          <span className="text-sm">{lead.message}</span>
+                        ) : lead.selectedServices?.services ? (
+                          lead.selectedServices.services.map(s => s.serviceName).join(', ')
+                        ) : (
+                          'Aucun détail disponible'
+                        )}
                       </div>
-                      <div className="text-xs text-brand-gray">
-                        {t.forVehicle.replace('{vehicleSize}', t[`size_${lead.selectedServices.vehicleSize as 'S' | 'M' | 'L' | 'XL'}`])}
-                      </div>
+                      {/* Afficher les infos véhicule seulement pour les anciennes leads avec selectedServices */}
+                      {lead.selectedServices?.vehicleSize && (
+                        <div className="text-xs text-brand-gray">
+                          {t.forVehicle.replace('{vehicleSize}', t[`size_${lead.selectedServices.vehicleSize as 'S' | 'M' | 'L' | 'XL'}`])}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-gray">
                       {new Date(lead.createdAt).toLocaleDateString()}
