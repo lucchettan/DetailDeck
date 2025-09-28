@@ -415,7 +415,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Save completed successfully');
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
-      
+
       // Petit délai pour laisser le temps au state de se mettre à jour
       setTimeout(() => {
         onSave();

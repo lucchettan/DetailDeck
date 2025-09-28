@@ -321,7 +321,7 @@ const Dashboard: React.FC = () => {
       setLoadingShopData(false);
       setLastFetchTime(Date.now());
     }
-  }, [user, lastFetchTime, shopData]);
+  }, [user, lastFetchTime]);
 
   // Handler for when a new vehicle size is added
   const handleNewVehicleSizeAdded = (newSize: ShopVehicleSize) => {
