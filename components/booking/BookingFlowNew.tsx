@@ -216,9 +216,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
       if (!service) return;
 
       // Prix et durée de base du service
-      const variation = service.vehicle_size_variations[selectedVehicleSize] || { price: 0, duration: 0 };
-      let servicePrice = service.base_price + variation.price;
-      let serviceDuration = service.base_duration + variation.duration;
+      const variation = service.vehicleSizeVariations?.[selectedVehicleSize] || { price: 0, duration: 0 };
+      let servicePrice = service.basePrice + variation.price;
+      let serviceDuration = service.baseDuration + variation.duration;
 
       // Ajouter le prix et la durée de la formule si sélectionnée
       let formulaPrice = 0;
@@ -249,11 +249,11 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         serviceId: service.id,
         serviceName: service.name,
         vehicleSizeLabel: vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || '',
-        basePrice: service.base_price,
+        basePrice: service.basePrice,
         variationPrice: variation.price,
         formulaPrice: formulaPrice,
         totalPrice: itemTotalPrice,
-        baseDuration: service.base_duration,
+        baseDuration: service.baseDuration,
         variationDuration: variation.duration,
         formulaDuration: formulaDuration,
         totalDuration: itemTotalDuration,
@@ -361,9 +361,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             if (!service) return null;
 
             // Calculer le prix et la durée pour ce service
-            const variation = service.vehicle_size_variations[selectedVehicleSize] || { price: 0, duration: 0 };
-            let servicePrice = service.base_price + variation.price;
-            let serviceDuration = service.base_duration + variation.duration;
+            const variation = service.vehicleSizeVariations?.[selectedVehicleSize] || { price: 0, duration: 0 };
+            let servicePrice = service.basePrice + variation.price;
+            let serviceDuration = service.baseDuration + variation.duration;
 
             // Ajouter la formule si sélectionnée
             if (selectedService.formulaId && service.formulas) {
