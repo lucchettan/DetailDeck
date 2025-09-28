@@ -557,9 +557,9 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
         {/* Contenu de la bannière */}
         <div className={`relative ${shopData.shopImageUrl ? 'text-white' : 'bg-white text-gray-900'} shadow-sm border-b`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center">
+            <div className="flex flex-col items-start">
 
-              {/* Nom du shop en très gros */}
+              {/* Nom du shop en très gros aligné à gauche */}
               <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">{shopData.name}</h1>
 
               {/* Bouton d'appel proéminent */}
@@ -568,8 +568,8 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                   <a
                     href={`tel:${shopData.phone}`}
                     className={`inline-flex items-center px-8 py-4 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-lg ${shopData.shopImageUrl
-                        ? 'bg-white text-gray-900 hover:bg-gray-100'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-white text-gray-900 hover:bg-gray-100'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
                       }`}
                   >
                     <span className="text-2xl mr-3">📞</span>
@@ -586,7 +586,7 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                     <span>{shopData.addressLine1}, {shopData.addressPostalCode} {shopData.addressCity}</span>
                   </div>
                 )}
-                
+
                 {shopData.hasMobileService && shopData.serviceZones && shopData.serviceZones.length > 0 && (
                   <div className={`flex items-center space-x-1 ${shopData.shopImageUrl ? 'text-gray-300' : 'text-gray-500'} opacity-80`}>
                     <span>🚚</span>
