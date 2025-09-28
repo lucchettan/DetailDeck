@@ -340,9 +340,9 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         .from('leads')
         .insert({
           shop_id: shopId,
-          client_name: callbackInfo.name,
+          client_name: `${callbackInfo.name} - RAPPEL`,
           client_phone: callbackInfo.phone,
-          client_email: `RAPPEL - Services: ${servicesText} - Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`,
+          client_email: null, // Pas d'email pour les rappels
           status: 'to_call'
         });
 
@@ -1087,7 +1087,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Demande de rappel</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Laissez-nous vos coordonnées et nous vous rappellerons pour finaliser votre réservation.
+              Laissez-nous vos coordonnées et nous vous rappellerons pour finaliser votre réservation. 
+              Nous discuterons des détails de votre sélection lors de l'appel.
             </p>
 
             <div className="space-y-4">
