@@ -437,7 +437,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                           // Assurer qu'il y a toujours au moins une zone vide pour commencer
                           const zones = formData.serviceZones || [];
                           const displayZones = zones.length === 0 ? [{ city: '', radius: '10' }] : zones;
-                          
+
                           return displayZones.map((zone, index) => (
                             <div key={index} className="flex items-end gap-3">
                               <div className="flex-1">
@@ -472,30 +472,45 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                 </select>
                               </div>
                               <div className="flex gap-1">
-                                {displayZones.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newZones = displayZones.filter((_, i) => i !== index);
-                                      handleInputChange('serviceZones', newZones.filter(z => z.city.trim() || z.radius));
-                                    }}
-                                    className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors px-2 py-2"
-                                    title="Supprimer cette zone"
-                                  >
-                                    Supprimer
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newZones = [...displayZones, { city: '', radius: '10' }];
-                                    handleInputChange('serviceZones', newZones);
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors px-2 py-2"
-                                  title="Ajouter une zone"
-                                >
-                                  + Ajouter
-                                </button>
+                                {(() => {
+                                  const isLastEmptyRow = index === displayZones.length - 1 && !zone.city.trim();
+                                  const isFilledRow = zone.city.trim();
+                                  const hasMultipleZones = displayZones.filter(z => z.city.trim()).length > 1;
+                                  
+                                  return (
+                                    <>
+                                      {/* Bouton Supprimer : sur les lignes remplies (sauf s'il n'y en a qu'une) */}
+                                      {isFilledRow && hasMultipleZones && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newZones = displayZones.filter((_, i) => i !== index);
+                                            handleInputChange('serviceZones', newZones.filter(z => z.city.trim()));
+                                          }}
+                                          className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors px-2 py-2"
+                                          title="Supprimer cette zone"
+                                        >
+                                          Supprimer
+                                        </button>
+                                      )}
+                                      
+                                      {/* Bouton Ajouter : uniquement sur la dernière ligne vide */}
+                                      {isLastEmptyRow && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newZones = [...displayZones, { city: '', radius: '10' }];
+                                            handleInputChange('serviceZones', newZones);
+                                          }}
+                                          className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors px-2 py-2"
+                                          title="Ajouter une zone"
+                                        >
+                                          + Ajouter
+                                        </button>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                           ));
