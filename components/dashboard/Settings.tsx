@@ -428,68 +428,78 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
                   {formData.hasMobileService && (
                     <div className="px-4 pb-4 border-t border-blue-200 mt-2 pt-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-medium text-brand-dark flex items-center gap-2">
-                          <span className="text-xl">📍</span> Zones de service
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newZones = [...(formData.serviceZones || [{ city: city, radius: radius }]), { city: '', radius: '10' }];
-                            handleInputChange('serviceZones', newZones);
-                          }}
-                          className="bg-brand-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-brand-blue/90 transition-colors flex items-center gap-1"
-                        >
-                          <span className="font-bold">+</span>
-                          Ajouter
-                        </button>
-                      </div>
+                      <h4 className="font-medium text-brand-dark flex items-center gap-2 mb-3">
+                        <span className="text-xl">📍</span> Zones de service
+                      </h4>
 
-                      <div className="space-y-3">
-                        {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
-                          <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Ville d'intervention</label>
-                                  <input
-                                    value={zone.city || ''}
-                                    onChange={(e) => {
-                                      const newZones = [...(formData.serviceZones || [])];
-                                      newZones[index] = { ...newZones[index], city: e.target.value };
-                                      handleInputChange('serviceZones', newZones);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-                                    placeholder={t.cityPlaceholder}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.serviceRadius}</label>
+                      <div className="space-y-2">
+                        {(() => {
+                          // Assurer qu'il y a toujours au moins une zone vide pour commencer
+                          const zones = formData.serviceZones || [];
+                          const displayZones = zones.length === 0 ? [{ city: '', radius: '10' }] : zones;
+                          
+                          return displayZones.map((zone, index) => (
+                            <div key={index} className="flex items-end gap-3">
+                              <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Ville d'intervention
+                                </label>
+                                <input
+                                  value={zone.city || ''}
+                                  onChange={(e) => {
+                                    const newZones = [...displayZones];
+                                    newZones[index] = { ...newZones[index], city: e.target.value };
+                                    handleInputChange('serviceZones', newZones.filter(z => z.city.trim() || z.radius));
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                                  placeholder="Paris, Lyon, Marseille..."
+                                />
+                              </div>
+                              <div className="w-32">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Rayon
+                                </label>
                                 <select
                                   value={zone.radius || '10'}
                                   onChange={(e) => {
-                                    const newZones = [...(formData.serviceZones || [])];
+                                    const newZones = [...displayZones];
                                     newZones[index] = { ...newZones[index], radius: e.target.value };
-                                    handleInputChange('serviceZones', newZones);
+                                    handleInputChange('serviceZones', newZones.filter(z => z.city.trim() || z.radius));
                                   }}
                                   className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                                 >
                                   {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                                 </select>
                               </div>
+                              <div className="flex gap-1">
+                                {displayZones.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newZones = displayZones.filter((_, i) => i !== index);
+                                      handleInputChange('serviceZones', newZones.filter(z => z.city.trim() || z.radius));
+                                    }}
+                                    className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors px-2 py-2"
+                                    title="Supprimer cette zone"
+                                  >
+                                    Supprimer
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newZones = [...displayZones, { city: '', radius: '10' }];
+                                    handleInputChange('serviceZones', newZones);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors px-2 py-2"
+                                  title="Ajouter une zone"
+                                >
+                                  + Ajouter
+                                </button>
+                              </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
-                                handleInputChange('serviceZones', newZones);
-                              }}
-                              className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors self-start mt-6"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        ))}
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
