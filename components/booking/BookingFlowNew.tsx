@@ -542,7 +542,7 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
     <div className="min-h-screen bg-gray-50">
       {/* Bannière du shop */}
       <div className="relative">
-        {/* Image de fond */}
+        {/* Image de fond nette */}
         {shopData.shopImageUrl && (
           <div className="absolute inset-0">
             <img
@@ -550,87 +550,49 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
               alt={`Photo de ${shopData.name}`}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
           </div>
         )}
-        
+
         {/* Contenu de la bannière */}
         <div className={`relative ${shopData.shopImageUrl ? 'text-white' : 'bg-white text-gray-900'} shadow-sm border-b`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
               
-              {/* Informations principales */}
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">{shopData.name}</h1>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  
-                  {/* Adresse (si service local) */}
-                  {shopData.hasLocalService && shopData.addressLine1 && (
-                    <div className="flex items-start space-x-2">
-                      <span className="text-lg">📍</span>
-                      <div>
-                        <div className="font-medium">Adresse</div>
-                        <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
-                          {shopData.addressLine1}
-                          <br />
-                          {shopData.addressPostalCode} {shopData.addressCity}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Zones d'activité (si service mobile) */}
-                  {shopData.hasMobileService && shopData.serviceZones && shopData.serviceZones.length > 0 && (
-                    <div className="flex items-start space-x-2">
-                      <span className="text-lg">🚚</span>
-                      <div>
-                        <div className="font-medium">Zones d'intervention</div>
-                        <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
-                          {shopData.serviceZones.map((zone: any, index: number) => (
-                            <div key={index}>
-                              {zone.city} ({zone.radius} km)
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Type de service */}
-                  <div className="flex items-start space-x-2">
-                    <span className="text-lg">
-                      {shopData.hasLocalService && shopData.hasMobileService ? '🏪🚚' : 
-                       shopData.hasMobileService ? '🚚' : '🏪'}
-                    </span>
-                    <div>
-                      <div className="font-medium">Type de service</div>
-                      <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
-                        {shopData.hasLocalService && shopData.hasMobileService ? 'Atelier + Mobile' :
-                         shopData.hasMobileService ? 'Service mobile' : 'Service en atelier'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                </div>
-              </div>
+              {/* Nom du shop en très gros */}
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">{shopData.name}</h1>
               
-              {/* Bouton d'appel */}
+              {/* Bouton d'appel proéminent */}
               {shopData.phone && (
-                <div className="flex-shrink-0">
+                <div className="mb-6">
                   <a
                     href={`tel:${shopData.phone}`}
-                    className={`inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+                    className={`inline-flex items-center px-8 py-4 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-lg ${
                       shopData.shopImageUrl 
                         ? 'bg-white text-gray-900 hover:bg-gray-100' 
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                   >
-                    <span className="text-lg mr-2">📞</span>
+                    <span className="text-2xl mr-3">📞</span>
                     {shopData.phone}
                   </a>
                 </div>
               )}
+              
+              {/* Adresse discrète en bas */}
+              <div className="text-center">
+                {shopData.hasLocalService && shopData.addressLine1 && (
+                  <div className={`text-sm ${shopData.shopImageUrl ? 'text-gray-300' : 'text-gray-500'} opacity-80`}>
+                    📍 {shopData.addressLine1}, {shopData.addressPostalCode} {shopData.addressCity}
+                  </div>
+                )}
+                
+                {shopData.hasMobileService && shopData.serviceZones && shopData.serviceZones.length > 0 && (
+                  <div className={`text-sm ${shopData.shopImageUrl ? 'text-gray-300' : 'text-gray-500'} opacity-80 mt-1`}>
+                    🚚 Zones: {shopData.serviceZones.map((zone: any) => `${zone.city} (${zone.radius}km)`).join(', ')}
+                  </div>
+                )}
+              </div>
               
             </div>
           </div>
