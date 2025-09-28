@@ -156,7 +156,7 @@ const Leads: React.FC<LeadsProps> = ({ shopId, initialLeads, onNavigateHome }) =
                       <div className="text-sm text-brand-dark">
                         {/* Afficher le message pour les nouvelles leads, ou les services pour les anciennes */}
                         {lead.message ? (
-                          <span className="text-sm">{lead.message}</span>
+                          <pre className="text-sm whitespace-pre-wrap font-sans">{lead.message}</pre>
                         ) : lead.selectedServices?.services ? (
                           lead.selectedServices.services.map(s => s.serviceName).join(', ')
                         ) : (

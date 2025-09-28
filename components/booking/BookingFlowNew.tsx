@@ -344,7 +344,13 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
           client_phone: callbackInfo.phone,
           client_email: null, // Pas d'email pour les rappels
           status: 'to_call',
-          message: `DEMANDE DE RAPPEL - Services: ${servicesText} - Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'} - Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
+          message: `DEMANDE DE RAPPEL
+
+Services: ${servicesText}
+
+Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'}
+
+Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
         });
 
       if (error) throw error;
