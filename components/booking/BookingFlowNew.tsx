@@ -45,6 +45,9 @@ interface Shop {
   addressPostalCode: string;
   businessType: string;
   shopImageUrl?: string;
+  hasLocalService?: boolean;
+  hasMobileService?: boolean;
+  serviceZones?: Array<{ city: string; radius: string }>;
 }
 
 interface VehicleSize {
@@ -537,34 +540,98 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              {shopData.shopImageUrl && (
-                <div className="flex-shrink-0">
-                  <img
-                    src={shopData.shopImageUrl}
-                    alt={`Photo de ${shopData.name}`}
-                    className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                  />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{shopData.name}</h1>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <span>{shopData.addressCity}</span>
-                  {shopData.businessType === 'mobile' && (
-                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                      Service mobile
-                    </span>
+      {/* Bannière du shop */}
+      <div className="relative">
+        {/* Image de fond */}
+        {shopData.shopImageUrl && (
+          <div className="absolute inset-0">
+            <img
+              src={shopData.shopImageUrl}
+              alt={`Photo de ${shopData.name}`}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+          </div>
+        )}
+        
+        {/* Contenu de la bannière */}
+        <div className={`relative ${shopData.shopImageUrl ? 'text-white' : 'bg-white text-gray-900'} shadow-sm border-b`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+              
+              {/* Informations principales */}
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold mb-4">{shopData.name}</h1>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  
+                  {/* Adresse (si service local) */}
+                  {shopData.hasLocalService && shopData.addressLine1 && (
+                    <div className="flex items-start space-x-2">
+                      <span className="text-lg">📍</span>
+                      <div>
+                        <div className="font-medium">Adresse</div>
+                        <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
+                          {shopData.addressLine1}
+                          <br />
+                          {shopData.addressPostalCode} {shopData.addressCity}
+                        </div>
+                      </div>
+                    </div>
                   )}
+                  
+                  {/* Zones d'activité (si service mobile) */}
+                  {shopData.hasMobileService && shopData.serviceZones && shopData.serviceZones.length > 0 && (
+                    <div className="flex items-start space-x-2">
+                      <span className="text-lg">🚚</span>
+                      <div>
+                        <div className="font-medium">Zones d'intervention</div>
+                        <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
+                          {shopData.serviceZones.map((zone: any, index: number) => (
+                            <div key={index}>
+                              {zone.city} ({zone.radius} km)
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Type de service */}
+                  <div className="flex items-start space-x-2">
+                    <span className="text-lg">
+                      {shopData.hasLocalService && shopData.hasMobileService ? '🏪🚚' : 
+                       shopData.hasMobileService ? '🚚' : '🏪'}
+                    </span>
+                    <div>
+                      <div className="font-medium">Type de service</div>
+                      <div className={shopData.shopImageUrl ? 'text-gray-200' : 'text-gray-600'}>
+                        {shopData.hasLocalService && shopData.hasMobileService ? 'Atelier + Mobile' :
+                         shopData.hasMobileService ? 'Service mobile' : 'Service en atelier'}
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
-            </div>
-            <div className="text-sm text-gray-600">
-              {shopData.phone}
+              
+              {/* Bouton d'appel */}
+              {shopData.phone && (
+                <div className="flex-shrink-0">
+                  <a
+                    href={`tel:${shopData.phone}`}
+                    className={`inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+                      shopData.shopImageUrl 
+                        ? 'bg-white text-gray-900 hover:bg-gray-100' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <span className="text-lg mr-2">📞</span>
+                    {shopData.phone}
+                  </a>
+                </div>
+              )}
+              
             </div>
           </div>
         </div>
