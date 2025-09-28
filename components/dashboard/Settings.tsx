@@ -365,46 +365,46 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
             <div className="border-t pt-6 mt-6">
               <label className="block text-sm font-bold text-brand-dark mb-2">Types de service</label>
               <p className="text-sm text-gray-600 mb-4">Choisissez les services que vous proposez</p>
-              
+
               <div className="space-y-4">
                 {/* Service en atelier */}
                 <div className={`border-2 rounded-xl transition-all ${formData.hasLocalService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
                   <label className="flex items-center p-4 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.hasLocalService || false} 
-                      onChange={(e) => handleInputChange('hasLocalService', e.target.checked)} 
-                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                    <input
+                      type="checkbox"
+                      checked={formData.hasLocalService || false}
+                      onChange={(e) => handleInputChange('hasLocalService', e.target.checked)}
+                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
                     />
                     <span className="ml-3 flex items-center gap-3 font-semibold text-brand-dark text-lg">
-                      <span className="text-2xl">🏠</span> 
+                      <span className="text-2xl">🏠</span>
                       Service en atelier
                     </span>
                   </label>
-                  
+
                   {formData.hasLocalService && (
                     <div className="px-4 pb-4 border-t border-blue-200 mt-2 pt-4">
                       <h4 className="font-medium text-brand-dark flex items-center gap-2 mb-3">
                         <span className="text-xl">📍</span> Adresse de l'atelier
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input 
-                          value={formData.addressLine1 || ''} 
-                          onChange={(e) => handleInputChange('addressLine1', e.target.value)} 
-                          placeholder={t.addressPlaceholder} 
-                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        <input
+                          value={formData.addressLine1 || ''}
+                          onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                          placeholder={t.addressPlaceholder}
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                         />
-                        <input 
-                          value={formData.addressCity || ''} 
-                          onChange={(e) => handleInputChange('addressCity', e.target.value)} 
-                          placeholder={t.cityPlaceholder} 
-                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        <input
+                          value={formData.addressCity || ''}
+                          onChange={(e) => handleInputChange('addressCity', e.target.value)}
+                          placeholder={t.cityPlaceholder}
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                         />
-                        <input 
-                          value={formData.addressPostalCode || ''} 
-                          onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} 
-                          placeholder="Code Postal" 
-                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        <input
+                          value={formData.addressPostalCode || ''}
+                          onChange={(e) => handleInputChange('addressPostalCode', e.target.value)}
+                          placeholder="Code Postal"
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                         />
                       </div>
                     </div>
@@ -414,18 +414,18 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                 {/* Service mobile */}
                 <div className={`border-2 rounded-xl transition-all ${formData.hasMobileService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
                   <label className="flex items-center p-4 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.hasMobileService || false} 
-                      onChange={(e) => handleInputChange('hasMobileService', e.target.checked)} 
-                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                    <input
+                      type="checkbox"
+                      checked={formData.hasMobileService || false}
+                      onChange={(e) => handleInputChange('hasMobileService', e.target.checked)}
+                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
                     />
                     <span className="ml-3 flex items-center gap-3 font-semibold text-brand-dark text-lg">
-                      <span className="text-2xl">🚚</span> 
+                      <span className="text-2xl">🚚</span>
                       Service mobile
                     </span>
                   </label>
-                  
+
                   {formData.hasMobileService && (
                     <div className="px-4 pb-4 border-t border-blue-200 mt-2 pt-4">
                       <div className="flex justify-between items-center mb-3">
@@ -440,7 +440,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                           }}
                           className="bg-brand-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-brand-blue/90 transition-colors flex items-center gap-1"
                         >
-                          <span className="text-lg">➕</span>
+                          <span className="font-bold">+</span>
                           Ajouter
                         </button>
                       </div>
@@ -477,19 +477,17 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                 </select>
                               </div>
                               <div>
-                                {(formData.serviceZones || []).length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
-                                      handleInputChange('serviceZones', newZones);
-                                    }}
-                                    className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors w-full flex items-center justify-center gap-1"
-                                  >
-                                    <span className="text-lg">🗑️</span>
-                                    Supprimer
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                                    handleInputChange('serviceZones', newZones);
+                                  }}
+                                  className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors w-full flex items-center justify-center gap-1"
+                                >
+                                  <span className="text-lg">🗑️</span>
+                                  Supprimer
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -500,7 +498,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
