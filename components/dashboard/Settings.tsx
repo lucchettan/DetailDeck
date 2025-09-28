@@ -471,7 +471,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                   const isLastRow = index === displayZones.length - 1;
                                   const hasContent = zone.city && zone.city.trim();
                                   const filledZonesCount = displayZones.filter(z => z.city && z.city.trim()).length;
-                                  
+
                                   if (isLastRow) {
                                     // Dernière ligne : toujours bouton Ajouter
                                     return (
@@ -487,8 +487,8 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                         + Ajouter
                                       </button>
                                     );
-                                  } else if (hasContent && filledZonesCount > 1) {
-                                    // Ligne non-dernière avec contenu : bouton Supprimer (sauf si c'est la seule zone remplie)
+                                  } else if (hasContent) {
+                                    // Ligne non-dernière avec contenu : bouton Supprimer (toujours disponible)
                                     return (
                                       <button
                                         type="button"
@@ -503,7 +503,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                       </button>
                                     );
                                   }
-                                  
+
                                   return null; // Pas de bouton pour les lignes vides non-dernières
                                 })()}
                               </div>
