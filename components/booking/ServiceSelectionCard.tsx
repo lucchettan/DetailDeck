@@ -85,30 +85,28 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
   const serviceAddOns = addOns.filter(addon => addon.service_id === service.id);
 
   return (
-    <div className={`bg-white rounded-lg shadow-md border-2 transition-all duration-200 ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300'
+    <div className={`overflow-hidden rounded-lg shadow-md border-2 transition-all duration-200 hover:-translate-y-0.5 ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300'
       }`}>
-      {/* Header du service */}
+      {/* Image principale en haut (style catalogue) */}
+      {service.imageUrls && service.imageUrls.length > 0 ? (
+        <img 
+          src={service.imageUrls[0]} 
+          alt={service.name} 
+          className="w-full h-40 object-cover" 
+        />
+      ) : (
+        <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
+          <ImageIcon className="w-12 h-12 text-gray-300" />
+        </div>
+      )}
+
+      {/* Contenu de la carte */}
       <div className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-lg text-gray-900">{service.name}</h3>
             {service.description && (
               <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-            )}
-
-            {/* Images du service */}
-            {service.imageUrls && service.imageUrls.length > 0 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto">
-                {service.imageUrls.map((imageUrl, index) => (
-                  <img
-                    key={index}
-                    src={imageUrl}
-                    alt={`${service.name} - Image ${index + 1}`}
-                    className="w-20 h-20 object-cover rounded-lg flex-shrink-0 bg-gray-100"
-                    loading="lazy"
-                  />
-                ))}
-              </div>
             )}
           </div>
           <button
