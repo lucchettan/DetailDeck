@@ -320,26 +320,29 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         return details;
       }).filter(Boolean).join(' | ');
 
+      // Structure simplifiée pour éviter les erreurs de colonnes
+      const servicesText = selectedServices.map(selectedService => {
+        const service = services.find(s => s.id === selectedService.serviceId);
+        let text = service?.name || '';
+        if (selectedService.formulaId) {
+          text += ` (${selectedService.formulaId})`;
+        }
+        if (selectedService.addOnIds.length > 0) {
+          const addOnNames = selectedService.addOnIds
+            .map(id => addOns.find(a => a.id === id)?.name)
+            .filter(Boolean);
+          text += ` + ${addOnNames.join(', ')}`;
+        }
+        return text;
+      }).join(' | ');
+
       const { error } = await supabase
         .from('leads')
         .insert({
           shop_id: shopId,
           client_phone: callbackInfo.phone,
           status: 'to_call',
-          selected_services: {
-            clientName: callbackInfo.name,
-            vehicleSize: selectedVehicleSize,
-            services: selectedServices.map(selectedService => {
-              const service = services.find(s => s.id === selectedService.serviceId);
-              return {
-                serviceName: service?.name || '',
-                formulaName: selectedService.formulaId || null,
-                addOns: selectedService.addOnIds.map(id => addOns.find(a => a.id === id)?.name).filter(Boolean)
-              };
-            }),
-            totalPrice: totalCalculation.totalPrice,
-            message: `Demande de rappel - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
-          }
+          message: `RAPPEL - ${callbackInfo.name} - Services: ${servicesText} - Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
         });
 
       if (error) throw error;
