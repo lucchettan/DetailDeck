@@ -288,7 +288,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
     try {
       console.log('🔍 [DEBUG] Starting image processing...');
-      
+
       if (imageToDelete) {
         console.log('🔍 [DEBUG] Deleting image:', imageToDelete);
         const oldImagePath = imageToDelete.split('/service-images/')[1];
@@ -320,7 +320,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         finalImageUrls = [data.publicUrl];
         console.log('🔍 [DEBUG] Image uploaded successfully:', data.publicUrl);
       }
-      
+
       console.log('🔍 [DEBUG] Image processing completed');
 
       // Construire les variations par taille de véhicule
@@ -415,7 +415,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Save completed successfully');
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
-      onSave();
+      
+      // Petit délai pour laisser le temps au state de se mettre à jour
+      setTimeout(() => {
+        onSave();
+      }, 100);
 
     } catch (error: any) {
       console.error("Save error:", error);
