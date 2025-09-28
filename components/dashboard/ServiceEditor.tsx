@@ -10,7 +10,7 @@ import { IS_MOCK_MODE } from '../../lib/env';
 import DurationPicker from '../common/DurationPicker';
 import { useFormPersistence } from '../../hooks/useFormPersistence';
 
-type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems: string[] };
+type FormulaWithIncluded = Omit<Partial<Formula>, 'description'> & { includedItems?: string[]; features?: string[] };
 
 interface ServiceEditorProps {
   serviceId: string | 'new';
@@ -124,7 +124,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
           const { formulas: initialFormulas, supplements: initialSupplements, specificAddOns: initialAddOns, ...serviceData } = initialData;
           setFormData(serviceData);
           setImagePreviewUrl(serviceData.image_urls?.[0] || null);
-          setFormulas(initialFormulas.map(f => ({ ...f, includedItems: f.description ? f.description.split('\n').filter(Boolean) : [] })));
+          setFormulas(initialFormulas.map(f => ({ 
+            ...f, 
+            includedItems: f.features || (f.description ? f.description.split('\n').filter(Boolean) : [])
+          })));
           setSupplements(initialSupplements);
           setSpecificAddOns(initialAddOns);
         }
@@ -190,7 +193,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
           // Charger les formules
           if (service.formulas && Array.isArray(service.formulas)) {
-            setFormulas(service.formulas);
+            setFormulas(service.formulas.map(f => ({ 
+              ...f, 
+              includedItems: f.features || f.includedItems || []
+            })));
           } else {
             setFormulas([{ name: 'Basique', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
           }
@@ -423,6 +429,11 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     }
   }
 
+  // Helper function to get included items from formula
+  const getIncludedItems = (formula: FormulaWithIncluded): string[] => {
+    return formula.includedItems || formula.features || [];
+  };
+
   const addFormula = () => setFormulas(prev => [...prev, { name: '', includedItems: [], additionalPrice: 0, additionalDuration: 0 }]);
   const updateFormulaField = (index: number, field: keyof FormulaWithIncluded, value: any) => {
     const newFormulas = [...formulas];
@@ -437,17 +448,26 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
   const addIncludedItem = (formulaIndex: number) => {
     const newFormulas = [...formulas];
-    newFormulas[formulaIndex].includedItems.push('');
+    if (!newFormulas[formulaIndex].includedItems) {
+      newFormulas[formulaIndex].includedItems = [];
+    }
+    newFormulas[formulaIndex].includedItems!.push('');
     setFormulas(newFormulas);
   }
   const updateIncludedItem = (formulaIndex: number, itemIndex: number, value: string) => {
     const newFormulas = [...formulas];
-    newFormulas[formulaIndex].includedItems[itemIndex] = value;
+    if (!newFormulas[formulaIndex].includedItems) {
+      newFormulas[formulaIndex].includedItems = [];
+    }
+    newFormulas[formulaIndex].includedItems![itemIndex] = value;
     setFormulas(newFormulas);
   }
   const removeIncludedItem = (formulaIndex: number, itemIndex: number) => {
     const newFormulas = [...formulas];
-    newFormulas[formulaIndex].includedItems.splice(itemIndex, 1);
+    if (!newFormulas[formulaIndex].includedItems) {
+      newFormulas[formulaIndex].includedItems = [];
+    }
+    newFormulas[formulaIndex].includedItems!.splice(itemIndex, 1);
     setFormulas(newFormulas);
   }
 
@@ -456,6 +476,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
     const newFormulas = [...formulas];
     const formulaToUpdate = newFormulas[formulaIndex];
+    if (!formulaToUpdate.includedItems) {
+      formulaToUpdate.includedItems = [];
+    }
     const newIncludedItems = [...formulaToUpdate.includedItems];
 
     const dragItemContent = newIncludedItems.splice(dragItem.current, 1)[0];
@@ -717,7 +740,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-2">{t.whatsIncluded}</label>
                     <div className="space-y-2">
-                      {formula.includedItems.map((item, itemIndex) => (
+                      {getIncludedItems(formula).map((item, itemIndex) => (
                         <div
                           key={itemIndex}
                           className="flex items-center gap-2 group"

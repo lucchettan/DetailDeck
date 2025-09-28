@@ -95,7 +95,7 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
             {service.description && (
               <p className="text-sm text-gray-600 mt-1">{service.description}</p>
             )}
-            
+
             {/* Images du service */}
             {service.imageUrls && service.imageUrls.length > 0 && (
               <div className="mt-3 flex gap-2 overflow-x-auto">
