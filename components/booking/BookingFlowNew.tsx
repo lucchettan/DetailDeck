@@ -128,6 +128,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   const [reservationId, setReservationId] = useState<string>('');
   const [isCartExpanded, setIsCartExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCallbackForm, setShowCallbackForm] = useState(false);
+  const [callbackInfo, setCallbackInfo] = useState({ name: '', phone: '' });
 
   // Charger les données du shop
   useEffect(() => {
@@ -287,6 +289,56 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   // Gérer la suppression d'un service
   const handleServiceRemove = (serviceId: string) => {
     setSelectedServices(selectedServices.filter(s => s.serviceId !== serviceId));
+  };
+
+  // Fonction pour créer une lead (demande de rappel)
+  const handleCallbackRequest = async () => {
+    if (!callbackInfo.name.trim() || !callbackInfo.phone.trim()) {
+      alert('Veuillez remplir votre nom et téléphone');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const cartDetails = selectedServices.map(selectedService => {
+        const service = services.find(s => s.id === selectedService.serviceId);
+        if (!service) return '';
+        
+        let details = `${service.name}`;
+        if (selectedService.formulaId) {
+          details += ` (Formule: ${selectedService.formulaId})`;
+        }
+        if (selectedService.addOnIds.length > 0) {
+          const selectedAddOns = selectedService.addOnIds
+            .map(id => addOns.find(a => a.id === id)?.name)
+            .filter(Boolean);
+          details += ` + Add-ons: ${selectedAddOns.join(', ')}`;
+        }
+        return details;
+      }).filter(Boolean).join(' | ');
+
+      const { error } = await supabase
+        .from('leads')
+        .insert({
+          shop_id: shopId,
+          customer_name: callbackInfo.name,
+          customer_phone: callbackInfo.phone,
+          vehicle_size_id: selectedVehicleSize,
+          message: `Demande de rappel - Services: ${cartDetails} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
+        });
+
+      if (error) throw error;
+
+      alert('Votre demande de rappel a été envoyée ! Le professionnel vous contactera bientôt.');
+      setShowCallbackForm(false);
+      setCallbackInfo({ name: '', phone: '' });
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la demande:', error);
+      alert('Erreur lors de l\'envoi de votre demande. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Valider les informations client
@@ -832,7 +884,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
           {/* Barre principale du footer */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
+            {/* Layout desktop : une seule ligne */}
+            <div className="hidden lg:flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-6">
                   {selectedVehicleSize && (
@@ -878,10 +931,10 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     {/* Boutons pour les étapes intermédiaires */}
                     {currentStep !== 'clientInfo' && (
                       <button
-                        onClick={() => setCurrentStep('categorySelection')}
+                        onClick={() => setShowCallbackForm(true)}
                         className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
                       >
-                        Ajouter un autre service
+                        Être rappelé
                       </button>
                     )}
 
@@ -925,6 +978,182 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Layout mobile/tablet : deux stacks */}
+            <div className="lg:hidden space-y-4">
+              {/* Stack 1: Info du panier */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  {selectedVehicleSize && (
+                    <div>
+                      <p className="text-xs text-gray-500">Véhicule</p>
+                      <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
+                    </div>
+                  )}
+
+                  {selectedServices.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500">Services</p>
+                      <p className="text-sm font-medium">{selectedServices.length} service{selectedServices.length > 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs text-gray-500">Durée</p>
+                    <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsCartExpanded(!isCartExpanded)}
+                  className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  {isCartExpanded ? "Masquer" : "Détail"}
+                </button>
+              </div>
+
+              {/* Stack 2: Actions */}
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <p className="text-xs text-gray-500">Total</p>
+                  <p className="text-lg font-bold text-blue-600">
+                    {totalCalculation.totalPrice.toFixed(2)}€
+                  </p>
+                </div>
+
+                {selectedServices.length > 0 && (
+                  <div className="flex items-center space-x-2">
+                    {currentStep !== 'clientInfo' && (
+                      <button
+                        onClick={() => setShowCallbackForm(true)}
+                        className="bg-gray-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
+                      >
+                        Être rappelé
+                      </button>
+                    )}
+
+                    {currentStep === 'serviceSelection' && (
+                      <button
+                        onClick={() => setCurrentStep('datetime')}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Réserver un RDV
+                      </button>
+                    )}
+
+                    {currentStep === 'datetime' && selectedDate && (
+                      <button
+                        onClick={() => setCurrentStep('clientInfo')}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Continuer
+                      </button>
+                    )}
+
+                    {currentStep === 'datetime' && !selectedDate && (
+                      <button
+                        onClick={() => setCurrentStep('serviceSelection')}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
+                      >
+                        Modifier services
+                      </button>
+                    )}
+
+                    {currentStep === 'clientInfo' && (
+                      <button
+                        onClick={handleReservationSubmit}
+                        disabled={isSubmitting}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {isSubmitting ? 'Envoi...' : 'Confirmer'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale pour demande de rappel */}
+      {showCallbackForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Demande de rappel</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Laissez-nous vos coordonnées et nous vous rappellerons pour finaliser votre réservation.
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="callbackName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom complet *
+                </label>
+                <input
+                  type="text"
+                  id="callbackName"
+                  value={callbackInfo.name}
+                  onChange={(e) => setCallbackInfo(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Votre nom et prénom"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="callbackPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Téléphone *
+                </label>
+                <input
+                  type="tel"
+                  id="callbackPhone"
+                  value={callbackInfo.phone}
+                  onChange={(e) => setCallbackInfo(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0123456789"
+                  required
+                />
+              </div>
+
+              {/* Résumé du panier */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">Votre sélection :</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {selectedVehicleSize && (
+                    <p>• Véhicule : {vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
+                  )}
+                  {selectedServices.map(selectedService => {
+                    const service = services.find(s => s.id === selectedService.serviceId);
+                    return service ? (
+                      <p key={service.id}>• {service.name}</p>
+                    ) : null;
+                  })}
+                  <p className="font-medium text-blue-600 pt-2">
+                    Total : {totalCalculation.totalPrice.toFixed(2)}€
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCallbackForm(false);
+                  setCallbackInfo({ name: '', phone: '' });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCallbackRequest}
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? 'Envoi...' : 'Envoyer la demande'}
+              </button>
             </div>
           </div>
         </div>
