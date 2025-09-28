@@ -594,9 +594,15 @@ const Dashboard: React.FC = () => {
               serviceCategories={serviceCategories}
               onBack={() => navigate('/dashboard/catalog')}
               onSave={(updatedService?: Service) => {
+                console.log('🔍 [DEBUG] onSave called with:', updatedService);
                 if (updatedService) {
+                  console.log('🔍 [DEBUG] Updating service in list:', updatedService.id);
                   // Mettre à jour le service dans la liste existante
-                  setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s));
+                  setServices(prev => {
+                    const updated = prev.map(s => s.id === updatedService.id ? updatedService : s);
+                    console.log('🔍 [DEBUG] Services before:', prev.length, 'after:', updated.length);
+                    return updated;
+                  });
                 }
                 setCurrentView({ page: 'catalog' });
               }}

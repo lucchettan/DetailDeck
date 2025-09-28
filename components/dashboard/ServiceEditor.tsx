@@ -418,7 +418,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
 
       // Arrêter le loading et naviguer avec le service mis à jour
       setIsSaving(false);
-      onSave(savedService);
+      onSave(toCamelCase(savedService) as Service);
 
     } catch (error: any) {
       console.error("Save error:", error);
