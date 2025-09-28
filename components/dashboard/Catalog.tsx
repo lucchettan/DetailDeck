@@ -20,7 +20,7 @@ interface CatalogProps {
   refreshTrigger?: number; // Pour forcer le rafraîchissement
 }
 
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const CACHE_DURATION = 30 * 1000; // 30 secondes
 
 const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewService, onOpenVehicleSizeManager, onOpenCategoryManager, onOpenCatalogSettings, initialServices, serviceCategories: shopServiceCategories = [], onNavigateHome, refreshTrigger }) => {
   const { t } = useLanguage();
@@ -30,7 +30,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
   const [lastFetched, setLastFetched] = useState<number | null>(initialServices ? Date.now() : null);
 
   const fetchServices = useCallback(async (force = false) => {
-    if (initialServices) return;
+    if (initialServices && !force) return;
     if (!shopId) return;
 
     const now = Date.now();
@@ -179,7 +179,7 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
       <div className="card p-6 md:p-8">
         <div className="border-b border-gray-200 mb-6">
           <div className="flex justify-between items-center">
-            <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+            <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
               {shopServiceCategories.map(category => {
                 const isActive = activeTab === category.id;
                 const categoryServices = servicesByCategory[category.id] || [];
