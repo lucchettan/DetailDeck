@@ -448,34 +448,23 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                       <div className="space-y-3">
                         {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
                           <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <label className="block text-sm font-medium text-gray-700">Ville d'intervention</label>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Ville d'intervention</label>
+                                  <input
+                                    value={zone.city || ''}
+                                    onChange={(e) => {
+                                      const newZones = [...(formData.serviceZones || [])];
+                                      newZones[index] = { ...newZones[index], city: e.target.value };
                                       handleInputChange('serviceZones', newZones);
                                     }}
-                                    className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
-                                  >
-                                    Supprimer
-                                  </button>
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                                    placeholder={t.cityPlaceholder}
+                                  />
                                 </div>
-                                <input
-                                  value={zone.city || ''}
-                                  onChange={(e) => {
-                                    const newZones = [...(formData.serviceZones || [])];
-                                    newZones[index] = { ...newZones[index], city: e.target.value };
-                                    handleInputChange('serviceZones', newZones);
-                                  }}
-                                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-                                  placeholder={t.cityPlaceholder}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.serviceRadius}</label>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.serviceRadius}</label>
                                 <select
                                   value={zone.radius || '10'}
                                   onChange={(e) => {
@@ -489,6 +478,16 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                                 </select>
                               </div>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                                handleInputChange('serviceZones', newZones);
+                              }}
+                              className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors self-start mt-6"
+                            >
+                              Supprimer
+                            </button>
                           </div>
                         ))}
                       </div>
