@@ -89,10 +89,10 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
       }`}>
       {/* Image principale en haut (style catalogue) */}
       {service.imageUrls && service.imageUrls.length > 0 ? (
-        <img 
-          src={service.imageUrls[0]} 
-          alt={service.name} 
-          className="w-full h-40 object-cover" 
+        <img
+          src={service.imageUrls[0]}
+          alt={service.name}
+          className="w-full h-40 object-cover"
         />
       ) : (
         <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
