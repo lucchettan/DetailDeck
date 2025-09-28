@@ -91,6 +91,7 @@ interface DetailsBreakdownItem {
   basePrice: number;
   variationPrice: number;
   formulaPrice: number;
+  formulaName: string;
   totalPrice: number;
   baseDuration: number;
   variationDuration: number;
@@ -254,6 +255,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         basePrice: service.basePrice,
         variationPrice: variation.price,
         formulaPrice: formulaPrice,
+        formulaName: selectedService.formulaId ? service.formulas?.find(f => f.name === selectedService.formulaId)?.name || selectedService.formulaId : '',
         totalPrice: itemTotalPrice,
         baseDuration: service.baseDuration,
         variationDuration: variation.duration,
@@ -300,11 +302,11 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
     try {
       setIsSubmitting(true);
-      
+
       const cartDetails = selectedServices.map(selectedService => {
         const service = services.find(s => s.id === selectedService.serviceId);
         if (!service) return '';
-        
+
         let details = `${service.name}`;
         if (selectedService.formulaId) {
           details += ` (Formule: ${selectedService.formulaId})`;
@@ -322,10 +324,22 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         .from('leads')
         .insert({
           shop_id: shopId,
-          customer_name: callbackInfo.name,
-          customer_phone: callbackInfo.phone,
-          vehicle_size_id: selectedVehicleSize,
-          message: `Demande de rappel - Services: ${cartDetails} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
+          client_phone: callbackInfo.phone,
+          status: 'to_call',
+          selected_services: {
+            clientName: callbackInfo.name,
+            vehicleSize: selectedVehicleSize,
+            services: selectedServices.map(selectedService => {
+              const service = services.find(s => s.id === selectedService.serviceId);
+              return {
+                serviceName: service?.name || '',
+                formulaName: selectedService.formulaId || null,
+                addOns: selectedService.addOnIds.map(id => addOns.find(a => a.id === id)?.name).filter(Boolean)
+              };
+            }),
+            totalPrice: totalCalculation.totalPrice,
+            message: `Demande de rappel - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
+          }
         });
 
       if (error) throw error;
@@ -858,10 +872,10 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         <div className="text-xs text-gray-500 ml-2">
                           <p>Base: {item.basePrice}€</p>
                           {item.variationPrice > 0 && (
-                            <p>Variation taille: {item.variationPrice}€</p>
+                            <p>Taille: {item.vehicleSizeLabel} +{item.variationPrice}€</p>
                           )}
                           {item.formulaPrice > 0 && (
-                            <p>Formule: {item.formulaPrice}€</p>
+                            <p>Formule: {item.formulaName} +{item.formulaPrice}€</p>
                           )}
                         </div>
                         {item.addOns.length > 0 && (
@@ -888,13 +902,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             <div className="hidden lg:flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-6">
-                  {selectedVehicleSize && (
-                    <div>
-                      <p className="text-xs text-gray-500">Véhicule</p>
-                      <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
-                    </div>
-                  )}
-
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
@@ -985,13 +992,6 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
               {/* Stack 1: Info du panier */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {selectedVehicleSize && (
-                    <div>
-                      <p className="text-xs text-gray-500">Véhicule</p>
-                      <p className="text-sm font-medium">{vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name}</p>
-                    </div>
-                  )}
-
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
@@ -1085,7 +1085,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
             <p className="text-sm text-gray-600 mb-6">
               Laissez-nous vos coordonnées et nous vous rappellerons pour finaliser votre réservation.
             </p>
-            
+
             <div className="space-y-4">
               <div>
                 <label htmlFor="callbackName" className="block text-sm font-medium text-gray-700 mb-1">
