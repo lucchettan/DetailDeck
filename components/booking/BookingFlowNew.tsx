@@ -44,6 +44,7 @@ interface Shop {
   addressCity: string;
   addressPostalCode: string;
   businessType: string;
+  shopImageUrl?: string;
 }
 
 interface VehicleSize {
@@ -191,7 +192,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         categoriesCount: categoriesData?.length || 0
       });
 
-      setShopData(shop);
+      setShopData(toCamelCase(shop) as Shop);
       setServices(toCamelCase(servicesData || []) as Service[]);
       setAddOns(toCamelCase(addOnsData || []) as AddOn[]);
       setVehicleSizes(toCamelCase(vehicleSizesData || []) as VehicleSize[]);
@@ -541,6 +542,15 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
+              {shopData.shopImageUrl && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={shopData.shopImageUrl}
+                    alt={`Photo de ${shopData.name}`}
+                    className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                  />
+                </div>
+              )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{shopData.name}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
