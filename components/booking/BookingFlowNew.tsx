@@ -13,14 +13,14 @@ import { ASSET_URLS } from '../../constants';
 // Types simplifiés pour la nouvelle structure
 interface Service {
   id: string;
-  shop_id: string;
-  category_id: string;
+  shopId: string;
+  categoryId: string;
   name: string;
   description: string;
-  base_price: number;
-  base_duration: number;
-  vehicle_size_variations: Record<string, { price: number; duration: number }>;
-  is_active: boolean;
+  basePrice: number;
+  baseDuration: number;
+  vehicleSizeVariations: Record<string, { price: number; duration: number }>;
+  isActive: boolean;
   imageUrls: string[];
 }
 
@@ -530,8 +530,16 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(() => {
+                    console.log('🔍 [DEBUG] Category matching:', {
+                      totalCategories: serviceCategories.length,
+                      totalServices: services.length,
+                      categories: serviceCategories.map(c => ({ id: c.id, name: c.name })),
+                      services: services.map(s => ({ id: s.id, name: s.name, categoryId: s.categoryId }))
+                    });
+
                     const categoriesWithServices = serviceCategories.filter(category => {
-                      const servicesInCategory = services.filter(service => service.category_id === category.id);
+                      const servicesInCategory = services.filter(service => service.categoryId === category.id);
+                      console.log(`🔍 [DEBUG] Category "${category.name}" (${category.id}) has ${servicesInCategory.length} services`);
                       return servicesInCategory.length > 0;
                     });
 
@@ -545,7 +553,7 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                     }
 
                     return categoriesWithServices.map(category => {
-                      const servicesInCategory = services.filter(service => service.category_id === category.id);
+                      const servicesInCategory = services.filter(service => service.categoryId === category.id);
                       return (
                         <button
                           key={category.id}
@@ -581,9 +589,16 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                   <h2 className="text-2xl font-bold text-gray-900">Sélectionnez vos services</h2>
                 </div>
                 <div className="space-y-4">
-                  {services
-                    .filter(service => service.category_id === selectedCategory)
-                    .map(service => (
+                  {(() => {
+                    const filteredServices = services.filter(service => service.categoryId === selectedCategory);
+                    console.log('🔍 [DEBUG] Service filtering:', {
+                      selectedCategory,
+                      totalServices: services.length,
+                      filteredServices: filteredServices.length,
+                      allServices: services.map(s => ({ id: s.id, name: s.name, categoryId: s.categoryId })),
+                      filteredServicesList: filteredServices.map(s => ({ id: s.id, name: s.name, categoryId: s.categoryId }))
+                    });
+                    return filteredServices.map(service => (
                       <ServiceSelectionCard
                         key={service.id}
                         service={service}
@@ -595,7 +610,8 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
                         onRemove={() => handleServiceRemove(service.id)}
                         isSelected={selectedServices.some(s => s.serviceId === service.id)}
                       />
-                    ))}
+                    ));
+                  })()}
                 </div>
               </div>
             )}
