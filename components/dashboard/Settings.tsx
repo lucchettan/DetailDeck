@@ -136,7 +136,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
     { id: 1, label: t.tabShopDetails, icon: <span className="text-xl">🏪</span>, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
     { id: 2, label: t.tabAvailability, icon: <span className="text-xl">🕒</span>, isComplete: (data: Partial<Shop>) => !!data.schedule },
     { id: 3, label: t.tabPolicies, icon: <span className="text-xl">📋</span>, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
-    { id: 4, label: t.tabAccount, icon: <span className="text-xl">👤</span>, isComplete: () => true },
+    { id: 4, label: 'Mot de passe', icon: <span className="text-xl">🔑</span>, isComplete: () => true },
   ], [t]);
 
 
