@@ -102,22 +102,12 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
 
       {/* Contenu de la carte */}
       <div className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg text-gray-900">{service.name}</h3>
-            {service.description && (
-              <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-            )}
-          </div>
-          <button
-            onClick={handleToggleSelection}
-            className={`ml-4 px-6 py-3 rounded-lg font-semibold transition-colors text-sm ${isSelected
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-          >
-            {isSelected ? 'Retirer du panier' : 'Ajouter au panier'}
-          </button>
+        {/* Titre et description */}
+        <div>
+          <h3 className="font-semibold text-lg text-gray-900">{service.name}</h3>
+          {service.description && (
+            <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+          )}
         </div>
 
         {/* Prix et durée de base */}
@@ -200,6 +190,19 @@ const ServiceSelectionCard: React.FC<ServiceSelectionCardProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Bouton d'action en bas de la carte */}
+      <div className="border-t border-gray-100 p-4">
+        <button
+          onClick={handleToggleSelection}
+          className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors text-sm ${isSelected
+            ? 'bg-red-500 text-white hover:bg-red-600'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+        >
+          {isSelected ? 'Retirer du panier' : 'Ajouter au panier'}
+        </button>
       </div>
     </div>
   );
