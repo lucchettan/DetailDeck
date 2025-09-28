@@ -493,11 +493,11 @@ const Dashboard: React.FC = () => {
   };
 
   const navigationItems = [
-    { id: 'home', label: t.dashboardHome, icon: <HomeIcon className="w-6 h-6" /> },
-    { id: 'leads', label: t.hotLeads, icon: <PhoneArrowUpRightIcon className="w-6 h-6" /> },
-    { id: 'catalog', label: t.catalog, icon: <BookOpenIcon className="w-6 h-6" /> },
-    { id: 'reservations', label: t.reservations, icon: <CalendarDaysIcon className="w-6 h-6" /> },
-    { id: 'settings', label: t.settings, icon: <SettingsIcon className="w-6 h-6" /> },
+    { id: 'home', label: t.dashboardHome, icon: <span className="text-2xl">🏠</span> },
+    { id: 'leads', label: t.hotLeads, icon: <span className="text-2xl">📞</span> },
+    { id: 'catalog', label: t.catalog, icon: <span className="text-2xl">📋</span> },
+    { id: 'reservations', label: t.reservations, icon: <span className="text-2xl">📅</span> },
+    { id: 'settings', label: t.settings, icon: <span className="text-2xl">⚙️</span> },
   ];
 
 

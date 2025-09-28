@@ -389,7 +389,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
             {formData.hasLocalService && (
               <div className="border-t pt-6 mt-6">
-                <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2"><MapPinIcon className="w-5 h-5" /> {t.address}</h4>
+                <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2">📍 {t.address}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input value={formData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2" />
                   <input value={formData.addressCity || ''} onChange={(e) => handleInputChange('addressCity', e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
@@ -400,7 +400,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
             {formData.hasMobileService && (
               <div className="border-t pt-6 mt-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-brand-dark flex items-center gap-2"><MapPinIcon className="w-5 h-5" /> Zones de service</h4>
+                  <h4 className="font-bold text-brand-dark flex items-center gap-2">🚚 Zones de service</h4>
                   <button
                     type="button"
                     onClick={() => {
