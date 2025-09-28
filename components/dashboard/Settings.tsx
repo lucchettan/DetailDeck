@@ -133,10 +133,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
 
   const steps = useMemo(() => [
-    { id: 1, label: t.tabShopDetails, icon: <StorefrontIcon />, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
-    { id: 2, label: t.tabAvailability, icon: <ClockIcon />, isComplete: (data: Partial<Shop>) => !!data.schedule },
-    { id: 3, label: t.tabPolicies, icon: <ShieldCheckIcon />, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
-    { id: 4, label: t.tabAccount, icon: <UserCircleIcon />, isComplete: () => true },
+    { id: 1, label: t.tabShopDetails, icon: <span className="text-xl">🏪</span>, isComplete: (data: Partial<Shop>) => !!data.name && !!data.email && !!data.phone },
+    { id: 2, label: t.tabAvailability, icon: <span className="text-xl">🕒</span>, isComplete: (data: Partial<Shop>) => !!data.schedule },
+    { id: 3, label: t.tabPolicies, icon: <span className="text-xl">📋</span>, isComplete: (data: Partial<Shop>) => !!data.minBookingNotice },
+    { id: 4, label: t.tabAccount, icon: <span className="text-xl">👤</span>, isComplete: () => true },
   ], [t]);
 
 
@@ -336,7 +336,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
         {activeStep === 1 && (
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
-              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><StorefrontIcon className="w-6 h-6 text-brand-blue" /> {t.businessDetails}</h3>
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">🏪</span> {t.businessDetails}</h3>
               <TopSaveButton />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -503,7 +503,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
         {activeStep === 2 && (
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
-              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><ClockIcon className="w-6 h-6 text-brand-blue" /> {t.businessHours}</h3>
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">🕒</span> {t.businessHours}</h3>
               <TopSaveButton />
             </div>
             <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
@@ -547,7 +547,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
         {activeStep === 3 && (
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
-              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><ShieldCheckIcon className="w-6 h-6 text-brand-blue" /> {t.bookingPolicies}</h3>
+              <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">📋</span> {t.bookingPolicies}</h3>
               <TopSaveButton />
             </div>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
@@ -572,7 +572,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
         {activeStep === 4 && (
           <div>
-            <h3 className="text-xl font-bold text-brand-dark mb-1 border-b pb-4 flex items-center gap-3"><KeyIcon className="w-6 h-6 text-brand-blue" /> {t.passwordManagement}</h3>
+            <h3 className="text-xl font-bold text-brand-dark mb-1 border-b pb-4 flex items-center gap-3"><span className="text-2xl">🔑</span> {t.passwordManagement}</h3>
             <p className="text-brand-gray text-sm mt-4 mb-6">{t.passwordManagementSubtitle}</p>
             <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
               <div>
