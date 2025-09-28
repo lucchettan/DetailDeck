@@ -145,21 +145,19 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
       if (shopError) throw shopError;
 
-      // Charger les services actifs
+      // Charger les services (on retire temporairement la condition is_active pour debug)
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('shop_id', shopId)
-        .eq('is_active', true);
+        .eq('shop_id', shopId);
 
       if (servicesError) throw servicesError;
 
-      // Charger les add-ons liés aux services (nouvelle structure)
+      // Charger les add-ons liés aux services (on retire temporairement la condition is_active pour debug)
       const { data: addOnsData, error: addOnsError } = await supabase
         .from('addons')
         .select('*')
         .eq('shop_id', shopId)
-        .eq('is_active', true)
         .not('service_id', 'is', null);
 
       if (addOnsError) throw addOnsError;
@@ -172,12 +170,11 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
 
       if (vehicleSizesError) throw vehicleSizesError;
 
-      // Charger les catégories de services
+      // Charger les catégories de services (on retire temporairement la condition is_active pour debug)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('shop_service_categories')
         .select('*')
-        .eq('shop_id', shopId)
-        .eq('is_active', true);
+        .eq('shop_id', shopId);
 
       if (categoriesError) throw categoriesError;
 
