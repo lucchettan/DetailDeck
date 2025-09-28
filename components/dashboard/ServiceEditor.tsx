@@ -416,13 +416,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
       
-      // Arrêter le loading AVANT de naviguer
+      // Arrêter le loading et naviguer immédiatement
       setIsSaving(false);
-      
-      // Petit délai pour laisser le temps au state de se mettre à jour
-      setTimeout(() => {
-        onSave();
-      }, 100);
+      onSave();
 
     } catch (error: any) {
       console.error("Save error:", error);

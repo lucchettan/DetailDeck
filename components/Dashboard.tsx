@@ -596,7 +596,7 @@ const Dashboard: React.FC = () => {
               onBack={() => navigate('/dashboard/catalog')}
               onSave={() => {
                 setCatalogRefreshTrigger(prev => prev + 1);
-                navigate('/dashboard/catalog');
+                setCurrentView({ page: 'catalog' });
               }}
               onDelete={() => navigate('/dashboard/catalog')}
             />
