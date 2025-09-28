@@ -415,7 +415,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Save completed successfully');
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
-      
+
       // Arrêter le loading et naviguer avec le service mis à jour
       setIsSaving(false);
       onSave(savedService);

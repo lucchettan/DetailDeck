@@ -29,6 +29,13 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
   const [loading, setLoading] = useState(!initialServices);
   const [lastFetched, setLastFetched] = useState<number | null>(initialServices ? Date.now() : null);
 
+  // Mettre à jour les services quand initialServices change
+  useEffect(() => {
+    if (initialServices) {
+      setServices(initialServices);
+    }
+  }, [initialServices]);
+
   const fetchServices = useCallback(async (force = false) => {
     if (initialServices && !force) return;
     if (!shopId) return;
