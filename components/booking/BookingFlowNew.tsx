@@ -340,9 +340,10 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
         .from('leads')
         .insert({
           shop_id: shopId,
+          client_name: callbackInfo.name,
           client_phone: callbackInfo.phone,
-          status: 'to_call',
-          message: `RAPPEL - ${callbackInfo.name} - Services: ${servicesText} - Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`
+          client_email: `RAPPEL - Services: ${servicesText} - Véhicule: ${vehicleSizes.find(vs => vs.id === selectedVehicleSize)?.name || 'Non spécifié'} - Total: ${totalCalculation.totalPrice.toFixed(2)}€`,
+          status: 'to_call'
         });
 
       if (error) throw error;
