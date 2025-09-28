@@ -19,7 +19,7 @@ interface ServiceEditorProps {
   vehicleSizes: ShopVehicleSize[];
   serviceCategories: ShopServiceCategory[];
   onBack: () => void;
-  onSave: () => void;
+  onSave: (updatedService?: Service) => void;
   onDelete: () => void;
   initialData?: (Service & { formulas: Formula[], supplements: VehicleSizeSupplement[], specificAddOns: AddOn[] }) | null;
 }
@@ -253,7 +253,7 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
         setAlertInfo({ isOpen: true, title: 'Démo', message: 'La sauvegarde est simulée en mode démo.' });
         // Nettoyer les données persistées après sauvegarde réussie
         clearPersistedData();
-        onSave();
+        onSave(); // Mode mock - pas de service à passer
       }, 1000);
       return;
     }
@@ -416,9 +416,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
       
-      // Arrêter le loading et naviguer immédiatement
+      // Arrêter le loading et naviguer avec le service mis à jour
       setIsSaving(false);
-      onSave();
+      onSave(savedService);
 
     } catch (error: any) {
       console.error("Save error:", error);

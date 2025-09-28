@@ -581,7 +581,6 @@ const Dashboard: React.FC = () => {
               onOpenCatalogSettings={() => setIsCatalogSettingsOpen(true)}
               initialServices={IS_MOCK_MODE ? mockServices : services}
               serviceCategories={serviceCategories}
-              refreshTrigger={catalogRefreshTrigger}
               onNavigateHome={() => navigate('/dashboard')}
             />
           </div>
@@ -594,8 +593,11 @@ const Dashboard: React.FC = () => {
               vehicleSizes={vehicleSizes}
               serviceCategories={serviceCategories}
               onBack={() => navigate('/dashboard/catalog')}
-              onSave={() => {
-                setCatalogRefreshTrigger(prev => prev + 1);
+              onSave={(updatedService?: Service) => {
+                if (updatedService) {
+                  // Mettre à jour le service dans la liste existante
+                  setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s));
+                }
                 setCurrentView({ page: 'catalog' });
               }}
               onDelete={() => navigate('/dashboard/catalog')}
