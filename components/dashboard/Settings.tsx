@@ -363,108 +363,143 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
             </div>
 
             <div className="border-t pt-6 mt-6">
-              <label className="block text-sm font-bold text-brand-dark mb-2">Type de service</label>
-              <p className="text-sm text-gray-600 mb-4">Vous pouvez proposer les deux types de service</p>
-              <div className="flex gap-4">
-                <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.hasLocalService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasLocalService || false}
-                    onChange={(e) => handleInputChange('hasLocalService', e.target.checked)}
-                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
-                  />
-                  <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><BuildingOffice2Icon className="w-5 h-5" /> Service en atelier</span>
-                </label>
-                <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all flex-1 ${formData.hasMobileService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasMobileService || false}
-                    onChange={(e) => handleInputChange('hasMobileService', e.target.checked)}
-                    className="h-4 w-4 text-brand-blue border-gray-300 focus:ring-brand-blue rounded"
-                  />
-                  <span className="ml-3 flex items-center gap-2 font-semibold text-brand-dark"><TruckIcon className="w-5 h-5" /> Service mobile</span>
-                </label>
-              </div>
-            </div>
-
-            {formData.hasLocalService && (
-              <div className="border-t pt-6 mt-6">
-                <h4 className="font-bold text-brand-dark flex items-center gap-2 mb-2">📍 {t.address}</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input value={formData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} placeholder={t.addressPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2" />
-                  <input value={formData.addressCity || ''} onChange={(e) => handleInputChange('addressCity', e.target.value)} placeholder={t.cityPlaceholder} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
-                  <input value={formData.addressPostalCode || ''} onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} placeholder="Code Postal" className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white" />
-                </div>
-              </div>
-            )}
-            {formData.hasMobileService && (
-              <div className="border-t pt-6 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-brand-dark flex items-center gap-2">🚚 Zones de service</h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newZones = [...(formData.serviceZones || [{ city: city, radius: radius }]), { city: '', radius: '10' }];
-                      handleInputChange('serviceZones', newZones);
-                    }}
-                    className="btn btn-secondary flex items-center gap-2 text-sm"
-                  >
-                    <PlusIcon className="w-4 h-4" />
-                    Ajouter une zone
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
-                    <div key={index} className="card p-4 border border-gray-200">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        <div>
-                          <label className="form-label">{t.operatingCity}</label>
-                          <input
-                            value={zone.city || ''}
-                            onChange={(e) => {
-                              const newZones = [...(formData.serviceZones || [])];
-                              newZones[index] = { ...newZones[index], city: e.target.value };
-                              handleInputChange('serviceZones', newZones);
-                            }}
-                            placeholder={t.cityPlaceholder}
-                            className="form-input"
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">{t.serviceRadius}</label>
-                          <select
-                            value={zone.radius || '10'}
-                            onChange={(e) => {
-                              const newZones = [...(formData.serviceZones || [])];
-                              newZones[index] = { ...newZones[index], radius: e.target.value };
-                              handleInputChange('serviceZones', newZones);
-                            }}
-                            className="form-input"
-                          >
-                            {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          {(formData.serviceZones || []).length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
-                                handleInputChange('serviceZones', newZones);
-                              }}
-                              className="btn btn-ghost text-red-500 hover:text-red-700 p-2"
-                            >
-                              <CloseIcon className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+              <label className="block text-sm font-bold text-brand-dark mb-2">Types de service</label>
+              <p className="text-sm text-gray-600 mb-4">Choisissez les services que vous proposez</p>
+              
+              <div className="space-y-4">
+                {/* Service en atelier */}
+                <div className={`border-2 rounded-xl transition-all ${formData.hasLocalService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                  <label className="flex items-center p-4 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.hasLocalService || false} 
+                      onChange={(e) => handleInputChange('hasLocalService', e.target.checked)} 
+                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                    />
+                    <span className="ml-3 flex items-center gap-3 font-semibold text-brand-dark text-lg">
+                      <span className="text-2xl">🏠</span> 
+                      Service en atelier
+                    </span>
+                  </label>
+                  
+                  {formData.hasLocalService && (
+                    <div className="px-4 pb-4 border-t border-blue-200 mt-2 pt-4">
+                      <h4 className="font-medium text-brand-dark flex items-center gap-2 mb-3">
+                        <span className="text-xl">📍</span> Adresse de l'atelier
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input 
+                          value={formData.addressLine1 || ''} 
+                          onChange={(e) => handleInputChange('addressLine1', e.target.value)} 
+                          placeholder={t.addressPlaceholder} 
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white md:col-span-2 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        />
+                        <input 
+                          value={formData.addressCity || ''} 
+                          onChange={(e) => handleInputChange('addressCity', e.target.value)} 
+                          placeholder={t.cityPlaceholder} 
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        />
+                        <input 
+                          value={formData.addressPostalCode || ''} 
+                          onChange={(e) => handleInputChange('addressPostalCode', e.target.value)} 
+                          placeholder="Code Postal" 
+                          className="w-full p-3 border border-gray-300 shadow-sm rounded-lg bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                        />
                       </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                {/* Service mobile */}
+                <div className={`border-2 rounded-xl transition-all ${formData.hasMobileService ? 'border-brand-blue bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                  <label className="flex items-center p-4 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.hasMobileService || false} 
+                      onChange={(e) => handleInputChange('hasMobileService', e.target.checked)} 
+                      className="h-5 w-5 text-brand-blue border-gray-300 focus:ring-brand-blue rounded" 
+                    />
+                    <span className="ml-3 flex items-center gap-3 font-semibold text-brand-dark text-lg">
+                      <span className="text-2xl">🚚</span> 
+                      Service mobile
+                    </span>
+                  </label>
+                  
+                  {formData.hasMobileService && (
+                    <div className="px-4 pb-4 border-t border-blue-200 mt-2 pt-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-brand-dark flex items-center gap-2">
+                          <span className="text-xl">📍</span> Zones de service
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newZones = [...(formData.serviceZones || [{ city: city, radius: radius }]), { city: '', radius: '10' }];
+                            handleInputChange('serviceZones', newZones);
+                          }}
+                          className="bg-brand-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-brand-blue/90 transition-colors flex items-center gap-1"
+                        >
+                          <span className="text-lg">➕</span>
+                          Ajouter
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {(formData.serviceZones || [{ city: city, radius: radius }]).map((zone, index) => (
+                          <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.operatingCity}</label>
+                                <input
+                                  value={zone.city || ''}
+                                  onChange={(e) => {
+                                    const newZones = [...(formData.serviceZones || [])];
+                                    newZones[index] = { ...newZones[index], city: e.target.value };
+                                    handleInputChange('serviceZones', newZones);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                                  placeholder={t.cityPlaceholder}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.serviceRadius}</label>
+                                <select
+                                  value={zone.radius || '10'}
+                                  onChange={(e) => {
+                                    const newZones = [...(formData.serviceZones || [])];
+                                    newZones[index] = { ...newZones[index], radius: e.target.value };
+                                    handleInputChange('serviceZones', newZones);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                                >
+                                  {radiusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                {(formData.serviceZones || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newZones = (formData.serviceZones || []).filter((_, i) => i !== index);
+                                      handleInputChange('serviceZones', newZones);
+                                    }}
+                                    className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors w-full flex items-center justify-center gap-1"
+                                  >
+                                    <span className="text-lg">🗑️</span>
+                                    Supprimer
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
 
           </div>
         )}
