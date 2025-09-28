@@ -451,7 +451,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
                                 <div className="flex justify-between items-center mb-1">
-                                  <label className="block text-sm font-medium text-gray-700">{t.operatingCity}</label>
+                                  <label className="block text-sm font-medium text-gray-700">Ville d'intervention</label>
                                   <button
                                     type="button"
                                     onClick={() => {
