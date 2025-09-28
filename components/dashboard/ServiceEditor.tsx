@@ -415,7 +415,10 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
       console.log('🔍 [DEBUG] Save completed successfully');
       // Nettoyer les données persistées après sauvegarde réussie
       clearPersistedData();
-
+      
+      // Arrêter le loading AVANT de naviguer
+      setIsSaving(false);
+      
       // Petit délai pour laisser le temps au state de se mettre à jour
       setTimeout(() => {
         onSave();
@@ -424,9 +427,9 @@ const ServiceEditor: React.FC<ServiceEditorProps> = ({
     } catch (error: any) {
       console.error("Save error:", error);
       setAlertInfo({ isOpen: true, title: "Save Error", message: `Error during save: ${error.message}` });
+      setIsSaving(false); // Arrêter le loading en cas d'erreur
     } finally {
-      console.log('🔍 [DEBUG] Finally block executed - setting isSaving to false');
-      setIsSaving(false);
+      console.log('🔍 [DEBUG] Finally block executed');
     }
   };
 
