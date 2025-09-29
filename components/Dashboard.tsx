@@ -57,7 +57,9 @@ export type {
 };
 
 const parsePath = (path: string): ViewType => {
-  const pathParts = path.split('/dashboard')[1]?.split('/').filter(Boolean) || [];
+  // Enlever les query params (?...) avant de parser
+  const cleanPath = path.split('?')[0];
+  const pathParts = cleanPath.split('/dashboard')[1]?.split('/').filter(Boolean) || [];
   const [page, action, id] = pathParts;
 
   if (page === 'catalog') {
@@ -114,11 +116,15 @@ const Dashboard: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
 
   const navigate = (path: string) => {
+    console.log('🔍 navigate called with path:', path);
+    const parsedView = parsePath(path);
+    console.log('🔍 parsedView:', parsedView);
     const isPreviewEnvironment = window.location.origin.includes('scf.usercontent.goog');
     if (!isPreviewEnvironment) {
       window.history.pushState({}, '', path);
     }
-    setCurrentView(parsePath(path));
+    setCurrentView(parsedView);
+    console.log('🔍 currentView should now be:', parsedView);
   };
 
   useEffect(() => {
@@ -503,6 +509,64 @@ const Dashboard: React.FC = () => {
 
   // Debug logs supprimés pour réduire le spam
 
+  const renderContent = () => {
+    console.log('🔍 renderContent called - currentView:', currentView);
+
+    // ServiceEditor pour créer/éditer un service
+    if (currentView.page === 'catalog' && currentView.id) {
+      console.log('✅ Rendering ServiceEditor with id:', currentView.id);
+      return (
+        <ServiceEditor
+          key={currentView.id}
+          serviceId={currentView.id}
+          shopId={shopData!.id}
+          supportedVehicleSizes={vehicleSizes.map(vs => vs.id)}
+          vehicleSizes={vehicleSizes}
+          serviceCategories={serviceCategories}
+          onBack={() => navigate('/dashboard/catalog')}
+          onSave={(updatedService?: Service) => {
+            if (updatedService) {
+              setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s));
+            }
+            navigate('/dashboard/catalog');
+          }}
+          onDelete={() => navigate('/dashboard/catalog')}
+        />
+      );
+    }
+
+    // Switch pour les autres pages
+    switch (currentView.page) {
+      case 'home':
+        console.log('📍 Rendering DashboardHome');
+        return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData!} hasServices={hasServices} />;
+      case 'leads':
+        console.log('📍 Rendering Leads');
+        return <Leads shopId={shopData!.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} onNavigateHome={() => navigate('/dashboard')} />;
+      case 'catalog':
+        console.log('📍 Rendering Catalog');
+        return (
+          <Catalog
+            shopId={shopData!.id}
+            onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)}
+            onAddNewService={(categoryId) => navigate(`/dashboard/catalog/new${categoryId ? `?category=${categoryId}` : ''}`)}
+            onOpenVehicleSizeManager={() => setIsVehicleSizeManagerOpen(true)}
+            onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
+            onOpenCatalogSettings={() => setIsCatalogSettingsOpen(true)}
+            initialServices={IS_MOCK_MODE ? mockServices : services}
+            serviceCategories={serviceCategories}
+            onNavigateHome={() => navigate('/dashboard')}
+          />
+        );
+      case 'reservations':
+        return <Reservations shopId={shopData!.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} onNavigateHome={() => navigate('/dashboard')} onReservationCreated={reservationRefreshTrigger} />;
+      case 'settings':
+        return <Settings shopData={shopData!} onSave={handleSaveShop} initialStep={settingsTargetStep} onNavigateHome={() => navigate('/dashboard')} />;
+      default:
+        return <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData!} hasServices={hasServices} />;
+    }
+  };
+
   if (authLoading || loadingShopData || checkingOnboarding) {
     return (
       <div className="flex-1 flex items-center justify-center h-screen flex-col bg-gray-50">
@@ -565,57 +629,7 @@ const Dashboard: React.FC = () => {
         </header>
 
         <main className="flex-1 p-6 sm:p-10 overflow-y-auto">
-          <div className={currentView.page === 'home' ? '' : 'hidden'}>
-            <DashboardHome onNavigate={handleGetStartedNavigation} shopData={shopData} hasServices={hasServices} />
-          </div>
-          <div className={currentView.page === 'leads' ? '' : 'hidden'}>
-            <Leads shopId={shopData.id} initialLeads={IS_MOCK_MODE ? mockLeads : undefined} onNavigateHome={() => navigate('/dashboard')} />
-          </div>
-          <div className={currentView.page === 'catalog' && !currentView.id ? '' : 'hidden'}>
-            <Catalog
-              shopId={shopData.id}
-              onEditService={(id) => navigate(`/dashboard/catalog/edit/${id}`)}
-              onAddNewService={(categoryId) => navigate(`/dashboard/catalog/new${categoryId ? `?category=${categoryId}` : ''}`)}
-              onOpenVehicleSizeManager={() => setIsVehicleSizeManagerOpen(true)}
-              onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
-              onOpenCatalogSettings={() => setIsCatalogSettingsOpen(true)}
-              initialServices={IS_MOCK_MODE ? mockServices : services}
-              serviceCategories={serviceCategories}
-              onNavigateHome={() => navigate('/dashboard')}
-            />
-          </div>
-
-          {currentView.page === 'catalog' && currentView.id && (
-            <ServiceEditor
-              serviceId={currentView.id}
-              shopId={shopData.id}
-              supportedVehicleSizes={vehicleSizes.map(vs => vs.id)}
-              vehicleSizes={vehicleSizes}
-              serviceCategories={serviceCategories}
-              onBack={() => navigate('/dashboard/catalog')}
-              onSave={(updatedService?: Service) => {
-                console.log('🔍 [DEBUG] onSave called with:', updatedService);
-                if (updatedService) {
-                  console.log('🔍 [DEBUG] Updating service in list:', updatedService.id);
-                  // Mettre à jour le service dans la liste existante
-                  setServices(prev => {
-                    const updated = prev.map(s => s.id === updatedService.id ? updatedService : s);
-                    console.log('🔍 [DEBUG] Services before:', prev.length, 'after:', updated.length);
-                    return updated;
-                  });
-                }
-                setCurrentView({ page: 'catalog' });
-              }}
-              onDelete={() => navigate('/dashboard/catalog')}
-            />
-          )}
-
-          <div className={currentView.page === 'reservations' ? '' : 'hidden'}>
-            <Reservations shopId={shopData.id} onAdd={() => openReservationEditor(null)} onEdit={(id) => openReservationEditor(id)} initialReservations={IS_MOCK_MODE ? mockReservations : undefined} onNavigateHome={() => navigate('/dashboard')} onReservationCreated={reservationRefreshTrigger} />
-          </div>
-          <div className={currentView.page === 'settings' ? '' : 'hidden'}>
-            <Settings shopData={shopData} onSave={handleSaveShop} initialStep={settingsTargetStep} onNavigateHome={() => navigate('/dashboard')} />
-          </div>
+          {renderContent()}
         </main>
 
         {isReservationEditorOpen && shopData && vehicleSizes.length > 0 && serviceCategories.length > 0 && (

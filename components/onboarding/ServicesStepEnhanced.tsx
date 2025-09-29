@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useFormPersistence } from '../../hooks/useFormPersistence';
 import { UnsavedChangesAlert } from '../common/UnsavedChangesAlert';
 import ServiceEditorOnboarding from './ServiceEditorOnboarding';
+import { ImageIcon } from '../Icons';
 
 interface ServicesStepEnhancedProps {
   onBack: () => void;
@@ -62,6 +63,7 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
+  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🔄 ServicesStepEnhanced: useEffect triggered');
@@ -91,20 +93,8 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
         console.log('📦 ServicesStepEnhanced: Loading prop services:', propServices.length);
         setServices(propServices);
       } else {
-        // Créer des services par défaut avec la nouvelle structure
-        const defaultServices = propCategories.map(category => ({
-          name: category.name === 'Intérieur' ? 'Nettoyage intérieur complet' : 'Lavage extérieur',
-          description: category.name === 'Intérieur'
-            ? 'Aspirateur, nettoyage des sièges et tableau de bord'
-            : 'Lavage carrosserie, jantes et vitres',
-          category_id: category.id,
-          base_price: category.name === 'Intérieur' ? 25 : 15,
-          base_duration: category.name === 'Intérieur' ? 45 : 30,
-          image_urls: [],
-          vehicle_size_variations: {},
-          specific_addons: []
-        }));
-        setServices(defaultServices);
+        // Ne pas créer de services par défaut - laisser vide
+        setServices([]);
       }
     } else {
       // Fallback: fetch si pas de props
@@ -148,23 +138,6 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
       if (vehicleSizesError) throw vehicleSizesError;
       setVehicleSizes(vehicleSizesData || []);
 
-      // Create default services if none exist
-      if (categoriesData && categoriesData.length > 0) {
-        const defaultServices = categoriesData.map(category => ({
-          name: category.name === 'Intérieur' ? 'Nettoyage intérieur complet' : 'Lavage extérieur',
-          description: category.name === 'Intérieur'
-            ? 'Aspirateur, nettoyage des sièges et tableau de bord'
-            : 'Lavage carrosserie, jantes et vitres',
-          category_id: category.id,
-          base_price: category.name === 'Intérieur' ? 25 : 15,
-          base_duration: category.name === 'Intérieur' ? 45 : 30,
-          image_urls: [],
-          vehicle_size_variations: {},
-          specific_addons: []
-        }));
-        setServices(defaultServices);
-      }
-
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -182,13 +155,15 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
     if (onDataUpdate) {
       onDataUpdate(newServices);
     }
+    // Fermer le mode édition après mise à jour
+    setSelectedCategoryForAdd(null);
   };
 
-  const addService = () => {
+  const addService = (categoryId: string) => {
     const newService: Service = {
       name: '',
       description: '',
-      category_id: categories[0]?.id || '',
+      category_id: categoryId,
       base_price: 20,
       base_duration: 30,
       image_urls: [],
@@ -202,6 +177,9 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
     if (onDataUpdate) {
       onDataUpdate(newServices);
     }
+
+    // Ouvrir le mode édition pour cette catégorie
+    setSelectedCategoryForAdd(categoryId);
   };
 
   const removeService = (index: number) => {
@@ -223,6 +201,12 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
     );
   };
 
+  // Grouper les services par catégorie
+  const servicesByCategory = categories.reduce((acc, category) => {
+    acc[category.id] = services.filter(s => s.category_id === category.id);
+    return acc;
+  }, {} as { [key: string]: Service[] });
+
   if (initialLoading) {
     return (
       <div className="text-center py-8">
@@ -242,59 +226,148 @@ const ServicesStepEnhanced: React.FC<ServicesStepEnhancedProps> = ({
     );
   }
 
-  return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Unsaved changes alert */}
-      <UnsavedChangesAlert hasUnsavedChanges={hasUnsavedChanges()} />
+  // Mode édition : afficher ServiceEditorOnboarding
+  if (selectedCategoryForAdd) {
+    const editingServiceIndex = services.findIndex(
+      s => s.category_id === selectedCategoryForAdd && !s.name.trim()
+    );
+    const editingService = editingServiceIndex >= 0 ? services[editingServiceIndex] : null;
 
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Créez vos services
-        </h2>
-        <p className="text-lg text-gray-600">
-          Définissez les services que vous proposez avec leurs options et variations.
-        </p>
-      </div>
+    if (editingService) {
+      return (
+        <div className="max-w-6xl mx-auto p-6">
+          <UnsavedChangesAlert hasUnsavedChanges={hasUnsavedChanges()} />
 
-      <div className="space-y-6">
-        {services.map((service, index) => (
           <ServiceEditorOnboarding
-            key={index}
-            service={service}
-            serviceIndex={index}
+            service={editingService}
+            serviceIndex={editingServiceIndex}
             categories={categories}
             vehicleSizes={vehicleSizes}
             onUpdate={updateService}
-            onRemove={removeService}
-            canRemove={services.length > 1}
+            onRemove={(idx) => {
+              removeService(idx);
+              setSelectedCategoryForAdd(null);
+            }}
+            canRemove={true}
+            onCancel={() => {
+              removeService(editingServiceIndex);
+              setSelectedCategoryForAdd(null);
+            }}
           />
-        ))}
-
-        {/* Add Service Button */}
-        <div className="text-center">
-          <button
-            onClick={addService}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            Ajouter un service
-          </button>
         </div>
+      );
+    }
+  }
+
+  // Mode résumé : afficher les services groupés par catégorie
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      <UnsavedChangesAlert hasUnsavedChanges={hasUnsavedChanges()} />
+
+      {/* Services groupés par catégorie */}
+      <div className="space-y-8">
+        {categories.map((category) => {
+          const categoryServices = servicesByCategory[category.id] || [];
+
+          return (
+            <div key={category.id} className="bg-blue-50 rounded-xl p-8 border-2 border-blue-100">
+              {/* En-tête de catégorie */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-2xl">
+                    {category.name.toLowerCase().includes('intérieur') ? '🏠' :
+                      category.name.toLowerCase().includes('extérieur') ? '✨' : '🔧'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">{category.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {categoryServices.length === 0
+                      ? 'Aucun service pour le moment'
+                      : `${categoryServices.length} service${categoryServices.length !== 1 ? 's' : ''}`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* Grid de services */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Bouton ajouter */}
+                <button
+                  onClick={() => addService(category.id)}
+                  className="flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 text-gray-600 hover:text-blue-600 min-h-[200px]"
+                >
+                  <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span className="font-semibold text-center">Ajouter un service</span>
+                </button>
+
+                {/* Cards de services */}
+                {categoryServices.map((service, idx) => {
+                  const globalIndex = services.findIndex(s => s === service);
+                  return (
+                    <div
+                      key={globalIndex}
+                      onClick={() => setSelectedCategoryForAdd(category.id)}
+                      className="cursor-pointer flex flex-col overflow-hidden border-2 border-gray-200 hover:border-blue-400 rounded-xl bg-white shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+                    >
+                      {/* Image */}
+                      {service.image_urls && service.image_urls.length > 0 ? (
+                        <img
+                          src={service.image_urls[0]}
+                          alt={service.name}
+                          className="w-full h-40 object-cover"
+                        />
+                      ) : (
+                        <div className="h-40 w-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <ImageIcon className="w-16 h-16 text-gray-300" />
+                        </div>
+                      )}
+
+                      {/* Contenu */}
+                      <div className="p-5 flex flex-col flex-grow">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="font-bold text-lg text-gray-900 line-clamp-1">{service.name}</h4>
+                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex-shrink-0 ml-2">
+                            Actif
+                          </span>
+                        </div>
+                        {service.description && (
+                          <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[40px]">{service.description}</p>
+                        )}
+                        <div className="mt-auto pt-4 border-t border-gray-200">
+                          <p className="text-xl font-bold text-gray-900">
+                            Dès {service.base_price} €
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Durée: {service.base_duration}min
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Navigation */}
       <div className="flex justify-between items-center mt-8 pt-6 border-t">
         <button
           onClick={onBack}
-          className="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+          className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors flex items-center gap-2"
         >
-          Retour
+          ← Retour
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed()}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
-          Continuer
+          Terminer l'onboarding →
         </button>
       </div>
     </div>

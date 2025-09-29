@@ -1,0 +1,53 @@
+# PRD - Améliorations de l'Onboarding DetailDeck
+
+## 🎯 Objectif
+Améliorer l'expérience d'onboarding des détaillants pour une configuration plus intuitive et une meilleure UX.
+
+## 📋 Problèmes Identifiés & Solutions
+
+### 1. Configuration des Réservations
+**Problème :** Options de délai confuses et horizon de 12 mois inutile
+**Solution :** 
+- Supprimer l'option "12 mois" (équivaut à 6 mois)
+- Reformuler en questions claires : "Quel est la date de réservation maximum pour un client?"
+- Améliorer les labels pour plus de clarté
+
+### 2. Navigation Entre Étapes
+**Problème :** Pas de scroll automatique entre les étapes
+**Solution :** Implémenter un scroll automatique vers le haut à chaque changement d'étape
+
+### 3. Textes Redondants
+**Problème :** Textes dupliqués entre header et section principale
+**Solution :** Nettoyer les textes redondants, garder seulement ceux dans la section principale
+
+### 4. Affichage des Services Créés
+**Problème :** Liste basique des services créés
+**Solution :** Afficher les services sous forme de cards organisées par catégorie (comme dans le catalogue)
+
+### 5. Sauvegarde des Zones d'Activité
+**Problème :** Zones d'activité vides après onboarding
+**Solution :** Corriger la sauvegarde des zones d'activité dans la base de données
+
+### 6. Alignement Adresse Shop
+**Problème :** Adresse mal alignée dans le booking form
+**Solution :** Aligner l'adresse avec les autres éléments (leading alignment)
+
+## 🎯 Critères d'Acceptance
+- L'onboarding est plus fluide avec scroll automatique
+- Les options de réservation sont claires et pertinentes
+- Les services sont présentés visuellement par catégorie
+- Les zones d'activité sont correctement sauvegardées
+- L'alignement du booking form est cohérent
+- Aucune fonctionnalité existante n'est cassée
+
+## 🔧 Stack Technique
+- React + TypeScript
+- Supabase pour la persistance
+- Tailwind CSS pour le styling
+- Composants existants à améliorer
+
+## 📱 Interface Concernée
+- Composants d'onboarding (ShopInfoStep, VehicleSizesStep, CategoriesStep, ServicesStep)
+- Booking form
+- Profil shop (zones d'activité)
+

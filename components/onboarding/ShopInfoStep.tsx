@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { ImageIcon } from '../Icons';
 import { useFormPersistence } from '../../hooks/useFormPersistence';
+import { processImageFile } from '../../lib/heicUtils';
 
 interface ShopInfoData {
   name: string;
@@ -15,6 +16,7 @@ interface ShopInfoData {
   addressCity: string;
   addressPostalCode: string;
   addressCountry: string;
+  shopImageUrl?: string;
   serviceZones: Array<{
     city: string;
     radius: number;
@@ -33,6 +35,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Persistance du formulaire
   const {
@@ -52,6 +55,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       addressCity: '',
       addressPostalCode: '',
       addressCountry: 'France',
+      shopImageUrl: '',
       serviceZones: []
     }
   });
@@ -59,6 +63,49 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
   useEffect(() => {
     loadExistingData();
   }, [user]);
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      // Traiter le fichier image (validation + conversion HEIC)
+      const processedFile = await processImageFile(file);
+
+      // Vérifier que le fichier n'est pas vide
+      if (processedFile.size === 0) {
+        throw new Error('Le fichier image est vide ou corrompu');
+      }
+
+      // Upload vers Supabase Storage
+      const fileExt = processedFile.name.split('.').pop();
+      const fileName = `shop_${Date.now()}.${fileExt}`;
+      const filePath = `shop-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('service-images')
+        .upload(filePath, processedFile);
+
+      if (uploadError) {
+        throw new Error(`Erreur lors de l'upload: ${uploadError.message}`);
+      }
+
+      // Obtenir l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(filePath);
+
+      updateField('shopImageUrl', publicUrl);
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const loadExistingData = async () => {
     if (!user?.email) return;
@@ -82,6 +129,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
           addressCity: shop.address_city || '',
           addressPostalCode: shop.address_postal_code || '',
           addressCountry: shop.address_country || 'France',
+          shopImageUrl: shop.shop_image_url || '',
           serviceZones: shop.service_zones || []
         });
       }
@@ -133,6 +181,7 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         name: formData.name.trim(),
         phone: formData.phone.trim() || null,
         business_type: businessType,
+        shop_image_url: formData.shopImageUrl || null,
         address_line1: formData.isLocal ? formData.addressLine1.trim() : null,
         address_city: formData.isLocal ? formData.addressCity.trim() || null : null,
         address_postal_code: formData.isLocal ? formData.addressPostalCode.trim() || null : null,
@@ -208,11 +257,8 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Informations de votre entreprise
+          Configuration de votre entreprise
         </h2>
-        <p className="text-gray-600">
-          Ces informations apparaîtront sur vos factures et dans les communications avec vos clients.
-        </p>
       </div>
 
       {/* Error */}
@@ -234,6 +280,39 @@ const ShopInfoStep: React.FC<ShopInfoStepProps> = ({ onBack, onNext }) => {
         </div>
         <p className="text-gray-600 mb-6">Ces informations apparaîtront sur vos factures et communications</p>
         <div className="space-y-6">
+          {/* Photo du shop */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Photo de votre entreprise
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
+                {formData.shopImageUrl ? (
+                  <img src={formData.shopImageUrl} alt="Shop" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="file"
+                  id="shopImageUpload"
+                  className="hidden"
+                  onChange={handleImageChange}
+                  accept="image/*"
+                  disabled={uploadingImage}
+                />
+                <label
+                  htmlFor="shopImageUpload"
+                  className={`inline-block bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer ${uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {uploadingImage ? 'Upload en cours...' : 'Ajouter une photo'}
+                </label>
+                <p className="text-xs text-gray-500 mt-2">JPG, PNG ou HEIC (max 5MB)</p>
+              </div>
+            </div>
+          </div>
+
           {/* Nom de l'entreprise */}
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <label className="block text-sm font-bold text-gray-700 mb-2">

@@ -40,6 +40,14 @@ const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
     }
   }, [user, hasLoaded]);
 
+  // Scroll automatique vers le haut lors du changement d'étape
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, [currentStep]);
+
   const loadOnboardingData = async () => {
     if (!user?.email) {
       console.log('❌ NewOnboarding: No user email found');

@@ -150,8 +150,7 @@ const VehicleSizesStep: React.FC<VehicleSizesStepProps> = ({
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Tailles de véhicules</h2>
-        <p className="text-gray-600">Définissez les différentes tailles de véhicules pour adapter vos tarifs</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Configuration des tailles</h2>
       </div>
 
       {/* Exemple de configuration - au-dessus du formulaire */}

@@ -114,15 +114,15 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
   useEffect(() => {
     setFormData(getInitialFormData(shopData));
-    setCity(shopData?.serviceAreas?.[0]?.city || '');
-    setRadius(String(shopData?.serviceAreas?.[0]?.radius || '20'));
+    setCity(shopData?.serviceZones?.[0]?.city || '');
+    setRadius(String(shopData?.serviceZones?.[0]?.radius || '20'));
     setIsDirty(false);
   }, [shopData]);
 
   useEffect(() => {
     const initialData = getInitialFormData(shopData);
-    const initialCity = shopData?.serviceAreas?.[0]?.city || '';
-    const initialRadius = String(shopData?.serviceAreas?.[0]?.radius || '20');
+    const initialCity = shopData?.serviceZones?.[0]?.city || '';
+    const initialRadius = String(shopData?.serviceZones?.[0]?.radius || '20');
 
     const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialData);
     const cityChanged = city !== initialCity;

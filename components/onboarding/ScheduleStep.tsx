@@ -62,7 +62,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
   const { user } = useAuth();
   const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
   const [minBookingNotice, setMinBookingNotice] = useState('4h');
-  const [maxBookingHorizon, setMaxBookingHorizon] = useState('12w');
+  const [maxBookingHorizon, setMaxBookingHorizon] = useState('6m');
   const [isSaving, setIsSaving] = useState(false);
 
   const dayLabels = {
@@ -144,8 +144,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Horaires d'activité</h2>
-        <p className="text-gray-600">Définissez vos disponibilités et règles de réservation</p>
+        <h2 className="text-3xl font-bold text-gray-900">Horaires d'activité</h2>
       </div>
 
       {/* Règles de réservation en premier */}
@@ -163,7 +162,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Délai minimum de réservation
+              Quel est le délai minimum pour qu'un client puisse réserver ?
             </label>
             <select
               value={minBookingNotice}
@@ -182,22 +181,21 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
 
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Horizon maximum de réservation
+              Jusqu'à combien de temps à l'avance vos clients peuvent-ils réserver ?
             </label>
             <select
               value={maxBookingHorizon}
               onChange={(e) => setMaxBookingHorizon(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="1w">1 semaine</option>
-              <option value="2w">2 semaines</option>
-              <option value="1m">1 mois</option>
-              <option value="2m">2 mois</option>
-              <option value="3m">3 mois</option>
-              <option value="6m">6 mois</option>
-              <option value="12w">12 semaines</option>
+              <option value="1w">Jusqu'à 1 semaine à l'avance</option>
+              <option value="2w">Jusqu'à 2 semaines à l'avance</option>
+              <option value="1m">Jusqu'à 1 mois à l'avance</option>
+              <option value="2m">Jusqu'à 2 mois à l'avance</option>
+              <option value="3m">Jusqu'à 3 mois à l'avance</option>
+              <option value="6m">Jusqu'à 6 mois à l'avance</option>
             </select>
-            <p className="text-xs text-gray-500 mt-2">Jusqu'à quand les clients peuvent réserver à l'avance</p>
+            <p className="text-xs text-gray-500 mt-2">Définissez jusqu'à quand vos clients peuvent réserver à l'avance</p>
           </div>
         </div>
       </div>

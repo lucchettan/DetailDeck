@@ -1,0 +1,213 @@
+# 🎯 Goal
+
+Build an ultra‑intuitive booking/catalog SaaS for automotive detailers. Pros create a shop, add services, set availability, and get a public booking URL. Clients pick vehicle size → category → service(s)/formula(s)/add‑ons → slot → contact details (and optionally pay later phase).
+
+---
+
+## ✅ In‑Scope (MVP • as of 27 Sep 2025)
+
+* Single vendor (each shop operates independently under its own public URL)
+* Shop profile (images x1–4, address and/or service zones, hours, lead times)
+* Vehicle sizes (name, short description, optional image)
+* Service categories (name, optional image)
+* Services (name, description, base price, base duration, images x1–4)
+* Service formulas (per‑service bundles with additive price/duration + feature bullet points)
+* Per‑vehicle‑size price/duration modifiers for each service
+* Add‑ons (per‑service optional extras with price/duration)
+* Booking flow (availability, slot pick, contact + vehicle refs)
+* No payments in MVP (but model extensible)
+
+## ❌ Out‑of‑Scope (MVP)
+
+* Multi‑staff / resource optimization, multi‑location assignment
+* Online payments, refunds, deposits, taxes/VAT calculations
+* Recurring bookings, subscriptions
+* Complex driving‑time routing between zones
+
+---
+
+# Product Requirements (PRD)
+
+## 1) User Types
+
+* **Detailer (Shop Owner)**: CRUD shop, sizes, categories, services, formulas, add‑ons, availability, lead time. View bookings.
+* **Client (End User)**: Discover public shop page, configure services, pick slot, submit booking request.
+* **Admin (Platform)**: Soft‑delete abusive shops, observe metrics. (Minimal for MVP.)
+
+## 2) Core Concepts
+
+* **Shop** has: identity, images, one physical address *and/or* one+ service zones (city + radius km), business hours by weekday, **min notice** (hours/days), **weekly advance notice** (number of weeks allowed ahead), supported **vehicle sizes**.
+* **Category** groups services (e.g., Interior, Exterior, Full Valet).
+* **Service**: base price/duration + images + rich description.
+* **Formula** (aka package/tier on a service): additive price & duration deltas, checklist features.
+* **Per‑Size Modifiers**: for each service, optional price/duration deltas per vehicle size.
+* **Add‑ons**: per service, independent extras with price/duration deltas.
+* **Availability** = opening windows per weekday + blackout dates + algorithm to propose bookable slots after min notice & within weekly advance limit, respecting current confirmed bookings.
+
+## 3) Booking Flow (Client)
+
+1. (Conditional) Pick **vehicle size** (if the shop defined any).
+2. Pick **category**, then one or more **services** within it.
+3. For each selected service: choose **formula** (optional), **add‑ons** (optional).
+4. System computes **total price & total duration** for all selected services.
+5. Pick **date & time** among available slots (respecting min notice, hours, existing bookings).
+6. Enter **contact info** + **vehicle reference** (make/model/plate optional), additional notes.
+7. Create **Pending** booking (status) → Shop receives notification.
+
+> Statuses: `pending` → `confirmed` | `declined` | `cancelled_by_client` | `cancelled_by_shop`.
+
+## 4) Availability Rules
+
+* Opening hours = one or multiple **timeframes per weekday**.
+* Slot granularity: 15 min (config constant), service durations in minutes.
+* Compute rolling availability for next `advance_weeks` weeks, excluding past times and applying `min_notice`.
+* Occupancy model: single parallel job (one car at a time) for MVP. (Extensible to capacity later.)
+
+---
+
+# Tech & Project Guardrails (Cursor‑Friendly)
+
+* **Language**: TypeScript (strict).
+* **Runtime**: Next.js (App Router) or Expo Router (if mobile first). Default to **Next.js** for MVP.
+* **DB**: Supabase Postgres; Row Level Security (RLS) on per‑shop rows.
+* **Auth**: Supabase Auth (email/password, magic link). Shops own their data.
+* **APIs**: Next.js route handlers `/api/*` (Edge‑compatible where possible). JSON only.
+* **Infra**: Vercel preview deploys; GitHub MCP for issues/PRs; Supabase MCP for migrations.
+* **UI**: React + Tailwind + shadcn/ui; Lucide icons; Zod validation; React‑Hook‑Form.
+* **Time**: `luxon` for TZ; store all timestamps in UTC; shop has a TZ field.
+* **Testing**: Vitest + Playwright (critical flows: pricing calc + slot generation + booking).
+
+---
+
+# Data Model (ERD Sketch)
+
+* **shops** (1) — (n) **service_categories**
+* **shops** (1) — (n) **vehicle_sizes**
+* **shops** (1) — (n) **services** — (n) **service_images**
+* **services** (1) — (n) **service_formulas** — (n) **formula_features**
+* **services** (1) — (n) **service_size_modifiers** (join to vehicle_sizes)
+* **services** (1) — (n) **service_addons**
+* **shops** (1) — (n) **opening_hours**
+* **shops** (1) — (n) **service_zones**
+* **shops** (1) — (n) **blackout_dates**
+* **shops** (1) — (n) **bookings** — (n) **booking_items** (captures chosen services, formulas, add‑ons, size)
+
+---
+
+# Pricing Calculation (Deterministic)
+
+### Formula
+
+```
+Total = Σ items (BaseService + SelectedFormula + SelectedSizeModifier + Σ AddOns)
+Duration = Σ items (BaseDuration + FormulaΔ + SizeΔ + Σ AddOnΔ)
+```
+
+### TS Contract
+
+```ts
+export interface PricingInput {
+  services: Array<{
+    serviceId: string;
+    formulaId?: string;
+    sizeId?: string;
+    addonIds?: string[];
+  }>;
+  shopId: string;
+}
+
+export interface PricingOutput { totalCents: number; totalDurationMin: number; breakdown: Array<{ serviceId: string; priceCents: number; durationMin: number; lines: string[] }>; }
+
+export async function calculatePricing(input: PricingInput): Promise<PricingOutput> { /* pure, uses DB reads */ }
+```
+
+---
+
+# Availability & Slotting
+
+### Inputs
+
+* Shop timezone, opening_hours frames
+* Booked intervals (confirmed + pending hold window, e.g., 30 min TTL)
+* Min notice hours, advance weeks
+* Slot step: 15 min (config)
+* Requested cumulative duration (from pricing calc)
+
+### Algorithm (pseudocode)
+
+```ts
+function generateSlots(shopId, durationMin, fromNow = DateTime.utc()): Slot[] {
+  // 1) respect minNotice & advanceWeeks → compute [windowStart, windowEnd]
+  // 2) iterate days; skip blackout_dates; get opening frames in shop TZ
+  // 3) within each frame, slide by SLOT_STEP; convert to UTC; check fit block [start, start+duration]
+  // 4) reject if overlap with any booking interval
+  // 5) return up to N slots (paginate)
+}
+```
+
+---
+
+# API Surface (Next.js route handlers)
+
+```
+POST   /api/shops                 → create shop
+GET    /api/shops/:slug           → public shop profile
+PATCH  /api/shops/:id             → update (auth)
+
+GET    /api/shops/:id/categories  → list
+POST   /api/categories            → create
+
+GET    /api/shops/:id/sizes       → list
+POST   /api/sizes                 → create
+
+GET    /api/shops/:id/services    → list (with formulas/addons/modifiers)
+POST   /api/services              → create/update
+
+POST   /api/pricing               → calculate total for a cart
+POST   /api/slots                 → get slots for a cart (requires duration)
+
+POST   /api/bookings              → create booking (status=pending)
+PATCH  /api/bookings/:id/status   → shop confirm/decline/cancel
+```
+
+---
+
+# UI/UX Notes (Ultra‑Intuitive)
+
+* **Progress header**: Vehicle → Category → Service(s) → Slot → Details → Confirm
+* **Sticky cart** with running price/duration; "Temps total estimé" and "À payer sur place / à la confirmation" (since no payments)
+* **Plain language** for detailers; avoid jargon like "SKU"
+* **Checklists** for formula features with ✅ icons
+* **Mobile‑first**; large tap targets; sane defaults; skeleton loaders
+* **Empty states**: helpful copy and 1‑click actions (e.g., "Ajouter votre première catégorie")
+
+---
+
+# Security & Privacy
+
+* RLS: `shops.owner_user_id = auth.uid()`; public `select` only on published catalog views.
+* Rate‑limit public APIs; captcha on booking create.
+* Do not store payment data (no payments MVP).
+
+---
+
+# Open Questions (flag for founder)
+
+1. Do we allow **multiple staff** (parallel capacity)? If yes, how to model capacity per frame?
+2. Should **zones** influence slot availability (e.g., travel buffer)?
+3. Booking confirmation: auto‑confirm or manual confirm by default?
+4. Required client fields: phone vs email? both?
+5. Cancellation windows & policies?
+6. Should pending bookings block time immediately (and how long)?
+
+---
+
+# Acceptance Criteria (MVP demo)
+
+* Can create a shop with hours, sizes, categories, services, formulas, add‑ons.
+* Public page at `/{shopSlug}` shows catalog; client can configure multi‑service cart.
+* Pricing is correct per fixtures; tests passing.
+* Slot API respects min notice & advance window; prevents overlaps; tests passing.
+* Booking creates `pending`; owner can `confirm/decline`.
+* All copy is FR‑first with niche yet clear terms for detailers.
+

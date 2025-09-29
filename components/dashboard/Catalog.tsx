@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Service } from '../Dashboard';
-import { PlusIcon, ImageIcon, MoneyIcon, CogIcon as SettingsIcon, CarIcon } from '../Icons';
+import { PlusIcon, ImageIcon, MoneyIcon, CogIcon as SettingsIcon, CarIcon, TrashIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import { toCamelCase } from '../../lib/utils';
 
@@ -117,34 +117,58 @@ const Catalog: React.FC<CatalogProps> = ({ shopId, onEditService, onAddNewServic
       </button>
 
       {serviceList.map(service => (
-        <div
-          key={service.id}
-          onClick={() => onEditService(service.id)}
-          className="cursor-pointer flex flex-col overflow-hidden border border-gray-200 hover:border-primary rounded-lg bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
-        >
-          {(service.imageUrls && service.imageUrls.length > 0) ? (
-            <img src={service.imageUrls[0]} alt={service.name} className="w-full h-40 object-cover rounded-t-lg" />
-          ) : (
-            <div className="h-40 w-full bg-gray-100 flex items-center justify-center rounded-t-lg">
-              <ImageIcon className="w-12 h-12 text-gray-300" />
-            </div>
-          )}
-          <div className="p-6 flex flex-col flex-grow">
-            <div className="flex-grow">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-neutral-dark pr-2">{service.name}</h3>
-                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {service.isActive ? 'Actif' : 'Inactif'}
-                </span>
+        <div key={service.id} className="relative group">
+          <div
+            onClick={() => onEditService(service.id)}
+            className="cursor-pointer flex flex-col overflow-hidden border border-gray-200 hover:border-blue-400 rounded-lg bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+          >
+            {(service.imageUrls && service.imageUrls.length > 0) ? (
+              <img src={service.imageUrls[0]} alt={service.name} className="w-full h-40 object-cover rounded-t-lg" />
+            ) : (
+              <div className="h-40 w-full bg-gray-100 flex items-center justify-center rounded-t-lg">
+                <ImageIcon className="w-12 h-12 text-gray-300" />
               </div>
-              <p className="text-gray-600 mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
+            )}
+            <div className="p-6 flex flex-col flex-grow">
+              <div className="flex-grow">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-bold text-neutral-dark pr-2">{service.name}</h3>
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${service.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {service.isActive ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+                <p className="text-gray-600 mt-2 text-sm min-h-[40px] line-clamp-2">{service.description}</p>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xl font-bold text-neutral-dark">
+                  {t.fromPrice.replace('{price}', String(service.basePrice || 0))}
+                </p>
+              </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2">
-              <MoneyIcon className="w-6 h-6 text-gray-400" />
-              <p className="text-xl font-bold text-neutral-dark">
-                {t.fromPrice.replace('{price}', String(service.basePrice || 0))}
-              </p>
-            </div>
+          </div>
+
+          {/* Boutons en overlay au hover */}
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditService(service.id);
+              }}
+              className="bg-white text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all"
+            >
+              Modifier
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?`)) {
+                  onDeleteService(service.id);
+                }
+              }}
+              className="bg-white text-red-500 hover:text-red-700 p-1.5 rounded-lg shadow-md hover:shadow-lg transition-all"
+            >
+              <TrashIcon className="w-5 h-5" />
+            </button>
           </div>
         </div>
       ))}

@@ -1,0 +1,54 @@
+# Context Projet DetailDeck
+
+Ce fichier contient le contexte complet du projet DetailDeck pour informer Taskmaster des spécifications et contraintes.
+
+## 🎯 Goal
+
+Build an ultra‑intuitive booking/catalog SaaS for automotive detailers. Pros create a shop, add services, set availability, and get a public booking URL. Clients pick vehicle size → category → service(s)/formula(s)/add‑ons → slot → contact details.
+
+## ✅ In‑Scope (MVP)
+
+* Single vendor (each shop operates independently under its own public URL)
+* Shop profile (images x1–4, address and/or service zones, hours, lead times)
+* Vehicle sizes (name, short description, optional image)
+* Service categories (name, optional image)
+* Services (name, description, base price, base duration, images x1–4)
+* Service formulas (per‑service bundles with additive price/duration + feature bullet points)
+* Per‑vehicle‑size price/duration modifiers for each service
+* Add‑ons (per‑service optional extras with price/duration)
+* Booking flow (availability, slot pick, contact + vehicle refs)
+* No payments in MVP (but model extensible)
+
+## 🏗️ Tech Stack
+
+* **Language**: TypeScript (strict)
+* **Runtime**: Next.js (App Router) avec Vite actuellement
+* **DB**: Supabase Postgres; Row Level Security (RLS)
+* **Auth**: Supabase Auth (email/password, magic link)
+* **UI**: React + Tailwind + shadcn/ui; Lucide icons
+* **Validation**: Zod + React Hook Form
+* **Time**: Luxon pour les fuseaux horaires
+
+## 🎨 UI/UX Principles
+
+* **Mobile‑first**: Large tap targets; sane defaults; skeleton loaders
+* **Plain language**: Éviter le jargon technique
+* **Ultra-intuitive**: Chaque étape doit être évidente
+* **Français d'abord**: Copy FR avec termes spécialisés detailing
+* **Empty states**: Messages utiles + actions 1-click
+
+## 📋 Structure Onboarding Actuelle
+
+1. **Shop Info**: Nom, description, adresse/zones, horaires, paramètres réservation
+2. **Vehicle Sizes**: Tailles de véhicules avec descriptions
+3. **Categories**: Catégories de services
+4. **Services**: Services avec formules, add-ons, variations par taille
+
+## 🔧 Contraintes Techniques
+
+* Ne pas casser les fonctionnalités existantes
+* Maintenir la cohérence avec le design system
+* Respecter les patterns React existants
+* Préserver les données utilisateur
+* Tests automatiques quand possible
+

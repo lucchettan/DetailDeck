@@ -212,8 +212,7 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Catégories de services</h2>
-        <p className="text-gray-600">Organisez vos services par catégories (ex: Intérieur, Extérieur, Détailing, etc.)</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Configuration des catégories</h2>
       </div>
 
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-100">
@@ -255,12 +254,12 @@ const CategoriesStep: React.FC<CategoriesStepProps> = ({
                         <img
                           src={category.image_url}
                           alt="Image de catégorie"
-                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                          className="w-24 h-24 object-cover rounded-lg border-2 border-gray-300 shadow-sm"
                         />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 shadow-md"
                         >
                           ×
                         </button>

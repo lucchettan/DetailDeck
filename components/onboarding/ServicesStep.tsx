@@ -167,7 +167,7 @@ const ServicesStep: React.FC<ServicesStepProps> = ({
       name: '',
       description: '',
       category_id: categories[0]?.id || '',
-      base_price: 0,
+      base_price: 20, // Prix par défaut plus logique
       base_duration: 30,
       image_urls: [],
       vehicle_size_variations: {},
