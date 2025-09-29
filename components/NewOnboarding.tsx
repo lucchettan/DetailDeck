@@ -11,34 +11,40 @@ import ServiceEditorOnboarding from './onboarding/ServiceEditorOnboarding';
 
 interface NewOnboardingProps {
   onComplete: () => void;
+  initialData?: {
+    shopId: string | null;
+    categories: any[];
+    vehicleSizes: any[];
+    services: any[];
+  };
 }
 
 type OnboardingStep = 'welcome' | 'shop-info' | 'schedule' | 'categories' | 'vehicle-sizes' | 'services';
 
-const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete }) => {
+const NewOnboarding: React.FC<NewOnboardingProps> = ({ onComplete, initialData }) => {
   const { t } = useLanguage();
   const { logOut, user } = useAuth();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
 
   // État centralisé pour toutes les données d'onboarding
   const [onboardingData, setOnboardingData] = useState({
-    shopId: null as string | null,
-    categories: [] as any[],
-    vehicleSizes: [] as any[],
-    services: [] as any[],
-    loading: true
+    shopId: initialData?.shopId || null,
+    categories: initialData?.categories || [],
+    vehicleSizes: initialData?.vehicleSizes || [],
+    services: initialData?.services || [],
+    loading: !initialData // Si initialData fourni, pas de loading
   });
 
   // État pour éviter les chargements multiples
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(!!initialData);
 
-  // Charger les données une seule fois au début
+  // Charger les données une seule fois au début (seulement si pas d'initialData)
   useEffect(() => {
-    if (user && !hasLoaded) {
+    if (user && !hasLoaded && !initialData) {
       setHasLoaded(true);
       loadOnboardingData();
     }
-  }, [user, hasLoaded]);
+  }, [user, hasLoaded, initialData]);
 
   // Scroll automatique vers le haut lors du changement d'étape
   useEffect(() => {

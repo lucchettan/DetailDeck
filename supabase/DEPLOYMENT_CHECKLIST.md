@@ -9,8 +9,9 @@
 
 ### 2. **Auto-seed pour Nouveaux Comptes**
 - **Fichier :** `setup_auto_seed_trigger.sql`
-- **Fonction :** `auto-seed-new-shop/index.ts`
+- **Méthode :** Trigger PostgreSQL automatique (PAS d'Edge Function)
 - **Usage :** Ajoute automatiquement catégories et tailles de véhicules par défaut
+- **Activation :** S'exécute automatiquement lors de la création d'un shop
 
 ### 3. **Vérifications Existantes**
 - `check_rls_policies.sql` - Vérification sécurité RLS

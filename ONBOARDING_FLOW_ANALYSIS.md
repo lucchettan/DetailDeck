@@ -6,7 +6,7 @@
 1. SignUp (SignInPage.tsx)
    ↓
 2. Trigger DB: auto_create_shop_trigger.sql
-   ↓  
+   ↓
 3. Trigger DB: setup_auto_seed_trigger.sql (crée categories + vehicle sizes)
    ↓
 4. Dashboard check onboarding (Dashboard.tsx)
@@ -61,10 +61,10 @@
 - OnboardingModal.tsx crée un shop **SANS** les données auto-seed
 - NewOnboarding.tsx assume que le shop existe déjà avec categories/sizes
 
-**Solution** : 
+**Solution** :
 ```bash
 # Vérifier si OnboardingModal est encore utilisé
-git grep -n "OnboardingModal" 
+git grep -n "OnboardingModal"
 # Si non utilisé → SUPPRIMER
 ```
 
@@ -117,8 +117,8 @@ useEffect(() => {
 **Solution** :
 ```typescript
 // Option 1: Dashboard passe les données à NewOnboarding
-<NewOnboarding 
-  onComplete={...} 
+<NewOnboarding
+  onComplete={...}
   initialData={{ shopId, categories, vehicleSizes, services }}
 />
 
@@ -323,7 +323,7 @@ EXCEPTION WHEN OTHERS THEN
 # 1. Vérifier OnboardingModal usage
 git grep -n "OnboardingModal" --exclude="*.md"
 
-# 2. Vérifier Edge Function usage  
+# 2. Vérifier Edge Function usage
 git grep -n "auto-seed-new-shop" --exclude="*.md"
 
 # 3. Vérifier quel trigger est actif en DB

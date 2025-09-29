@@ -587,6 +587,12 @@ const Dashboard: React.FC = () => {
   if (needsOnboarding) {
     return (
       <NewOnboarding
+        initialData={{
+          shopId: shopData?.id || null,
+          categories: serviceCategories,
+          vehicleSizes: vehicleSizes,
+          services: services
+        }}
         onComplete={() => {
           setNeedsOnboarding(false);
           fetchShopData(true); // Force refresh after onboarding

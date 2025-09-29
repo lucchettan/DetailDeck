@@ -8,7 +8,6 @@ import Pricing from './Pricing';
 import FAQ from './FAQ';
 import Footer from './Footer';
 import WaitingListModal from './WaitingListModal';
-import OnboardingModal from './OnboardingModal';
 import PaymentSuccess from './PaymentSuccess';
 import { useAuth } from '../contexts/AuthContext';
 import Benefits from './Benefits';
@@ -20,7 +19,6 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
   const { accessDemo } = useAuth();
   const [isWaitingListModalOpen, setIsWaitingListModalOpen] = useState(false);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const handleDemoClick = async () => {
@@ -54,10 +52,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
       <WaitingListModal
         isOpen={isWaitingListModalOpen}
         onClose={() => setIsWaitingListModalOpen(false)}
-      />
-      <OnboardingModal
-        isOpen={isOnboardingModalOpen}
-        onClose={() => setIsOnboardingModalOpen(false)}
       />
       <PaymentSuccess onReturnToHome={() => { }} />
     </div>
