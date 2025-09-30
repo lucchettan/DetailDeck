@@ -11,7 +11,8 @@ BEGIN
     name,
     business_type,
     opening_hours,
-    booking_rules
+    min_booking_delay,
+    max_booking_horizon
   ) VALUES (
     NEW.email,
     'Mon Entreprise', -- Default name
@@ -25,7 +26,8 @@ BEGIN
       "saturday": [],
       "sunday": []
     }', -- Default opening hours (9am-5pm Mon-Fri)
-    '{"min_notice_hours": 2, "advance_weeks": 4, "slot_duration_minutes": 30}' -- Default booking rules
+    2, -- Default min booking delay (2 hours)
+    4  -- Default max booking horizon (4 weeks)
   );
 
   RETURN NEW;
@@ -39,7 +41,7 @@ CREATE OR REPLACE TRIGGER create_shop_on_user_signup
   EXECUTE FUNCTION create_empty_shop_for_new_user();
 
 -- Create empty shops for existing users who don't have one
-INSERT INTO shops (email, name, business_type, opening_hours, booking_rules)
+INSERT INTO shops (email, name, business_type, opening_hours, min_booking_delay, max_booking_horizon)
 SELECT
   u.email,
   'Mon Entreprise',
@@ -53,7 +55,8 @@ SELECT
     "saturday": [],
     "sunday": []
   }',
-  '{"min_notice_hours": 2, "advance_weeks": 4, "slot_duration_minutes": 30}'
+  2, -- Default min booking delay (2 hours)
+  4  -- Default max booking horizon (4 weeks)
 FROM auth.users u
 LEFT JOIN shops s ON u.email = s.email
 WHERE s.email IS NULL

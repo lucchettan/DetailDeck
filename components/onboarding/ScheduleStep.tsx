@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
+import { MinBookingNotice, MaxBookingHorizon, getMinBookingNoticeInHours, getMaxBookingHorizonInWeeks, MIN_BOOKING_NOTICE_OPTIONS, MAX_BOOKING_HORIZON_OPTIONS } from '../../types';
 
 interface TimeFrame {
   from: string;
@@ -61,8 +62,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
-  const [minBookingNotice, setMinBookingNotice] = useState('4h');
-  const [maxBookingHorizon, setMaxBookingHorizon] = useState('6m');
+  const [minBookingNotice, setMinBookingNotice] = useState<MinBookingNotice>(MinBookingNotice.FOUR_HOURS);
+  const [maxBookingHorizon, setMaxBookingHorizon] = useState<MaxBookingHorizon>(MaxBookingHorizon.FOUR_WEEKS);
   const [isSaving, setIsSaving] = useState(false);
 
   const dayLabels = {
@@ -124,10 +125,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
         .from('shops')
         .update({
           opening_hours: schedule,
-          booking_rules: {
-            min_booking_notice: minBookingNotice,
-            max_booking_horizon: maxBookingHorizon
-          }
+          min_booking_delay: getMinBookingNoticeInHours(minBookingNotice),
+          max_booking_horizon: getMaxBookingHorizonInWeeks(maxBookingHorizon)
         })
         .eq('email', user.email);
 
@@ -166,15 +165,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
             </label>
             <select
               value={minBookingNotice}
-              onChange={(e) => setMinBookingNotice(e.target.value)}
+              onChange={(e) => setMinBookingNotice(e.target.value as MinBookingNotice)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="1h">1 heure</option>
-              <option value="2h">2 heures</option>
-              <option value="4h">4 heures</option>
-              <option value="8h">8 heures</option>
-              <option value="1d">1 jour</option>
-              <option value="2d">2 jours</option>
+              {MIN_BOOKING_NOTICE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
             <p className="text-xs text-gray-500 mt-2">Temps minimum avant qu'un client puisse réserver</p>
           </div>
@@ -185,15 +181,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onBack, onNext }) => {
             </label>
             <select
               value={maxBookingHorizon}
-              onChange={(e) => setMaxBookingHorizon(e.target.value)}
+              onChange={(e) => setMaxBookingHorizon(e.target.value as MaxBookingHorizon)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="1w">Jusqu'à 1 semaine à l'avance</option>
-              <option value="2w">Jusqu'à 2 semaines à l'avance</option>
-              <option value="1m">Jusqu'à 1 mois à l'avance</option>
-              <option value="2m">Jusqu'à 2 mois à l'avance</option>
-              <option value="3m">Jusqu'à 3 mois à l'avance</option>
-              <option value="6m">Jusqu'à 6 mois à l'avance</option>
+              {MAX_BOOKING_HORIZON_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
             <p className="text-xs text-gray-500 mt-2">Définissez jusqu'à quand vos clients peuvent réserver à l'avance</p>
           </div>

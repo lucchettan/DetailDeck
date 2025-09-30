@@ -19,6 +19,7 @@ import BookingPreviewModal from './booking/BookingPreviewModal';
 import Leads from './dashboard/Leads';
 import { IS_MOCK_MODE } from '../lib/env';
 import { mockShop, mockServices, mockLeads, mockReservations, mockVehicleSizes, mockServiceCategories } from '../lib/mockData';
+import { Shop, MinBookingNotice, MaxBookingHorizon, getMinBookingNoticeInHours, getMaxBookingHorizonInWeeks } from '../types';
 import NewOnboarding from './NewOnboarding';
 
 type ViewType = {
@@ -29,32 +30,6 @@ type ViewType = {
 // Import types from the new centralized location
 // Types removed for deployment compatibility
 
-import {
-  Shop,
-  Service,
-  Formula,
-  VehicleSizeSupplement,
-  AddOn,
-  Reservation,
-  Lead,
-  ShopVehicleSize,
-  ShopServiceCategory,
-  FullShopData
-} from '../types';
-
-// Re-export for backwards compatibility
-export type {
-  Shop,
-  Service,
-  Formula,
-  VehicleSizeSupplement,
-  AddOn,
-  Reservation,
-  Lead,
-  ShopVehicleSize,
-  ShopServiceCategory,
-  FullShopData
-};
 
 const parsePath = (path: string): ViewType => {
   // Enlever les query params (?...) avant de parser
@@ -372,23 +347,83 @@ const Dashboard: React.FC = () => {
 
   const handleSaveShop = async (updatedShopData: Partial<Shop>) => {
     if (!user) return;
-    const payload: any = { ...updatedShopData };
-    const snakeCasePayload: any = {};
-    for (const key in payload) {
-      snakeCasePayload[key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)] = payload[key];
+
+    // Créer une copie complète du shop actuel
+    const shopToSave = { ...shopData, ...updatedShopData };
+
+    // Convertir les enums en valeurs numériques pour la DB
+    if (updatedShopData.minBookingNotice) {
+      shopToSave.minBookingDelay = getMinBookingNoticeInHours(updatedShopData.minBookingNotice as MinBookingNotice);
     }
-    delete snakeCasePayload.id;
+    if (updatedShopData.maxBookingHorizon) {
+      shopToSave.maxBookingHorizonWeeks = getMaxBookingHorizonInWeeks(updatedShopData.maxBookingHorizon as MaxBookingHorizon);
+    }
+
+    // Seules les colonnes qui existent vraiment dans la DB
+    const dbPayload: any = {};
+
+    // Colonnes autorisées (celles qui existent dans la table shops)
+    const allowedColumns = {
+      'email': shopToSave.email,
+      'name': shopToSave.name,
+      'phone': shopToSave.phone,
+      'addressLine1': shopToSave.addressLine1,
+      'addressCity': shopToSave.addressCity,
+      'addressPostalCode': shopToSave.addressPostalCode,
+      'addressCountry': shopToSave.addressCountry,
+      'businessType': shopToSave.businessType,
+      'serviceZones': shopToSave.serviceZones,
+      'openingHours': shopToSave.openingHours,
+      'hasLocalService': shopToSave.hasLocalService,
+      'hasMobileService': shopToSave.hasMobileService,
+      'schedule': shopToSave.schedule,
+      'shopImageUrl': shopToSave.shopImageUrl,
+      'minBookingDelay': shopToSave.minBookingDelay,
+      'maxBookingHorizonWeeks': shopToSave.maxBookingHorizonWeeks
+    };
+
+    // Mapping vers les noms de colonnes DB
+    const dbColumnMapping: Record<string, string> = {
+      'email': 'email',
+      'name': 'name',
+      'phone': 'phone',
+      'addressLine1': 'address_line1',
+      'addressCity': 'address_city',
+      'addressPostalCode': 'address_postal_code',
+      'addressCountry': 'address_country',
+      'businessType': 'business_type',
+      'serviceZones': 'service_zones',
+      'openingHours': 'opening_hours',
+      'hasLocalService': 'has_local_service',
+      'hasMobileService': 'has_mobile_service',
+      'schedule': 'opening_hours',
+      'shopImageUrl': 'shop_image_url',
+      'minBookingDelay': 'min_booking_delay',
+      'maxBookingHorizonWeeks': 'max_booking_horizon'
+    };
+
+    // Ne garder que les colonnes qui ont une valeur et qui existent dans la DB
+    for (const [camelKey, value] of Object.entries(allowedColumns)) {
+      if (value !== undefined && value !== null) {
+        const dbKey = dbColumnMapping[camelKey];
+        if (dbKey) {
+          dbPayload[dbKey] = value;
+        }
+      }
+    }
 
     if (shopData) {
-      const { data, error } = await supabase.from('shops').update(snakeCasePayload).eq('id', shopData.id).select().single();
+      const { data, error } = await supabase.from('shops').update(dbPayload).eq('id', shopData.id).select().single();
       if (error) {
         console.error("Error updating shop info:", error);
         setAlertInfo({ isOpen: true, title: "Update Error", message: `Error updating shop info: ${error.message}` });
         return;
       }
-      if (data) setShopData(toCamelCase(data) as Shop);
+      if (data) {
+        setShopData(toCamelCase(data) as Shop);
+      }
     } else {
-      const { data, error } = await supabase.from('shops').insert({ ...snakeCasePayload, email: user.email }).select().single();
+      const { data, error } = await supabase.from('shops').insert({ ...dbPayload, email: user.email }).select().single();
       if (error) {
         console.error("Error creating shop info:", error);
         setAlertInfo({ isOpen: true, title: "Creation Error", message: `Error creating shop info: ${error.message}` });

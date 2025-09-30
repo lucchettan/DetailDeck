@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { SuccessIcon, ImageIcon, CloseIcon, CheckCircleIcon, SparklesIcon, XCircleIcon } from '../Icons';
+import { SuccessIcon, ImageIcon, CloseIcon, CheckCircleIcon, SparklesIcon, XCircleIcon, TrashIcon } from '../Icons';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from './Calendar';
 import TimeSlotPicker from './TimeSlotPicker';
@@ -48,6 +48,9 @@ interface Shop {
   hasLocalService?: boolean;
   hasMobileService?: boolean;
   serviceZones?: Array<{ city: string; radius: string }>;
+  minNoticeHours?: number;
+  minBookingDelay?: number;
+  maxBookingHorizonWeeks?: number;
 }
 
 interface VehicleSize {
@@ -295,6 +298,35 @@ const BookingFlowNew: React.FC<BookingPageProps> = ({ shopId }) => {
   // Gérer la suppression d'un service
   const handleServiceRemove = (serviceId: string) => {
     setSelectedServices(selectedServices.filter(s => s.serviceId !== serviceId));
+  };
+
+  // Fermer la popup détail quand on navigue ou soumet
+  useEffect(() => {
+    if (currentStep !== 'time' && currentStep !== 'services') {
+      setIsCartExpanded(false);
+    }
+  }, [currentStep]);
+
+  // Gérer la sélection de date avec auto-scroll sur mobile
+  const handleDateSelect = (date: Date | null) => {
+    setSelectedDate(date);
+
+    // Auto-scroll vers la section des horaires sur mobile uniquement
+    if (date && window.innerWidth < 768) { // 768px = breakpoint md de Tailwind
+      setTimeout(() => {
+        const timeSection = document.querySelector('[data-time-section]');
+        if (timeSection) {
+          // Calculer la position pour que le haut de la section soit en haut de l'écran
+          const elementTop = timeSection.getBoundingClientRect().top + window.pageYOffset;
+          const offsetTop = elementTop - 200; // 200px de marge pour être sûr que ça remonte bien
+
+          window.scrollTo({
+            top: offsetTop,
+            behavior: 'smooth'
+          });
+        }
+      }, 200); // Délai plus long pour laisser le temps au TimeSlotPicker de se rendre
+    }
   };
 
   // Fonction pour créer une lead (demande de rappel)
@@ -564,7 +596,7 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
               {/* Bouton d'appel proéminent */}
               {shopData.phone && (
-                <div className="mb-6">
+                <div className="mb-4">
                   <a
                     href={`tel:${shopData.phone}`}
                     className={`inline-flex items-center px-8 py-4 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-lg ${shopData.shopImageUrl
@@ -578,17 +610,17 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                 </div>
               )}
 
-              {/* Informations en bas à gauche */}
-              <div className="absolute bottom-4 left-4 flex items-center space-x-4 text-sm">
+              {/* Informations d'adresse alignées avec le nom et téléphone */}
+              <div className="flex flex-col gap-2 text-base">
                 {shopData.hasLocalService && shopData.addressLine1 && (
-                  <div className={`flex items-center space-x-1 ${shopData.shopImageUrl ? 'text-gray-300' : 'text-gray-500'} opacity-80`}>
+                  <div className={`flex items-center gap-2 ${shopData.shopImageUrl ? 'text-white' : 'text-gray-700'}`}>
                     <span>📍</span>
                     <span>{shopData.addressLine1}, {shopData.addressPostalCode} {shopData.addressCity}</span>
                   </div>
                 )}
 
                 {shopData.hasMobileService && shopData.serviceZones && shopData.serviceZones.length > 0 && (
-                  <div className={`flex items-center space-x-1 ${shopData.shopImageUrl ? 'text-gray-300' : 'text-gray-500'} opacity-80`}>
+                  <div className={`flex items-center gap-2 ${shopData.shopImageUrl ? 'text-white' : 'text-gray-700'}`}>
                     <span>🚚</span>
                     <span>Zones: {shopData.serviceZones.map((zone: any) => `${zone.city} (${zone.radius}km)`).join(', ')}</span>
                   </div>
@@ -602,7 +634,7 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
       {/* Contenu principal */}
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${currentStep === 'confirmed' ? 'pb-8' :
-          isCartExpanded ? 'pb-80' : 'pb-32'
+        isCartExpanded ? 'pb-80' : 'pb-32'
         }`}>
         <div className="max-w-4xl mx-auto">
           {/* Étapes */}
@@ -639,14 +671,14 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
             {currentStep === 'categorySelection' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center space-x-4 mb-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
                   <button
                     onClick={() => setCurrentStep('vehicleSize')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-2 py-1 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     ← Retour
                   </button>
-                  <h2 className="text-2xl font-bold text-gray-900">Choisissez une catégorie</h2>
+                  <h2 className="text-sm sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Choisissez une catégorie</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(() => {
@@ -698,15 +730,15 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
             )}
 
             {currentStep === 'serviceSelection' && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center space-x-4 mb-6">
+              <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
                   <button
                     onClick={() => setCurrentStep('categorySelection')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-2 py-1 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     ← Retour
                   </button>
-                  <h2 className="text-2xl font-bold text-gray-900">Sélectionnez vos services</h2>
+                  <h2 className="text-sm sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Sélectionnez vos services</h2>
                 </div>
                 <div className="space-y-4">
                   {(() => {
@@ -738,25 +770,25 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
             {currentStep === 'datetime' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center space-x-4 mb-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
                   <button
                     onClick={() => setCurrentStep('serviceSelection')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-2 py-1 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     ← Retour
                   </button>
-                  <h2 className="text-2xl font-bold text-gray-900">Choisissez votre créneau</h2>
+                  <h2 className="text-sm sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Choisissez votre créneau</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-4">Date</h3>
                     <Calendar
                       selectedDate={selectedDate}
-                      onDateSelect={setSelectedDate}
+                      onDateSelect={handleDateSelect}
                       shopId={shopId}
                     />
                   </div>
-                  <div>
+                  <div data-time-section>
                     <h3 className="font-semibold text-gray-900 mb-4">Heure</h3>
                     {selectedDate ? (
                       <TimeSlotPicker
@@ -765,6 +797,8 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                         onTimeSlotSelect={setSelectedTimeSlot}
                         shopId={shopId}
                         duration={totalCalculation.totalDuration}
+                        minNoticeHours={shopData?.minBookingDelay || 2}
+                        maxBookingHorizon={shopData?.maxBookingHorizonWeeks}
                       />
                     ) : (
                       <div className="text-center p-8 bg-gray-50 rounded-lg">
@@ -778,14 +812,14 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
             {currentStep === 'clientInfo' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center space-x-4 mb-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
                   <button
                     onClick={() => setCurrentStep('datetime')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-2 py-1 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     ← Retour
                   </button>
-                  <h2 className="text-2xl font-bold text-gray-900">Vos informations</h2>
+                  <h2 className="text-sm sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Vos informations</h2>
                 </div>
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -917,29 +951,40 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                   <div className="space-y-3 mb-4">
                     <p className="text-sm text-gray-600">Services sélectionnés:</p>
                     {totalCalculation.breakdown.map((item, index) => (
-                      <div key={index} className="border-l-2 border-blue-500 pl-3">
-                        <p className="font-medium text-sm">{item.serviceName}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.totalPrice}€ • {formatDuration(item.totalDuration)}
-                        </p>
-                        <div className="text-xs text-gray-500 ml-2">
-                          <p>Base: {item.basePrice}€</p>
-                          {item.variationPrice > 0 && (
-                            <p>Taille: {item.vehicleSizeLabel} +{item.variationPrice}€</p>
-                          )}
-                          {item.formulaPrice > 0 && (
-                            <p>Formule: {item.formulaName} +{item.formulaPrice}€</p>
-                          )}
-                        </div>
-                        {item.addOns.length > 0 && (
-                          <div className="mt-1">
-                            {item.addOns.map(addOn => (
-                              <p key={addOn.id} className="text-xs text-gray-500 ml-2">
-                                Add-on: {addOn.name} ({addOn.price}€)
-                              </p>
-                            ))}
+                      <div key={index} className="border-l-2 border-blue-500 pl-3 pr-3 relative">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{item.serviceName}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.totalPrice}€ • {formatDuration(item.totalDuration)}
+                            </p>
+                            <div className="text-xs text-gray-500 ml-2">
+                              <p>Base: {item.basePrice}€</p>
+                              {item.variationPrice > 0 && (
+                                <p>Taille: {item.vehicleSizeLabel} +{item.variationPrice}€{item.variationDuration > 0 ? ` +${formatDuration(item.variationDuration)}` : ''}</p>
+                              )}
+                              {item.formulaPrice > 0 && (
+                                <p>Formule: {item.formulaName} +{item.formulaPrice}€</p>
+                              )}
+                            </div>
+                            {item.addOns.length > 0 && (
+                              <div className="mt-1">
+                                {item.addOns.map(addOn => (
+                                  <p key={addOn.id} className="text-xs text-gray-500 ml-2">
+                                    Add-on: {addOn.name} ({addOn.price}€)
+                                  </p>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <button
+                            onClick={() => handleServiceRemove(item.serviceId)}
+                            className="ml-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            title="Retirer ce service"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -991,7 +1036,10 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                     {/* Boutons pour les étapes intermédiaires */}
                     {currentStep !== 'clientInfo' && (
                       <button
-                        onClick={() => setShowCallbackForm(true)}
+                        onClick={() => {
+                          setShowCallbackForm(true);
+                          setIsCartExpanded(false);
+                        }}
                         className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
                       >
                         Être rappelé
@@ -1000,7 +1048,10 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
                     {currentStep === 'serviceSelection' && (
                       <button
-                        onClick={() => setCurrentStep('datetime')}
+                        onClick={() => {
+                          setCurrentStep('datetime');
+                          setIsCartExpanded(false);
+                        }}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                       >
                         Réserver un RDV
@@ -1009,7 +1060,10 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
 
                     {currentStep === 'datetime' && selectedDate && (
                       <button
-                        onClick={() => setCurrentStep('clientInfo')}
+                        onClick={() => {
+                          setCurrentStep('clientInfo');
+                          setIsCartExpanded(false);
+                        }}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                       >
                         Continuer
@@ -1041,10 +1095,10 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
             </div>
 
             {/* Layout mobile/tablet : deux stacks */}
-            <div className="lg:hidden space-y-4">
-              {/* Stack 1: Info du panier */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+            <div className="lg:hidden space-y-3">
+              {/* Stack 1: Info du panier + Détail à gauche, Prix à droite */}
+              <div className="flex items-end justify-between">
+                <div className="flex items-end space-x-3">
                   {selectedServices.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500">Services</p>
@@ -1056,75 +1110,82 @@ Total estimé: ${totalCalculation.totalPrice.toFixed(2)}€`
                     <p className="text-xs text-gray-500">Durée</p>
                     <p className="text-sm font-medium">{formatDuration(totalCalculation.totalDuration)}</p>
                   </div>
+
+                  <button
+                    onClick={() => setIsCartExpanded(!isCartExpanded)}
+                    className="px-2 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    {isCartExpanded ? "Masquer" : "Détail"}
+                  </button>
                 </div>
 
-                <button
-                  onClick={() => setIsCartExpanded(!isCartExpanded)}
-                  className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  {isCartExpanded ? "Masquer" : "Détail"}
-                </button>
-              </div>
-
-              {/* Stack 2: Actions */}
-              <div className="flex items-center justify-between">
-                <div className="text-left">
+                <div className="text-right">
                   <p className="text-xs text-gray-500">Total</p>
-                  <p className="text-lg font-bold text-blue-600">
+                  <p className="text-base font-bold text-blue-600">
                     {totalCalculation.totalPrice.toFixed(2)}€
                   </p>
                 </div>
-
-                {selectedServices.length > 0 && (
-                  <div className="flex items-center space-x-2">
-                    {currentStep !== 'clientInfo' && (
-                      <button
-                        onClick={() => setShowCallbackForm(true)}
-                        className="bg-gray-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-                      >
-                        Être rappelé
-                      </button>
-                    )}
-
-                    {currentStep === 'serviceSelection' && (
-                      <button
-                        onClick={() => setCurrentStep('datetime')}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        Réserver un RDV
-                      </button>
-                    )}
-
-                    {currentStep === 'datetime' && selectedDate && (
-                      <button
-                        onClick={() => setCurrentStep('clientInfo')}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        Continuer
-                      </button>
-                    )}
-
-                    {currentStep === 'datetime' && !selectedDate && (
-                      <button
-                        onClick={() => setCurrentStep('serviceSelection')}
-                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-                      >
-                        Modifier services
-                      </button>
-                    )}
-
-                    {currentStep === 'clientInfo' && (
-                      <button
-                        onClick={handleReservationSubmit}
-                        disabled={isSubmitting}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
-                      >
-                        {isSubmitting ? 'Envoi...' : 'Confirmer'}
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
+
+              {/* Stack 2: Actions seules */}
+              {selectedServices.length > 0 && (
+                <div className="flex items-center justify-end space-x-2">
+                  {currentStep !== 'clientInfo' && (
+                    <button
+                      onClick={() => {
+                        setShowCallbackForm(true);
+                        setIsCartExpanded(false);
+                      }}
+                      className="bg-gray-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Être rappelé
+                    </button>
+                  )}
+
+                  {currentStep === 'serviceSelection' && (
+                    <button
+                      onClick={() => {
+                        setCurrentStep('datetime');
+                        setIsCartExpanded(false);
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Réserver un RDV
+                    </button>
+                  )}
+
+                  {currentStep === 'datetime' && selectedDate && (
+                    <button
+                      onClick={() => {
+                        setCurrentStep('clientInfo');
+                        setIsCartExpanded(false);
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Continuer
+                    </button>
+                  )}
+
+                  {currentStep === 'datetime' && !selectedDate && (
+                    <button
+                      onClick={() => setCurrentStep('serviceSelection')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Modifier services
+                    </button>
+                  )}
+
+                  {currentStep === 'clientInfo' && (
+                    <button
+                      onClick={handleReservationSubmit}
+                      disabled={isSubmitting}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
+                    >
+                      {isSubmitting ? 'Envoi...' : 'Confirmer'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -23,9 +23,11 @@ interface TimeSlotPickerProps {
     selectedTimeSlot: string;
     onTimeSlotSelect: (time: string) => void;
     duration: number;
+    minNoticeHours?: number;
+    maxBookingHorizon?: number; // Nombre de semaines
 }
 
-const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, selectedTimeSlot, onTimeSlotSelect, duration }) => {
+const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, selectedTimeSlot, onTimeSlotSelect, duration, minNoticeHours = 0, maxBookingHorizon }) => {
     const { t } = useLanguage();
     const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -74,8 +76,33 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, s
 
     const availableSlots = useMemo(() => {
         if (!selectedDate || duration <= 0) {
+            console.log('🔍 TimeSlotPicker: No date or invalid duration', { selectedDate, duration });
             return [];
         }
+
+        // Vérifier l'horizon maximum de réservation
+        const today = new Date();
+        const maxBookingDate = new Date(today);
+
+        if (maxBookingHorizon && typeof maxBookingHorizon === 'number') {
+            const horizonDays = maxBookingHorizon * 7; // Convertir semaines en jours
+            maxBookingDate.setDate(today.getDate() + horizonDays);
+
+            if (selectedDate > maxBookingDate) {
+                console.log('🔍 TimeSlotPicker: Date exceeds max booking horizon', { selectedDate, maxBookingDate, maxBookingHorizon, horizonDays });
+                return [];
+            }
+        }
+
+        console.log('🔍 TimeSlotPicker: Generating slots for', {
+            selectedDate,
+            duration,
+            minNoticeHours,
+            minNoticeHoursType: typeof minNoticeHours,
+            maxBookingHorizon,
+            maxBookingHorizonType: typeof maxBookingHorizon,
+            isToday: toYYYYMMDD(selectedDate) === toYYYYMMDD(new Date())
+        });
 
         // Horaires par défaut (9h-18h)
         const startTime = 9 * 60; // 9h00 en minutes
@@ -84,15 +111,23 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, s
         const initialSlots: string[] = [];
         let currentTime = startTime;
 
-        // Vérifier si c'est aujourd'hui pour éviter les créneaux passés
+        // Vérifier si c'est aujourd'hui pour éviter les créneaux passés et respecter le délai minimum
         const isToday = toYYYYMMDD(selectedDate) === toYYYYMMDD(new Date());
         if (isToday) {
             const now = new Date();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            currentTime = Math.max(currentTime, Math.ceil(currentMinutes / 15) * 15);
+            // Ajouter le délai minimum en minutes (avec valeur par défaut de 0 si undefined)
+            const minNoticeMinutes = (minNoticeHours || 0) * 60;
+            const earliestAllowedTime = currentMinutes + minNoticeMinutes;
+
+            // S'assurer que le currentTime respecte le délai minimum
+            const minTimeWithNotice = Math.ceil(earliestAllowedTime / 15) * 15;
+            currentTime = Math.max(currentTime, minTimeWithNotice);
+
+            console.log(`🕐 Min notice: ${minNoticeHours || 0}h (${minNoticeMinutes}min), Current: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}, Earliest allowed: ${Math.floor(earliestAllowedTime / 60)}:${(earliestAllowedTime % 60).toString().padStart(2, '0')}, First slot: ${Math.floor(currentTime / 60)}:${(currentTime % 60).toString().padStart(2, '0')}`);
         }
 
-        while (currentTime + duration <= endTime) {
+        while (currentTime + duration <= endTime && !isNaN(currentTime)) {
             const hours = Math.floor(currentTime / 60).toString().padStart(2, '0');
             const minutes = (currentTime % 60).toString().padStart(2, '0');
             initialSlots.push(`${hours}:${minutes}`);
@@ -130,7 +165,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({ shopId, selectedDate, s
         console.log('🔍 Available slots after filtering:', filteredSlots);
         return filteredSlots;
 
-    }, [selectedDate, duration, existingReservations]);
+    }, [selectedDate, duration, existingReservations, minNoticeHours, maxBookingHorizon]);
 
     if (isLoading) {
         return <div className="text-center p-4 bg-gray-50 rounded-lg">Chargement des créneaux...</div>;

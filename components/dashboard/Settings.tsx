@@ -4,7 +4,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { CloseIcon, ImageIcon, PlusIcon, SaveIcon, StorefrontIcon, ClockIcon, ShieldCheckIcon, UserCircleIcon, KeyIcon, BuildingOffice2Icon, TruckIcon, MapPinIcon, CarIcon } from '../Icons';
 import CustomSelect from '../CustomSelect';
-import { Shop } from '../Dashboard';
+import { Shop } from '../../types';
+import { MinBookingNotice, MaxBookingHorizon, MIN_BOOKING_NOTICE_OPTIONS, MAX_BOOKING_HORIZON_OPTIONS, getMinBookingNoticeInHours } from '../../types';
 
 type TimeFrame = { from: string; to: string };
 type Schedule = {
@@ -30,8 +31,8 @@ const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
     businessType: 'local', // Gardé pour compatibilité
     hasLocalService: true, // Par défaut, service en atelier activé
     hasMobileService: false, // Par défaut, service mobile désactivé
-    minBookingNotice: '4h',
-    maxBookingHorizon: '12w',
+    minBookingNotice: MinBookingNotice.FOUR_HOURS,
+    maxBookingHorizon: MaxBookingHorizon.FOUR_WEEKS,
     schedule: initialSchedule,
   };
 
@@ -46,12 +47,45 @@ const getInitialFormData = (shopData: Shop | null): Partial<Shop> => {
       hasMobileService = shopData.businessType === 'mobile' || shopData.businessType === 'hybrid';
     }
 
+    // Charger les valeurs depuis les nouvelles colonnes
+    let minBookingNotice = defaults.minBookingNotice;
+    let maxBookingHorizon = defaults.maxBookingHorizon;
+
+    if (shopData.minBookingDelay) {
+      // Convertir minBookingDelay (heures) en MinBookingNotice
+      const hours = shopData.minBookingDelay;
+      if (hours === 1) minBookingNotice = MinBookingNotice.ONE_HOUR;
+      else if (hours === 2) minBookingNotice = MinBookingNotice.TWO_HOURS;
+      else if (hours === 4) minBookingNotice = MinBookingNotice.FOUR_HOURS;
+      else if (hours === 6) minBookingNotice = MinBookingNotice.SIX_HOURS;
+      else if (hours === 12) minBookingNotice = MinBookingNotice.TWELVE_HOURS;
+      else if (hours === 24) minBookingNotice = MinBookingNotice.ONE_DAY;
+      else if (hours === 48) minBookingNotice = MinBookingNotice.TWO_DAYS;
+    }
+
+    // Vérifier d'abord maxBookingHorizonWeeks, puis maxBookingHorizon comme fallback
+    const weeksValue = shopData.maxBookingHorizonWeeks || shopData.maxBookingHorizon;
+    if (weeksValue) {
+      // Convertir la valeur (semaines) en MaxBookingHorizon
+      const weeks = typeof weeksValue === 'number' ? weeksValue : parseInt(weeksValue.toString());
+      if (weeks === 1) maxBookingHorizon = MaxBookingHorizon.ONE_WEEK;
+      else if (weeks === 2) maxBookingHorizon = MaxBookingHorizon.TWO_WEEKS;
+      else if (weeks === 3) maxBookingHorizon = MaxBookingHorizon.THREE_WEEKS;
+      else if (weeks === 4) maxBookingHorizon = MaxBookingHorizon.FOUR_WEEKS;
+      else if (weeks === 5) maxBookingHorizon = MaxBookingHorizon.FIVE_WEEKS;
+      else if (weeks === 6) maxBookingHorizon = MaxBookingHorizon.SIX_WEEKS;
+      else if (weeks === 7) maxBookingHorizon = MaxBookingHorizon.SEVEN_WEEKS;
+      else if (weeks === 8) maxBookingHorizon = MaxBookingHorizon.EIGHT_WEEKS;
+    }
+
     return {
       ...defaults,
       ...shopData,
       hasLocalService,
       hasMobileService,
-      schedule: shopData.schedule || initialSchedule,
+      minBookingNotice,
+      maxBookingHorizon,
+      schedule: shopData.openingHours || shopData.schedule || initialSchedule,
     };
   }
   return defaults;
@@ -113,7 +147,17 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
   }, [initialStep]);
 
   useEffect(() => {
-    setFormData(getInitialFormData(shopData));
+    console.log('🔍 [SETTINGS DEBUG] shopData changed:', {
+      bookingRules: shopData?.booking_rules,
+      minBookingNotice: shopData?.minBookingNotice,
+      maxBookingHorizon: shopData?.maxBookingHorizon
+    });
+    const newFormData = getInitialFormData(shopData);
+    console.log('🔍 [SETTINGS DEBUG] Generated formData:', {
+      minBookingNotice: newFormData.minBookingNotice,
+      maxBookingHorizon: newFormData.maxBookingHorizon
+    });
+    setFormData(newFormData);
     setCity(shopData?.serviceZones?.[0]?.city || '');
     setRadius(String(shopData?.serviceZones?.[0]?.radius || '20'));
     setIsDirty(false);
@@ -247,37 +291,10 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-  const noticeOptions = [
-    { value: '30m', label: t.notice_30_minutes }, { value: '1h', label: t.notice_1_hour },
-    { value: '2h', label: t.notice_2_hours }, { value: '4h', label: t.notice_4_hours },
-    { value: '8h', label: t.notice_8_hours }, { value: '12h', label: t.notice_12_hours },
-    { value: '1d', label: t.notice_1_day }, { value: '2d', label: t.notice_2_days },
-  ];
+  // Utiliser les nouvelles options typées
+  const noticeOptions = MIN_BOOKING_NOTICE_OPTIONS;
+  const horizonOptions = MAX_BOOKING_HORIZON_OPTIONS;
 
-  const horizonOptions = [
-    { value: '1w', label: t.horizon_1_week }, { value: '2w', label: t.horizon_2_weeks },
-    { value: '4w', label: t.horizon_4_weeks }, { value: '8w', label: t.horizon_8_weeks },
-    { value: '12w', label: t.horizon_12_weeks }, { value: '24w', label: t.horizon_24_weeks },
-    { value: '52w', label: t.horizon_52_weeks },
-  ];
-
-  const TopSaveButton = () => (
-    <button
-      type="button"
-      onClick={handleSaveClick}
-      disabled={!isDirty || isSaving}
-      className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isSaving ? (
-        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-      ) : (
-        <>
-          <SaveIcon className="w-5 h-5" />
-          <span>{t.saveModifications}</span>
-        </>
-      )}
-    </button>
-  );
 
 
   return (
@@ -332,7 +349,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
               <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">🏪</span> {t.businessDetails}</h3>
-              <TopSaveButton />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
@@ -523,7 +539,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
               <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">🕒</span> {t.businessHours}</h3>
-              <TopSaveButton />
             </div>
             <p className="text-brand-gray mb-6 text-sm">{t.businessHoursSubtitle}</p>
             <div className="space-y-6">
@@ -548,7 +563,7 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
                             <div className="flex-1"><TimePicker value={frame.from} onChange={value => handleTimeChange(day, index, 'from', value)} /></div>
                             <span className="text-sm text-brand-gray">{t.to}</span>
                             <div className="flex-1"><TimePicker value={frame.to} onChange={value => handleTimeChange(day, index, 'to', value)} /></div>
-                            {(formData.schedule?.[day]?.timeframes.length ?? 0) > 0 &&
+                            {(formData.schedule?.[day]?.timeframes.length ?? 0) > 1 &&
                               <button onClick={() => handleRemoveTimeFrame(day, index)} className="text-gray-400 hover:text-red-500"><CloseIcon /></button>
                             }
                           </div>
@@ -567,21 +582,34 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
           <div>
             <div className="flex justify-between items-center mb-4 border-b pb-4">
               <h3 className="text-xl font-bold text-brand-dark flex items-center gap-3"><span className="text-2xl">📋</span> {t.bookingPolicies}</h3>
-              <TopSaveButton />
+              <button
+                onClick={handleSaveClick}
+                disabled={!isDirty || isSaving}
+                className="bg-brand-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <SaveIcon className="w-4 h-4" />
+                    <span>Enregistrer</span>
+                  </>
+                )}
+              </button>
             </div>
             <p className="text-brand-gray mb-6 text-sm">{t.bookingPoliciesSubtitle}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label htmlFor="minBookingNotice" className="block text-sm font-bold text-brand-dark">{t.minBookingNotice}</label>
                 <p className="text-xs text-brand-gray mb-2">{t.minBookingNoticeSubtitle}</p>
-                <select id="minBookingNotice" value={formData.minBookingNotice || '4h'} onChange={(e) => handleInputChange('minBookingNotice', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
+                <select id="minBookingNotice" value={formData.minBookingNotice || MinBookingNotice.FOUR_HOURS} onChange={(e) => handleInputChange('minBookingNotice', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                   {noticeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
               <div>
                 <label htmlFor="maxBookingHorizon" className="block text-sm font-bold text-brand-dark">{t.maxBookingHorizon}</label>
                 <p className="text-xs text-brand-gray mb-2">{t.maxBookingHorizonSubtitle}</p>
-                <select id="maxBookingHorizon" value={formData.maxBookingHorizon || '12w'} onChange={(e) => handleInputChange('maxBookingHorizon', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
+                <select id="maxBookingHorizon" value={formData.maxBookingHorizon || MaxBookingHorizon.FOUR_WEEKS} onChange={(e) => handleInputChange('maxBookingHorizon', e.target.value)} className="w-full p-2 border border-gray-300 shadow-sm rounded-lg bg-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue">
                   {horizonOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
@@ -614,24 +642,6 @@ const Settings: React.FC<SettingsProps> = ({ shopData, onSave, initialStep, onNa
         )}
       </div>
 
-      {activeStep < 4 && (
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleSaveClick}
-            disabled={!isDirty || isSaving}
-            className="bg-brand-blue text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px]"
-          >
-            {isSaving ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-            ) : (
-              <>
-                <SaveIcon className="w-5 h-5" />
-                <span>{t.saveModifications}</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
